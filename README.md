@@ -37,9 +37,9 @@ collection.insert(new BasicDBObject("name", "jon"));
 
 ## Scope
 
-fongo doesn't implement all mongo functionality. most query and update syntax is supported.  MapReduce,
-gridfs, and capped collections are not supported.  Also, there is no index support other than the \_id index.
-Fongo uses a LinkedHashMap internally with the \_id as the key.
+fongo doesn't implement all mongo functionality. most query and update syntax is supported. 
+Gridfs and capped collections are not supported.
+MapReduce is in minimal way but will be enhanced soon.
 
 ## Implementation Details
 
