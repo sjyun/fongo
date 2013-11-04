@@ -1,6 +1,6 @@
 package com.mongodb;
 
-import com.foursquare.fongo.Fongo;
+import org.fongo.Fongo;
 import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.List;

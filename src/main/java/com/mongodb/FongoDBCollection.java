@@ -4,16 +4,20 @@ import java.util.*;
 
 import org.bson.BSON;
 import org.bson.types.ObjectId;
+import org.fongo.FongoException;
+import org.fongo.impl.ExpressionParser;
+import org.fongo.impl.Filter;
+import org.fongo.impl.Tuple2;
+import org.fongo.impl.UpdateEngine;
+import org.fongo.impl.Util;
+import org.fongo.impl.index.IndexFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.foursquare.fongo.FongoException;
-import com.foursquare.fongo.impl.*;
-import com.foursquare.fongo.impl.geo.GeoUtil;
-import com.foursquare.fongo.impl.geo.LatLong;
-import com.foursquare.fongo.impl.index.GeoIndex;
-import com.foursquare.fongo.impl.index.IndexAbstract;
-import com.foursquare.fongo.impl.index.IndexFactory;
+import org.fongo.impl.geo.GeoUtil;
+import org.fongo.impl.geo.LatLong;
+import org.fongo.impl.index.GeoIndex;
+import org.fongo.impl.index.IndexAbstract;
 
 /**
  * fongo override of com.mongodb.DBCollection

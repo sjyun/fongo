@@ -4,7 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 
-import com.foursquare.fongo.Fongo;
+import org.fongo.Fongo;
 import org.junit.Test;
 
 public class FongoMongoTest {

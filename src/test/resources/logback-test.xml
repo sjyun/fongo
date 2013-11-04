@@ -7,7 +7,7 @@
     </appender>
 
     <logger name="org" level="INFO" />
-    <logger name="com.foursquare.fongo" level="INFO" />
+    <logger name="org.fongo" level="INFO" />
     <logger name="com.mongodb.FongoDBCollection" level="INFO" />
     <logger name="com.mongodb.FongoDB" level="INFO" />
 

@@ -10,9 +10,9 @@ Add dependency to your project:
 
 ```
 <dependency>
-  <groupId>com.foursquare</groupId>
+  <groupId>org.fongo</groupId>
   <artifactId>fongo</artifactId>
-  <version>1.3.0</version>
+  <version>1.3.1</version>
 </dependency>
 ```
 
@@ -21,7 +21,7 @@ Add dependency to your project:
 Use in place of regular `com.mongodb.Mongo` instance:
 
 ```java
-import com.foursquare.fongo.Fongo;
+import org.fongo.Fongo;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
 import com.mognodb.DBCollection;
@@ -75,7 +75,7 @@ Mongo mongo = fongo.getMongo();
 If you use Spring, you can configure fongo in your XML configuration context:
 
 ```xml
-<bean name="fongo" class="com.foursquare.fongo.Fongo">
+<bean name="fongo" class="org.fongo.Fongo">
     <constructor-arg value="InMemoryMongo" />
 </bean>
 <bean id="mongo" factory-bean="fongo" factory-method="getMongo" />

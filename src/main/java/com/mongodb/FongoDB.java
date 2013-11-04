@@ -1,7 +1,7 @@
 package com.mongodb;
 
-import com.foursquare.fongo.impl.Aggregator;
-import com.foursquare.fongo.impl.MapReduce;
+import org.fongo.impl.Aggregator;
+import org.fongo.impl.MapReduce;
 import java.util.HashSet;
 
 import java.util.ArrayList;
@@ -14,7 +14,7 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.foursquare.fongo.Fongo;
+import org.fongo.Fongo;
 
 /**
  * fongo override of com.mongodb.DB

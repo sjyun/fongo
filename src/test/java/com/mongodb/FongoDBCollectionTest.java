@@ -11,7 +11,7 @@ import org.bson.BSONObject;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.foursquare.fongo.Fongo;
+import org.fongo.Fongo;
 
 public class FongoDBCollectionTest {
   private FongoDBCollection collection;
