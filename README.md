@@ -50,7 +50,8 @@ It also has a "provided" dependency on sl4j-api for logging.  If you don't alrea
 <dependency> 
   <groupId>ch.qos.logback</groupId>
   <artifactId>logback-classic</artifactId>
-  <version>1.0.4</version>
+  <version>1.0.13</version>
+  <scope>test</test>
 </dependency>
 ```
 
