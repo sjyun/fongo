@@ -1,7 +1,16 @@
 package com.mongodb;
 
-import java.util.*;
-
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
+import java.util.Set;
 import org.bson.BSON;
 import org.bson.types.ObjectId;
 import org.fongo.FongoException;
@@ -10,14 +19,13 @@ import org.fongo.impl.Filter;
 import org.fongo.impl.Tuple2;
 import org.fongo.impl.UpdateEngine;
 import org.fongo.impl.Util;
-import org.fongo.impl.index.IndexFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.fongo.impl.geo.GeoUtil;
 import org.fongo.impl.geo.LatLong;
 import org.fongo.impl.index.GeoIndex;
 import org.fongo.impl.index.IndexAbstract;
+import org.fongo.impl.index.IndexFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * fongo override of com.mongodb.DBCollection
@@ -26,7 +34,7 @@ import org.fongo.impl.index.IndexAbstract;
  * @author jon
  */
 public class FongoDBCollection extends DBCollection {
-  final static Logger LOG = LoggerFactory.getLogger(FongoDBCollection.class);
+  private final static Logger LOG = LoggerFactory.getLogger(FongoDBCollection.class);
 
   public static final String ID_KEY = "_id";
   private final FongoDB fongoDb;
@@ -143,6 +151,7 @@ public class FongoDBCollection extends DBCollection {
       replacementValue = list;
     } else if (replacementValue instanceof Map) {
       BasicDBObject newDbo = new BasicDBObject();
+      //noinspection unchecked
       for (Map.Entry<String, Object> entry : (Set<Map.Entry<String, Object>>) ((Map) replacementValue).entrySet()) {
         newDbo.put(entry.getKey(), replaceListAndMap(entry.getValue()));
       }
@@ -181,7 +190,7 @@ public class FongoDBCollection extends DBCollection {
       if (!o.containsField(ID_KEY)) {
         o.put(ID_KEY, q.get(ID_KEY));
       }
-      List<DBObject> oldObjects = _idIndex.get(o);
+      @SuppressWarnings("unchecked") List<DBObject> oldObjects = _idIndex.get(o);
       addToIndexes(o, oldObjects == null ? null : oldObjects.get(0), concern);
       updatedDocuments++;
     } else {
@@ -302,7 +311,9 @@ public class FongoDBCollection extends DBCollection {
     rec.append("v", 1);
     rec.append("key", keys);
     rec.append("ns", this.getDB().getName() + "." + this.getName());
-    if (options != null && !options.containsField("name")) {
+    if (options != null && options.containsField("name")) {
+      rec.append("name", options.get("name"));
+    } else {
       StringBuilder sb = new StringBuilder();
       boolean firstLoop = true;
       for (String keyName : keys.keySet()) {
@@ -313,8 +324,6 @@ public class FongoDBCollection extends DBCollection {
         firstLoop = false;
       }
       rec.append("name", sb.toString());
-    } else {
-      rec.append("name", options.get("name"));
     }
     // Ensure index doesn't exist.
     if (indexColl.findOne(rec) != null) {
@@ -330,7 +339,7 @@ public class FongoDBCollection extends DBCollection {
 
     try {
       IndexAbstract index = IndexFactory.create((String) rec.get("name"), keys, unique);
-      List<List<Object>> notUnique = index.addAll(_idIndex.values());
+      @SuppressWarnings("unchecked") List<List<Object>> notUnique = index.addAll(_idIndex.values());
       if (!notUnique.isEmpty()) {
         // Duplicate key.
         if (enforceDuplicates(getWriteConcern())) {
@@ -367,11 +376,12 @@ public class FongoDBCollection extends DBCollection {
    * note: decoder, readPref, options are ignored
    */
   @Override
-  synchronized Iterator<DBObject> __find(DBObject ref, DBObject fields, int numToSkip, int batchSize, int limit, int options,
+  synchronized Iterator<DBObject> __find(DBObject ref, DBObject fields, int numToSkip, int batchSize, int limit,
+                                         int options,
                                          ReadPreference readPref, DBDecoder decoder) throws MongoException {
     ref = filterLists(ref);
     if (LOG.isDebugEnabled()) {
-      LOG.debug("find({}, {}).skip({}).limit({})", new Object[]{ref, fields, numToSkip, limit,});
+      LOG.debug("find({}, {}).skip({}).limit({})", ref, fields, numToSkip, limit);
       LOG.debug("the db looks like {}", _idIndex.values());
     }
 
@@ -433,7 +443,6 @@ public class FongoDBCollection extends DBCollection {
   /**
    * Return "objects.values()" if no index found.
    *
-   * @param ref
    * @return objects from "_id" if no index found, elsewhere the restricted values from an index.
    */
   private Collection<DBObject> filterByIndexes(DBObject ref) {
@@ -441,6 +450,7 @@ public class FongoDBCollection extends DBCollection {
     if (ref != null) {
       IndexAbstract matchingIndex = searchIndex(ref);
       if (matchingIndex != null) {
+        //noinspection unchecked
         dbObjectIterable = matchingIndex.retrieveObjects(ref);
         if (LOG.isDebugEnabled()) {
           LOG.debug("restrict with index {}, from {} to {} elements", matchingIndex.getName(), _idIndex.size(), dbObjectIterable.size());
@@ -448,6 +458,7 @@ public class FongoDBCollection extends DBCollection {
       }
     }
     if (dbObjectIterable == null) {
+      //noinspection unchecked
       dbObjectIterable = _idIndex.values();
     }
     return dbObjectIterable;
@@ -677,6 +688,7 @@ public class FongoDBCollection extends DBCollection {
         }
       }
     }
+    //noinspection unchecked
     return new ArrayList(results);
   }
 
@@ -711,7 +723,7 @@ public class FongoDBCollection extends DBCollection {
   /**
    * Search the most restrictive index for query.
    *
-   * @param query
+   * @param query query for restriction
    * @return the most restrictive index, or null.
    */
   private synchronized IndexAbstract searchIndex(DBObject query) {
@@ -721,7 +733,7 @@ public class FongoDBCollection extends DBCollection {
     for (IndexAbstract index : indexes) {
       if (index.canHandle(queryFields)) {
         // The most restrictive first.
-        if (index.getFields().size() > foundCommon || (!result.isUnique() && index.isUnique())) {
+        if (index.getFields().size() > foundCommon || (result != null && !result.isUnique() && index.isUnique())) {
           result = index;
           foundCommon = index.getFields().size();
         }
@@ -770,7 +782,7 @@ public class FongoDBCollection extends DBCollection {
     Set<String> queryFields = object.keySet();
     // First, try to see if index can add the new value.
     for (IndexAbstract index : indexes) {
-      List<List<Object>> error = index.checkAddOrUpdate(object, oldObject);
+      @SuppressWarnings("unchecked") List<List<Object>> error = index.checkAddOrUpdate(object, oldObject);
       if (!error.isEmpty()) {
         // TODO formatting : E11000 duplicate key error index: test.zip.$city_1_state_1_pop_1  dup key: { : "BARRE", : "MA", : 4546.0 }
         if (enforceDuplicates(concern)) {
@@ -794,7 +806,7 @@ public class FongoDBCollection extends DBCollection {
   /**
    * Remove an object from indexes.
    *
-   * @param object
+   * @param object object to remove.
    */
   private synchronized void removeFromIndexes(DBObject object) {
     Set<String> queryFields = object.keySet();
@@ -805,7 +817,6 @@ public class FongoDBCollection extends DBCollection {
     }
   }
 
-  //@VisibleForTesting
   public synchronized Collection<IndexAbstract> getIndexes() {
     return Collections.unmodifiableList(indexes);
   }
@@ -815,6 +826,7 @@ public class FongoDBCollection extends DBCollection {
     if (matchingIndex == null) {
       fongoDb.notOkErrorResult(-5, "no geo indices for geoNear").throwOnError();
     }
+    //noinspection ConstantConditions
     LOG.info("geoNear() near:{}, query:{}, limit:{}, maxDistance:{}, spherical:{}, use index:{}", near, query, limit, maxDistance, spherical, matchingIndex.getName());
 
     List<LatLong> latLongs = GeoUtil.latLon(Collections.<String>emptyList(), near);

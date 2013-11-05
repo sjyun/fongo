@@ -138,6 +138,7 @@ public class Group extends PipelineKeyword {
     // Try to group in the mapping.
     Map<DBObject, Mapping> mapping = createMapping(coll, id);
 
+    //noinspection unchecked
     for (Map.Entry<String, Object> entry : ((Set<Map.Entry<String, Object>>) group.toMap().entrySet())) {
       String key = entry.getKey();
       Object value = entry.getValue();
@@ -217,6 +218,7 @@ public class Group extends PipelineKeyword {
     if (id instanceof DBObject) {
       //ex: { "state" : "$state" , "city" : "$city"}
       DBObject subKey = new BasicDBObject();
+      //noinspection unchecked
       for (Map.Entry<String, Object> entry : (Set<Map.Entry<String, Object>>) ((DBObject) id).toMap().entrySet()) {
         subKey.put(entry.getKey(), Util.extractField(dbObject, fieldName(entry.getValue()))); // TODO : hierarchical, like "state" : {bar:"$foo"}
       }
@@ -234,6 +236,7 @@ public class Group extends PipelineKeyword {
   private DBObject criteriaForId(Object id, DBObject dbObject) {
     DBObject result = new BasicDBObject();
     if (id instanceof DBObject) {
+      //noinspection unchecked
       for (Map.Entry<String, Object> entry : (Set<Map.Entry<String, Object>>) ((DBObject) id).toMap().entrySet()) {
         result.put(entry.getKey(), Util.extractField(dbObject, fieldName(entry.getValue()))); // TODO : hierarchical, like "state" : {bar:"$foo"}
       }
@@ -316,13 +319,13 @@ public class Group extends PipelineKeyword {
       return null;
     }
     // Always return double.
-    return (result.doubleValue() / (double) count);
+    return result == null ? null : (result.doubleValue() / (double) count);
   }
 
   /**
    * Return the first or the last of a collection.
    *
-   * @param coll
+   * @param coll collection who contains data.
    * @param value fieldname for searching.
    * @return
    */
@@ -429,20 +432,22 @@ public class Group extends PipelineKeyword {
     return result;
   }
 
-  private static Number returnSameType(Number type, Number other) {
-    if (type instanceof Float) {
-      return Float.valueOf(other.floatValue());
-    } else if (type instanceof Double) {
-      return Double.valueOf(other.doubleValue());
-    } else if (type instanceof Integer) {
-      return Integer.valueOf(other.intValue());
-    } else if (type instanceof Long) {
-      return Long.valueOf(other.longValue());
-    } else {
-      LOG.warn("type of field not handled for sum : {}", type.getClass());
-    }
-    return other;
-  }
+// --Commented out by Inspection START (05/11/13 12:10):
+//  private static Number returnSameType(Number type, Number other) {
+//    if (type instanceof Float) {
+//      return Float.valueOf(other.floatValue());
+//    } else if (type instanceof Double) {
+//      return Double.valueOf(other.doubleValue());
+//    } else if (type instanceof Integer) {
+//      return Integer.valueOf(other.intValue());
+//    } else if (type instanceof Long) {
+//      return Long.valueOf(other.longValue());
+//    } else {
+//      LOG.warn("type of field not handled for sum : {}", type.getClass());
+//    }
+//    return other;
+//  }
+// --Commented out by Inspection STOP (05/11/13 12:10)
 
   @Override
   public String getKeyword() {

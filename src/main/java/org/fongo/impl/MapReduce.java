@@ -35,7 +35,8 @@ public class MapReduce {
   private final String map;
 
   private final String reduce;
-  
+
+  // TODO
   private final String finalize;
 
   private final DBObject out;

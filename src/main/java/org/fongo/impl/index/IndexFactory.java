@@ -1,18 +1,16 @@
 package org.fongo.impl.index;
 
+import java.util.Map;
+
 import org.fongo.impl.Util;
+
 import com.mongodb.DBObject;
 import com.mongodb.MongoException;
-import java.util.Map;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * A factory for index.
  */
 public final class IndexFactory {
-  static final Logger LOG = LoggerFactory.getLogger(IndexFactory.class);
-
   private IndexFactory() {
   }
 
@@ -25,7 +23,7 @@ public final class IndexFactory {
     }
   }
 
-  static String getGeoKey(DBObject keys) {
+  private static String getGeoKey(DBObject keys) {
     boolean first = true;
     String geo = null;
     for (Map.Entry<String, Object> entry : Util.entrySet(keys)) {

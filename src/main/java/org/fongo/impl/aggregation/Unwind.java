@@ -1,16 +1,15 @@
 package org.fongo.impl.aggregation;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.bson.util.annotations.ThreadSafe;
 import org.fongo.impl.Util;
+
 import com.mongodb.BasicDBList;
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
 import com.mongodb.MongoException;
-import java.util.ArrayList;
-import java.util.List;
-import org.bson.util.annotations.ThreadSafe;
-import org.fongo.impl.Util;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * User: william
@@ -18,8 +17,6 @@ import org.slf4j.LoggerFactory;
  */
 @ThreadSafe
 public class Unwind extends PipelineKeyword {
-  private static final Logger LOG = LoggerFactory.getLogger(Unwind.class);
-
   public static final Unwind INSTANCE = new Unwind();
 
   private Unwind() {

@@ -26,7 +26,7 @@ public final class GeoUtil {
   //      8,     19
   //      9,     3.71
   //      10,    0.6
-  public static int SIZE_GEOHASH = 5; // Size of the geohash. 12 = more accurate.
+  public static final int SIZE_GEOHASH = 5; // Size of the geohash. 12 = more accurate.
 
   private GeoUtil() {
   }

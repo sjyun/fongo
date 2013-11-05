@@ -30,7 +30,7 @@ public class Project extends PipelineKeyword {
   }
 
   static abstract class ProjectedAbstract<T extends ProjectedAbstract> {
-    protected static final Map<String, Class<? extends ProjectedAbstract>> projectedAbstractMap = new HashMap<String, Class<? extends ProjectedAbstract>>();
+    static final Map<String, Class<? extends ProjectedAbstract>> projectedAbstractMap = new HashMap<String, Class<? extends ProjectedAbstract>>();
 
     static {
       projectedAbstractMap.put(ProjectedStrcasecmp.KEYWORD, ProjectedStrcasecmp.class);
@@ -115,7 +115,7 @@ public class Project extends PipelineKeyword {
         } else {
           // case : {biggestCity:  { name: "$biggestCity",  pop: "$biggestPop" }}
           projectResult.removeField(key);
-          for (Map.Entry<String, Object> subentry : (Set<Map.Entry<String, Object>>) value.toMap().entrySet()) {
+          for (Map.Entry<String, Object> subentry : Util.entrySet(value)) {
             createMapping(coll, projectResult, projectedFields, subentry.getKey(), subentry.getValue(), namespace + key + ".", ProjectedRename.newInstance(namespace + key + "." + subentry.getKey(), coll, null));
           }
         }
@@ -156,7 +156,7 @@ public class Project extends PipelineKeyword {
       return null;
     }
 
-    protected static void errorResult(DBCollection coll, int code, String err) {
+    static void errorResult(DBCollection coll, int code, String err) {
       ((FongoDB) coll.getDB()).notOkErrorResult(code, err).throwOnError();
     }
 
@@ -168,7 +168,7 @@ public class Project extends PipelineKeyword {
      * @param <T>
      * @return
      */
-    protected static <T> T extractValue(DBObject object, Object fieldOrValue) {
+    static <T> T extractValue(DBObject object, Object fieldOrValue) {
       if (fieldOrValue instanceof String && fieldOrValue.toString().startsWith("$")) {
         return Util.extractField(object, fieldOrValue.toString().substring(1));
       }
@@ -212,7 +212,7 @@ public class Project extends PipelineKeyword {
       if (!(value instanceof List) || ((List) value).size() != 2) {
         errorResult(coll, 16020, "the $ifNull operator requires an array of 2 operands");
       }
-      List<String> values = (List<String>) value;
+      @SuppressWarnings("unchecked") List<String> values = (List<String>) value;
       this.field = values.get(0);
       this.valueIfNull = values.get(1);
     }
@@ -244,6 +244,7 @@ public class Project extends PipelineKeyword {
       if (!(value instanceof List) || ((List) value).size() == 0) {
         errorResult(coll, 16020, "the $concat operator requires an array of operands");
       }
+      //noinspection unchecked
       toConcat = (List<Object>) value;
     }
 
@@ -287,7 +288,7 @@ public class Project extends PipelineKeyword {
       if (!(value instanceof List) || ((List) value).size() != 3) {
         errorResult(coll, 16020, "the $substr operator requires an array of 3 operands");
       }
-      List<Object> values = (List<Object>) value;
+      @SuppressWarnings("unchecked") List<Object> values = (List<Object>) value;
       field = (String) values.get(0);
       start = ((Number) values.get(1)).intValue();
       end = ((Number) values.get(2)).intValue();
@@ -351,7 +352,7 @@ public class Project extends PipelineKeyword {
       result.put(destName, strcmp < 0 ? -1 : strcmp > 1 ? 1 : 0);
     }
 
-    protected int compare(String value1, String value2) {
+    int compare(String value1, String value2) {
       return value1.compareTo(value2);
     }
   }
@@ -378,7 +379,7 @@ public class Project extends PipelineKeyword {
       this(KEYWORD, destName, coll, object);
     }
 
-    protected ProjectedToLower(String keyword, String destName, DBCollection coll, DBObject object) {
+    ProjectedToLower(String keyword, String destName, DBCollection coll, DBObject object) {
       super(KEYWORD, destName, object);
       Object value = object.get(keyword);
       if (value instanceof List) {
@@ -408,7 +409,7 @@ public class Project extends PipelineKeyword {
       result.put(destName, value);
     }
 
-    protected String transformValue(String value) {
+    String transformValue(String value) {
       return value.toLowerCase();
     }
   }
@@ -442,7 +443,7 @@ public class Project extends PipelineKeyword {
 
     // Extract fields who will be renamed.
     Map<String, ProjectedAbstract> projectedFields = new HashMap<String, ProjectedAbstract>();
-    for (Map.Entry<String, Object> entry : (Set<Map.Entry<String, Object>>) project.toMap().entrySet()) {
+    for (Map.Entry<String, Object> entry : Util.entrySet (project)) {
       if (entry.getValue() != null) {
         ProjectedAbstract.createMapping(coll, projectResult, projectedFields, entry.getKey(), entry.getValue(), "", ProjectedRename.newInstance(entry.getKey(), coll, null));
       }

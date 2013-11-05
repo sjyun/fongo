@@ -583,7 +583,7 @@ public class ExpressionParser {
 
   private Filter buildExpressionFilter(final List<String> path, Object expression) {
     if (OR.equals(path.get(0))) {
-      Collection<DBObject> queryList = typecast(path + " operator", expression, Collection.class);
+      @SuppressWarnings("unchecked") Collection<DBObject> queryList = typecast(path + " operator", expression, Collection.class);
       OrFilter orFilter = new OrFilter();
       for (DBObject query : queryList) {
         orFilter.addFilter(buildFilter(query));
@@ -745,7 +745,7 @@ public class ExpressionParser {
     }
     for (int i = 0; i < queryList.size(); i++) {
       Integer compareValue = compareObjects(queryList.get(i), storedList.get(i));
-      if (compareValue != null && compareValue != 0) {
+      if (compareValue != 0) {
         return compareValue;
       }
     }
@@ -861,7 +861,7 @@ public class ExpressionParser {
 
   static abstract class ConjunctionFilter implements Filter {
 
-    List<Filter> filters = new ArrayList<Filter>();
+    final List<Filter> filters = new ArrayList<Filter>();
 
     public void addFilter(Filter filter) {
       filters.add(filter);

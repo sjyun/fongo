@@ -25,6 +25,7 @@ public class Index extends IndexAbstract<DBObject> {
     if (unique && keys.containsField(FongoDBCollection.ID_KEY) && keys.toMap().size() == 1) {
       return new LinkedHashMap<DBObject, List<DBObject>>();
     } else {
+      //noinspection unchecked
       return new TreeMap<DBObject, List<DBObject>>(new ExpressionParser().buildObjectComparator(isAsc(keys)));
     }
   }

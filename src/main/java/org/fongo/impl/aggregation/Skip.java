@@ -1,11 +1,11 @@
 package org.fongo.impl.aggregation;
 
+import java.util.List;
+
+import org.bson.util.annotations.ThreadSafe;
+
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
-import java.util.List;
-import org.bson.util.annotations.ThreadSafe;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * User: william
@@ -13,8 +13,6 @@ import org.slf4j.LoggerFactory;
  */
 @ThreadSafe
 public class Skip extends PipelineKeyword {
-  private static final Logger LOG = LoggerFactory.getLogger(Skip.class);
-
   public static final Skip INSTANCE = new Skip();
 
   private Skip() {

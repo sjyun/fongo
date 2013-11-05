@@ -17,12 +17,10 @@ import org.slf4j.LoggerFactory;
 
 /**
  * An index for the MongoDB.
- *
+ * <p/>
  * NOT Thread Safe. The ThreadSafety must be done by the caller.
  */
 public abstract class IndexAbstract<T extends DBObject> {
-  static final Logger LOG = LoggerFactory.getLogger(IndexAbstract.class);
-
   private final String name;
   private final DBObject keys;
   private final Set<String> fields;
@@ -33,7 +31,7 @@ public abstract class IndexAbstract<T extends DBObject> {
   final Map<T, List<T>> mapValues;
   int lookupCount = 0;
 
-  public IndexAbstract(String name, DBObject keys, boolean unique, Map<T, List<T>> mapValues, String geoIndex) throws MongoException {
+  IndexAbstract(String name, DBObject keys, boolean unique, Map<T, List<T>> mapValues, String geoIndex) throws MongoException {
     this.name = name;
     this.fields = Collections.unmodifiableSet(keys.keySet()); // Setup BEFORE keys.
     this.keys = prepareKeys(keys);
@@ -41,8 +39,8 @@ public abstract class IndexAbstract<T extends DBObject> {
     this.mapValues = mapValues;
     this.geoIndex = geoIndex;
 
-    for(Object value : keys.toMap().values()) {
-      if(!(value instanceof String) && !(value instanceof Number)) {
+    for (Object value : keys.toMap().values()) {
+      if (!(value instanceof String) && !(value instanceof Number)) {
         //com.mongodb.WriteConcernException: { "serverUsed" : "/127.0.0.1:27017" , "err" : "bad index key pattern { a: { n: 1 } }" , "code" : 10098 , "n" : 0 , "connectionId" : 543 , "ok" : 1.0}
         throw new MongoException(10098, "bad index key pattern : " + keys);
       }
@@ -187,7 +185,7 @@ public abstract class IndexAbstract<T extends DBObject> {
 
   // Only for unique index and for query with values. ($in doens't work by example.)
   public List<T> get(DBObject query) {
-    if(!unique) {
+    if (!unique) {
       throw new IllegalStateException("get is only for unique index");
     }
     lookupCount++;
@@ -198,7 +196,7 @@ public abstract class IndexAbstract<T extends DBObject> {
 
   public Collection<T> retrieveObjects(DBObject query) {
     // Optimization
-    if(unique && query.keySet().size() == 1 && !(query.toMap().values().iterator().next() instanceof DBObject)) {
+    if (unique && query.keySet().size() == 1 && !(query.toMap().values().iterator().next() instanceof DBObject)) {
       return get(query);
     }
 
@@ -272,7 +270,7 @@ public abstract class IndexAbstract<T extends DBObject> {
    * @param object
    * @return
    */
-  protected T getKeyFor(DBObject object) {
+  T getKeyFor(DBObject object) {
     DBObject applyProjections = FongoDBCollection.applyProjections(object, keys);
     return (T) applyProjections;
   }

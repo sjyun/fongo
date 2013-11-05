@@ -28,10 +28,10 @@ import org.slf4j.LoggerFactory;
  * TODO : more $geometry.
  */
 public class GeoIndex extends IndexAbstract<GeoUtil.GeoDBObject> {
-  static final Logger LOG = LoggerFactory.getLogger(GeoIndex.class);
+  private static final Logger LOG = LoggerFactory.getLogger(GeoIndex.class);
 
   // EXPERIMENTAL SET TO FALSE : did not work well...
-  static final boolean BRUTE_FORCE = true;
+  private static final boolean BRUTE_FORCE = true;
 
   GeoIndex(String name, DBObject keys, boolean unique, String geoIndex) {
     super(name, keys, unique, new LinkedHashMap<GeoUtil.GeoDBObject, List<GeoUtil.GeoDBObject>>(), geoIndex);

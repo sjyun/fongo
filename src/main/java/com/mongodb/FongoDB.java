@@ -23,7 +23,7 @@ import org.fongo.Fongo;
  * @author jon
  */
 public class FongoDB extends DB {
-  final static Logger LOG = LoggerFactory.getLogger(FongoDB.class);
+  private final static Logger LOG = LoggerFactory.getLogger(FongoDB.class);
 
   private final Map<String, FongoDBCollection> collMap = Collections.synchronizedMap(new HashMap<String, FongoDBCollection>());
   private final Fongo fongo;
@@ -170,7 +170,7 @@ public class FongoDB extends DB {
       CommandResult okResult = okResult();
       return okResult;
     } else if (cmd.containsField("aggregate")) {
-      List<DBObject> result = doAggregateCollection((String) cmd.get("aggregate"), (List<DBObject>) cmd.get("pipeline"));
+      @SuppressWarnings("unchecked") List<DBObject> result = doAggregateCollection((String) cmd.get("aggregate"), (List<DBObject>) cmd.get("pipeline"));
       if (result == null) {
         return notOkErrorResult("can't aggregate");
       }

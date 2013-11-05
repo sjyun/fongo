@@ -184,6 +184,7 @@ public class Util {
     throw new IllegalArgumentException("Don't know how to embedded: " + source);
   }
 
+  @SuppressWarnings("unchecked")
   public static Set<Map.Entry<String, Object>> entrySet(DBObject object) {
     return (Set<Map.Entry<String, Object>>) object.toMap().entrySet();
   }
