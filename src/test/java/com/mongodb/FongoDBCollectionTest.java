@@ -11,7 +11,7 @@ import org.bson.BSONObject;
 import org.junit.Before;
 import org.junit.Test;
 
-import org.fongo.Fongo;
+import com.github.fakemongo.Fongo;
 
 public class FongoDBCollectionTest {
   private FongoDBCollection collection;

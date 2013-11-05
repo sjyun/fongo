@@ -10,7 +10,7 @@ Add dependency to your project:
 
 ```
 <dependency>
-  <groupId>org.fongo</groupId>
+  <groupId>com.github.fakemongo</groupId>
   <artifactId>fongo</artifactId>
   <version>1.3.1</version>
 </dependency>
@@ -21,7 +21,7 @@ Add dependency to your project:
 Use in place of regular `com.mongodb.Mongo` instance:
 
 ```java
-import org.fongo.Fongo;
+import com.github.fakemongo.Fongo;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
 import com.mognodb.DBCollection;
@@ -75,7 +75,7 @@ Mongo mongo = fongo.getMongo();
 If you use Spring, you can configure fongo in your XML configuration context:
 
 ```xml
-<bean name="fongo" class="org.fongo.Fongo">
+<bean name="fongo" class="com.github.fakemongo.Fongo">
     <constructor-arg value="InMemoryMongo" />
 </bean>
 <bean id="mongo" factory-bean="fongo" factory-method="getMongo" />

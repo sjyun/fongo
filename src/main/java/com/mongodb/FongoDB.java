@@ -1,7 +1,7 @@
 package com.mongodb;
 
-import org.fongo.impl.Aggregator;
-import org.fongo.impl.MapReduce;
+import com.github.fakemongo.impl.Aggregator;
+import com.github.fakemongo.impl.MapReduce;
 import java.util.HashSet;
 
 import java.util.ArrayList;
@@ -14,7 +14,7 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.fongo.Fongo;
+import com.github.fakemongo.Fongo;
 
 /**
  * fongo override of com.mongodb.DB

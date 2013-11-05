@@ -1,6 +1,6 @@
 package com.mongodb;
 
-import org.fongo.Fongo;
+import com.github.fakemongo.Fongo;
 import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.List;

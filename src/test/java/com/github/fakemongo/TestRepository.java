@@ -1,0 +1,10 @@
+package com.github.fakemongo;
+
+import org.springframework.data.mongodb.repository.MongoRepository;
+
+/**
+ * User: william
+ * Date: 28/08/13
+ */
+public interface TestRepository extends MongoRepository<SpringFongoTest.ReferencedObject, String> {
+}
