@@ -3,7 +3,6 @@ package com.github.fakemongo
 import _root_.com.mongodb.{MongoClient, DBCollection}
 import org.scalatest._
 import java.util.UUID
-import com.github.fakemongo.Fongo
 
 trait FongoAbstractTest extends FunSuite with BeforeAndAfter {
   // If you want to test against real world (a real mongodb client).

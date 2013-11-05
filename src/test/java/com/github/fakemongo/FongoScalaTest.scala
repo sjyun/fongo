@@ -2,10 +2,8 @@ package com.github.fakemongo
 
 import _root_.com.mongodb.BasicDBObject
 import org.scalatest._
-import collection.JavaConversions._
 import org.scalatest.junit.JUnitRunner
 import org.junit.runner.RunWith
-import com.github.fakemongo.Fongo
 
 @RunWith(classOf[JUnitRunner])
 class FongoScalaTest extends FunSuite with BeforeAndAfter {
