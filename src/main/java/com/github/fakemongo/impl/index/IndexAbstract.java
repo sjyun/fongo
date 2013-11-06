@@ -192,14 +192,14 @@ public abstract class IndexAbstract<T extends DBObject> {
     return mapValues.get(key);
   }
 
+  // @Nonnull
   public Collection<T> retrieveObjects(DBObject query) {
     // Optimization
     if (unique && query.keySet().size() == 1 && !(query.toMap().values().iterator().next() instanceof DBObject)) {
-      Collection<T> ret = get(query);
-      if (ret == null) {
-        ret = Collections.emptyList();
+      List<T> result = get(query);
+      if (result != null) {
+        return result;
       }
-      return ret;
     }
 
     lookupCount++;
