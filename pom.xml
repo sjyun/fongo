@@ -35,6 +35,11 @@
             <name>Jon Hoffman</name>
             <email>jon@foursquare.com</email>
         </developer>
+        <developer>
+            <id>twillouer</id>
+            <name>William Delanoue</name>
+            <email>william.delanoue@gmail.com</email>
+        </developer>
     </developers>
 
     <packaging>jar</packaging>
