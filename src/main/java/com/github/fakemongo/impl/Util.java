@@ -17,6 +17,7 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 import com.mongodb.FongoDBCollection;
 import com.mongodb.gridfs.GridFSFile;
+import org.bson.types.Binary;
 
 public class Util {
 
@@ -139,6 +140,19 @@ public class Util {
     return true;
   }
 
+  public static Object clone(Object source) {
+    if (source instanceof DBObject) {
+      return clone((DBObject) source);
+    }
+    if (source instanceof Binary) {
+      return ((Binary) source).getData().clone();
+    }
+//    if(source instanceof Cloneable) {
+//      return ((Cloneable) source).clone();
+//    }
+    return source;
+  }
+
   public static <T extends DBObject> T clone(T source) {
     if (source == null) {
       return null;
@@ -177,7 +191,11 @@ public class Util {
         if (entry.getValue() instanceof DBObject) {
           clone.put(entry.getKey(), Util.clone((DBObject) entry.getValue()));
         } else {
-          clone.put(entry.getKey(), entry.getValue());
+          if (entry.getValue() instanceof Binary) {
+            clone.put(entry.getKey(), ((Binary) entry.getValue()).getData().clone());
+          } else {
+            clone.put(entry.getKey(), entry.getValue());
+          }
         }
       }
       return (T) clone;

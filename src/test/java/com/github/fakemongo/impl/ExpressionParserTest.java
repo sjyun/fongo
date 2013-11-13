@@ -11,6 +11,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.regex.Pattern;
+import org.bson.types.Binary;
 import org.bson.types.MaxKey;
 import org.bson.types.MinKey;
 import org.bson.types.ObjectId;
@@ -663,7 +664,17 @@ public class ExpressionParserTest {
 
     // For NOT converting Double to Long
     assertEquals(1, expressionParser.compareTo(-9223372036854775808L, (double) -9223372036854775807L));
-    assertEquals(-1,  expressionParser.compareTo((double) -9223372036854775807L, -9223372036854775808L));
+    assertEquals(-1, expressionParser.compareTo((double) -9223372036854775807L, -9223372036854775808L));
+  }
+
+  @Test
+  public void testCompareToBinary() {
+    ExpressionParser expressionParser = new ExpressionParser();
+
+    // Binary must be handled
+    assertTrue(0 == expressionParser.compareTo(new Binary("jon".getBytes()), new Binary("jon".getBytes())));
+    assertTrue(0 > expressionParser.compareTo(new Binary("JON".getBytes()), new Binary("jon".getBytes())));
+    assertTrue(1 < expressionParser.compareTo(new Binary("jon".getBytes()), new Binary("JON".getBytes())));
   }
 
   @Test

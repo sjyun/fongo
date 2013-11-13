@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 import org.bson.LazyBSONList;
+import org.bson.types.Binary;
 import org.bson.types.MaxKey;
 import org.bson.types.MinKey;
 import org.bson.types.ObjectId;
@@ -91,6 +92,7 @@ public class ExpressionParser {
     map.put(BasicDBObject.class, 4);
     map.put(LazyDBObject.class, 4);
     map.put(byte[].class, 5);
+    map.put(Binary.class, 5);
     map.put(ObjectId.class, 6);
     map.put(Boolean.class, 7);
     map.put(Date.class, 8);
@@ -385,10 +387,10 @@ public class ExpressionParser {
           }
 
           Filter filter = buildFilter(query);
-          for(Object object : storedList) {
-              if(filter.apply((DBObject) object)) {
-                  return true;
-              }
+          for (Object object : storedList) {
+            if (filter.apply((DBObject) object)) {
+              return true;
+            }
           }
 
           return false;
@@ -714,6 +716,22 @@ public class ExpressionParser {
           checkTypes = false;
         }
       }
+      if (cc1 instanceof Binary) {
+        cc1 = convertFrom((Binary) cc1);
+        checkTypes = false;
+      }
+      if (cc2 instanceof Binary) {
+        cc2 = convertFrom((Binary) cc2);
+        checkTypes = false;
+      }
+      if (cc1 instanceof byte[]) {
+        cc1 = convertFrom((byte[]) cc1);
+        checkTypes = false;
+      }
+      if (cc2 instanceof byte[]) {
+        cc2 = convertFrom((byte[]) cc2);
+        checkTypes = false;
+      }
       if (checkTypes) {
         Integer type1 = CLASS_TO_WEIGHT.get(clazz1);
         Integer type2 = CLASS_TO_WEIGHT.get(clazz2);
@@ -726,8 +744,16 @@ public class ExpressionParser {
       }
     }
 
-//    LOG.info("\tcompareTo() cc1:{}, cc2:{} => {}", cc1, cc2, ((Comparable) cc1).compareTo(cc2));
+    LOG.info("\tcompareTo() cc1:{}, cc2:{} => {}", cc1, cc2, ((Comparable) cc1).compareTo(cc2));
     return ((Comparable) cc1).compareTo(cc2);
+  }
+
+  private Comparable<String> convertFrom(Binary binary) {
+    return new String(binary.getData()); // + binary.getType(); // Adding getType() to respect contract of "equals";
+  }
+
+  private Comparable<String> convertFrom(byte[] array) {
+    return new String(array);
   }
 
   public int compareLists(List queryList, List storedList) {
