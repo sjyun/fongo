@@ -453,7 +453,7 @@ public class FongoDBCollection extends DBCollection {
         //noinspection unchecked
         dbObjectIterable = matchingIndex.retrieveObjects(ref);
         if (LOG.isDebugEnabled()) {
-          LOG.debug("restrict with index {}, from {} to {} elements", matchingIndex.getName(), _idIndex.size(), dbObjectIterable.size());
+          LOG.debug("restrict with index {}, from {} to {} elements", matchingIndex.getName(), _idIndex.size(), dbObjectIterable == null ? 0 : dbObjectIterable.size());
         }
       }
     }

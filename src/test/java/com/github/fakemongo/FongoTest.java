@@ -272,7 +272,7 @@ public class FongoTest {
 
     DBCursor cursor = collection.find((DBObject) JSON.parse("{ array: { $elemMatch: { value1: 1, value2: { $gt: 1 } } } }"));
     assertEquals(Arrays.asList((DBObject) JSON.parse("{ _id:2, array: [ { value1:1, value2:0 }, { value1:1, value2:2 } ] }")
-      ), cursor.toArray());
+    ), cursor.toArray());
   }
 
   @Test
@@ -897,17 +897,17 @@ public class FongoTest {
             new BasicDBObject("_id", 1).append("a", new BasicDBObject("b", 1))
         ), results);
   }
-  
+
   @Test
   public void testCommandQuery() {
     DBCollection collection = newCollection();
     collection.insert(new BasicDBObject("_id", 1).append("a", 3));
     collection.insert(new BasicDBObject("_id", 2).append("a", 2));
     collection.insert(new BasicDBObject("_id", 3).append("a", 1));
-    
+
     assertEquals(
-      new BasicDBObject("_id", 3).append("a", 1),
-      collection.findOne(new BasicDBObject(), null, new BasicDBObject("a", 1))
+        new BasicDBObject("_id", 3).append("a", 1),
+        collection.findOne(new BasicDBObject(), null, new BasicDBObject("a", 1))
     );
   }
 
@@ -1659,6 +1659,26 @@ public class FongoTest {
         new BasicDBObject("_id", 2).append("b", 1),
         new BasicDBObject("_id", 1).append("a", 3)
     ), objects);
+  }
+
+  /**
+   * line 456 (LOG.debug("restrict with index {}, from {} to {} elements", matchingIndex.getName(), _idIndex.size(), dbObjectIterable.size());) obviously throws a null pointer if dbObjectIterable is null. This exact case is handled 4 lines below, but it does not apply to the log message. Please catch appropriately
+   */
+  @Test
+  public void testIssue1() {
+    ch.qos.logback.classic.Logger LOG = (ch.qos.logback.classic.Logger) LoggerFactory.getLogger(FongoDBCollection.class);
+    Level oldLevel = LOG.getLevel();
+    try {
+      LOG.setLevel(Level.DEBUG);
+      // Given
+      DBCollection collection = newCollection();
+
+      // When
+      collection.remove(new BasicDBObject("_id", 1));
+
+    } finally {
+      LOG.setLevel(oldLevel);
+    }
   }
 
   static class Seq {

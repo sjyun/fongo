@@ -195,7 +195,11 @@ public abstract class IndexAbstract<T extends DBObject> {
   public Collection<T> retrieveObjects(DBObject query) {
     // Optimization
     if (unique && query.keySet().size() == 1 && !(query.toMap().values().iterator().next() instanceof DBObject)) {
-      return get(query);
+      Collection<T> ret = get(query);
+      if (ret == null) {
+        ret = Collections.emptyList();
+      }
+      return ret;
     }
 
     lookupCount++;
