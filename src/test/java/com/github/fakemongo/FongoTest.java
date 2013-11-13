@@ -1,7 +1,36 @@
 package com.github.fakemongo;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
+
+import org.bson.BSON;
+import org.bson.Transformer;
+import org.bson.types.Binary;
+import org.bson.types.MaxKey;
+import org.bson.types.MinKey;
+import org.bson.types.ObjectId;
+import org.junit.Rule;
+import org.junit.Test;
+import org.slf4j.LoggerFactory;
+
 import ch.qos.logback.classic.Level;
-import com.github.fakemongo.Fongo;
+
 import com.github.fakemongo.impl.ExpressionParser;
 import com.github.fakemongo.impl.Util;
 import com.mongodb.BasicDBList;
@@ -18,32 +47,12 @@ import com.mongodb.MongoException;
 import com.mongodb.QueryBuilder;
 import com.mongodb.WriteConcern;
 import com.mongodb.WriteResult;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.Pattern;
 import com.mongodb.util.JSON;
-import org.bson.BSON;
-import org.bson.Transformer;
-import org.bson.types.MaxKey;
-import org.bson.types.MinKey;
-import org.bson.types.ObjectId;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import org.junit.Test;
-import org.slf4j.LoggerFactory;
 
 public class FongoTest {
+
+  @Rule
+  public FongoRule fongoRule = new FongoRule(false);
 
   @Test
   public void testGetDb() {
@@ -1681,6 +1690,45 @@ public class FongoTest {
     }
   }
 
+  @Test
+  public void testBinarySave() throws Exception {
+    // Given
+    DBCollection collection = newCollection();
+    Binary expectedId = new Binary("friend2".getBytes());
+
+    // When
+    collection.save(BasicDBObjectBuilder.start().add("_id", expectedId).get());
+    collection.update(BasicDBObjectBuilder.start().add("_id", new Binary("friend2".getBytes())).get(), new BasicDBObject("date", 12));
+
+    // Then
+    List<DBObject> result = collection.find().toArray();
+    assertThat(result).hasSize(1);
+    assertThat(result.get(0).keySet()).containsExactly("_id", "date");
+    assertThat(result.get(0).get("_id")).isEqualTo("friend2".getBytes());
+    assertThat(result.get(0).get("date")).isEqualTo(12);
+  }
+
+  @Test
+  public void testBinarySaveWithBytes() throws Exception {
+    // Given
+    DBCollection collection = newCollection();
+    Binary expectedId = new Binary("friend2".getBytes());
+
+    // When
+    collection.save(BasicDBObjectBuilder.start().add("_id", expectedId).get());
+    collection.update(BasicDBObjectBuilder.start().add("_id", "friend2".getBytes()).get(), new BasicDBObject("date", 12));
+
+
+    // Then
+    List<DBObject> result = collection.find().toArray();
+    System.out.println(result.get(0).get("_id"));
+    System.out.println("friend2".getBytes());
+    assertThat(result).hasSize(1);
+    assertThat(result.get(0).keySet()).containsExactly("_id", "date");
+    assertThat(result.get(0).get("_id")).isEqualTo("friend2".getBytes());
+    assertThat(result.get(0).get("date")).isEqualTo(12);
+  }
+
   static class Seq {
     Object[] data;
 
@@ -1693,16 +1741,12 @@ public class FongoTest {
     return new HashSet<T>(Arrays.asList(objects));
   }
 
-  public static DBCollection newCollection() {
-    Fongo fongo = newFongo();
-    DB db = fongo.getDB("db");
-    DBCollection collection = db.getCollection("coll");
-    return collection;
+  public DBCollection newCollection() {
+    return fongoRule.newCollection("db");
   }
 
-  public static Fongo newFongo() {
-    Fongo fongo = new Fongo("test");
-    return fongo;
+  public Fongo newFongo() {
+    return fongoRule.newFongo();
   }
 
 }

@@ -12,6 +12,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 import org.bson.BSON;
+import org.bson.types.Binary;
 import org.bson.types.ObjectId;
 import com.github.fakemongo.FongoException;
 import com.github.fakemongo.impl.ExpressionParser;
@@ -84,7 +85,7 @@ public class FongoDBCollection extends DBCollection {
       }
       ObjectId id = putIdIfNotPresent(cloned);
       if (!(obj instanceof LazyDBObject) && obj.get(ID_KEY) == null) {
-        obj.put(ID_KEY, id);
+        obj.put(ID_KEY, Util.clone(id));
       }
 
       putSizeCheck(cloned, concern);
@@ -102,7 +103,7 @@ public class FongoDBCollection extends DBCollection {
     if (object == null) {
       ObjectId id = new ObjectId();
       id.notNew();
-      obj.put(ID_KEY, id);
+      obj.put(ID_KEY, Util.clone(id));
       return id;
     } else if (object instanceof ObjectId) {
       ObjectId id = (ObjectId) object;
@@ -156,6 +157,8 @@ public class FongoDBCollection extends DBCollection {
         newDbo.put(entry.getKey(), replaceListAndMap(entry.getValue()));
       }
       replacementValue = newDbo;
+    } else if(replacementValue instanceof Binary) {
+      replacementValue = ((Binary) replacementValue).getData();
     }
     return replacementValue;
   }
@@ -178,7 +181,7 @@ public class FongoDBCollection extends DBCollection {
       LOG.debug("update(" + q + ", " + o + ", " + upsert + ", " + multi + ")");
     }
 
-    if (o.containsField(ID_KEY) && q.containsField(ID_KEY) && !o.get(ID_KEY).equals(q.get(ID_KEY))) {
+    if (o.containsField(ID_KEY) && q.containsField(ID_KEY) && objectComparator.compare(o.get(ID_KEY), q.get(ID_KEY)) != 0) {
       throw new MongoException.DuplicateKey(fongoDb.notOkErrorResult(0, "can not change _id of a document " + ID_KEY));
     }
 
@@ -188,10 +191,12 @@ public class FongoDBCollection extends DBCollection {
 
     if (idOnlyUpdate && isNotUpdateCommand(o)) {
       if (!o.containsField(ID_KEY)) {
-        o.put(ID_KEY, q.get(ID_KEY));
+        o.put(ID_KEY, Util.clone(q.get(ID_KEY)));
+      } else {
+        o.put(ID_KEY, Util.clone(o.get(ID_KEY)));
       }
       @SuppressWarnings("unchecked") List<DBObject> oldObjects = _idIndex.get(o);
-      addToIndexes(o, oldObjects == null ? null : oldObjects.get(0), concern);
+      addToIndexes(Util.clone(o), oldObjects == null ? null : oldObjects.get(0), concern);
       updatedDocuments++;
     } else {
       Filter filter = expressionParser.buildFilter(q);
@@ -241,7 +246,7 @@ public class FongoDBCollection extends DBCollection {
         return Collections.emptyList();
       }
     }
-    return Collections.singletonList(idValue);
+    return Collections.singletonList(Util.clone(idValue));
   }
 
   protected BasicDBObject createUpsertObject(DBObject q) {
@@ -249,7 +254,7 @@ public class FongoDBCollection extends DBCollection {
     List idsIn = idsIn(q);
 
     if (!idsIn.isEmpty()) {
-      newObject.put(ID_KEY, idsIn.get(0));
+      newObject.put(ID_KEY, Util.clone(idsIn.get(0)));
     } else {
       BasicDBObject filteredQuery = new BasicDBObject();
       for (String key : q.keySet()) {
@@ -556,7 +561,7 @@ public class FongoDBCollection extends DBCollection {
     } else {
       ret = new BasicDBObject();
       if (!wasIdExcluded) {
-        ret.append(ID_KEY, result.get(ID_KEY));
+        ret.append(ID_KEY, Util.clone(result.get(ID_KEY)));
       }
     }
 
