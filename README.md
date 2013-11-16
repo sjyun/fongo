@@ -13,6 +13,7 @@ Add dependency to your project:
   <groupId>com.github.fakemongo</groupId>
   <artifactId>fongo</artifactId>
   <version>1.3.2</version>
+  <scope>test</scope>
 </dependency>
 ```
 
@@ -94,6 +95,7 @@ If you use Spring, you can configure fongo in your XML configuration context:
 ## Todo
 
 * more testing
+* complete compatibility with Jongo
 
 ## Reporting Bugs and submitting patches
 
