@@ -19,7 +19,7 @@ import com.mongodb.FongoDBCollection;
 import com.mongodb.gridfs.GridFSFile;
 import org.bson.types.Binary;
 
-public class Util {
+public final class Util {
 
   private Util() {
   }
