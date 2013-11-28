@@ -592,7 +592,7 @@ public class FongoIndexTest {
   // Creating an index before inserting into a collection must add records only if necessary
   @Test
   public void testCreateIndexBefore() throws Exception {
-    DBCollection collection = FongoTest.newCollection();
+    DBCollection collection = fongoRule.newCollection();
     collection.ensureIndex(new BasicDBObject("a", 1));
     collection.insert(new BasicDBObject("_id", 1).append("a", 1));
     collection.insert(new BasicDBObject("_id", 2));
@@ -603,7 +603,7 @@ public class FongoIndexTest {
 
   @Test
   public void testRemoveMulti() throws Exception {
-    DBCollection collection = FongoTest.newCollection();
+    DBCollection collection = fongoRule.newCollection();
     collection.ensureIndex(new BasicDBObject("a", 1));
     collection.insert(new BasicDBObject("_id", 1).append("a", 1));
     collection.insert(new BasicDBObject("_id", 2));
