@@ -1720,9 +1720,9 @@ public class FongoTest {
 
 
     // Then
+    System.out.println(collection.find(BasicDBObjectBuilder.start("_id", "friend2".getBytes()).get()).toArray());
     List<DBObject> result = collection.find().toArray();
     System.out.println(result.get(0).get("_id"));
-    System.out.println("friend2".getBytes());
     assertThat(result).hasSize(1);
     assertThat(result.get(0).keySet()).containsExactly("_id", "date");
     assertThat(result.get(0).get("_id")).isEqualTo("friend2".getBytes());

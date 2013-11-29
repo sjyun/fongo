@@ -674,7 +674,17 @@ public class ExpressionParserTest {
     // Binary must be handled
     assertTrue(0 == expressionParser.compareTo(new Binary("jon".getBytes()), new Binary("jon".getBytes())));
     assertTrue(0 > expressionParser.compareTo(new Binary("JON".getBytes()), new Binary("jon".getBytes())));
-    assertTrue(1 < expressionParser.compareTo(new Binary("jon".getBytes()), new Binary("JON".getBytes())));
+    assertTrue(0 < expressionParser.compareTo(new Binary("jon".getBytes()), new Binary("JON".getBytes())));
+  }
+
+  @Test
+  public void testCompareToBytesArray() {
+    ExpressionParser expressionParser = new ExpressionParser();
+
+    // Binary must be handled
+    assertTrue(0 == expressionParser.compareTo("jon".getBytes(), "jon".getBytes()));
+    assertTrue(0 > expressionParser.compareTo("JON".getBytes(), "jon".getBytes()));
+    assertTrue(0 < expressionParser.compareTo("jon".getBytes(), "JON".getBytes()));
   }
 
   @Test

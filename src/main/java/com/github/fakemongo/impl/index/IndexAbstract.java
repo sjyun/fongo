@@ -12,6 +12,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.bson.types.Binary;
 
 /**
  * An index for the MongoDB.
@@ -195,10 +196,13 @@ public abstract class IndexAbstract<T extends DBObject> {
   // @Nonnull
   public Collection<T> retrieveObjects(DBObject query) {
     // Optimization
-    if (unique && query.keySet().size() == 1 && !(query.toMap().values().iterator().next() instanceof DBObject)) {
-      List<T> result = get(query);
-      if (result != null) {
-        return result;
+    if (unique && query.keySet().size() == 1) {
+      Object key = query.toMap().values().iterator().next();
+      if (!(key instanceof DBObject || key instanceof Binary || key instanceof byte[])) {
+        List<T> result = get(query);
+        if (result != null) {
+          return result;
+        }
       }
     }
 
