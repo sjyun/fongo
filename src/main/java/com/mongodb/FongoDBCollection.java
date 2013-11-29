@@ -182,6 +182,7 @@ public class FongoDBCollection extends DBCollection {
     }
 
     if (o.containsField(ID_KEY) && q.containsField(ID_KEY) && objectComparator.compare(o.get(ID_KEY), q.get(ID_KEY)) != 0) {
+      LOG.warn("can not change _id of a document query={}, document={}", q, o);
       throw new MongoException.DuplicateKey(fongoDb.notOkErrorResult(0, "can not change _id of a document " + ID_KEY));
     }
 
