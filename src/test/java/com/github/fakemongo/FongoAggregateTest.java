@@ -416,7 +416,7 @@ public class FongoAggregateTest {
             "{\n a_id: 1,\n \"name\": \"n4\"\n},\n" +
             "{\n a_id: 2,\n \"name\": \"n5\"\n}]");
 
-    DBObject group = fongoRule.parseDEObject("{$group: { '_id': '$a_id', 'name': { $push: '$name'}}}");
+    DBObject group = fongoRule.parseDBObject("{$group: { '_id': '$a_id', 'name': { $push: '$name'}}}");
 
     // Aggregate
     AggregationOutput output = collection.aggregate(group, new BasicDBObject("$sort", new BasicDBObject("_id", 1)));
@@ -440,7 +440,7 @@ public class FongoAggregateTest {
             "{\n a_id: 1,\n \"name\": \"n2\"\n},\n" +
             "{\n a_id: 2,\n \"name\": \"n5\"\n}]\n");
 
-    DBObject group = fongoRule.parseDEObject("{$group: { '_id': '$a_id', 'name': { $push: '$name'}}}");
+    DBObject group = fongoRule.parseDBObject("{$group: { '_id': '$a_id', 'name': { $push: '$name'}}}");
 
     // Aggregate
     AggregationOutput output = collection.aggregate(group, new BasicDBObject("$sort", new BasicDBObject("_id", 1)));
@@ -464,7 +464,7 @@ public class FongoAggregateTest {
             "{\n a_id: 1,\n \"name\": \"n4\"\n},\n" +
             "{\n a_id: 2,\n \"name\": \"n5\"\n}]");
 
-    DBObject group = fongoRule.parseDEObject("{$group: { '_id': '$a_id', 'name': { $push: '$name'}}}");
+    DBObject group = fongoRule.parseDBObject("{$group: { '_id': '$a_id', 'name': { $push: '$name'}}}");
 
     // Aggregate
     AggregationOutput output = collection.aggregate(group, new BasicDBObject("$sort", new BasicDBObject("_id", 1)));
@@ -488,7 +488,7 @@ public class FongoAggregateTest {
             "{\n a_id: 1,\n \"name\": \"n2\"\n},\n" +
             "{\n a_id: 2,\n \"name\": \"n5\"\n}]");
 
-    DBObject group = fongoRule.parseDEObject("{$group: { '_id': '$a_id', 'name': { $addToSet: '$name'}}}");
+    DBObject group = fongoRule.parseDBObject("{$group: { '_id': '$a_id', 'name': { $addToSet: '$name'}}}");
 
     // Aggregate
     AggregationOutput output = collection.aggregate(group, new BasicDBObject("$sort", new BasicDBObject("_id", 1)));

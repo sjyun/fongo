@@ -1,6 +1,5 @@
 package com.github.fakemongo;
 
-import com.github.fakemongo.Fongo;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
@@ -82,7 +81,7 @@ public class FongoRule extends ExternalResource {
       BufferedReader br = new BufferedReader(new InputStreamReader(is));
       String line = br.readLine();
       while (line != null) {
-        coll.insert(this.parseDEObject(line));
+        coll.insert(this.parseDBObject(line));
         line = br.readLine();
       }
     } finally {
@@ -97,7 +96,7 @@ public class FongoRule extends ExternalResource {
     return parse(json);
   }
 
-  public DBObject parseDEObject(String json) {
+  public DBObject parseDBObject(String json) {
     return parse(json);
   }
 

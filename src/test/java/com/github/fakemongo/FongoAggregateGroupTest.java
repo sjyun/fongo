@@ -29,7 +29,7 @@ public class FongoAggregateGroupTest {
         "{ _id: 3, item: { sec: \"main\", category: \"pie\", type: \"shepherd's\" } },\n" +
         "{ _id: 4, item: { sec: \"main\", category: \"pie\", type: \"chicken pot\" } }]");
 
-    DBObject project = fongoRule.parseDEObject("{ $group: { _id:\n" +
+    DBObject project = fongoRule.parseDBObject("{ $group: { _id:\n" +
         "                                    { $concat: [ \"$item.sec\",\n" +
         "                                                 \": \",\n" +
         "                                                 \"$item.category\"\n" +

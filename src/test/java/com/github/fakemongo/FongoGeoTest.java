@@ -133,7 +133,7 @@ public class FongoGeoTest {
     assertEquals(10, ((BasicDBList) results).size());
     System.out.println(results);
 
-    assertEquals(fongoRule.parseDEObject("[ { \"dis\" : 20.007390023320283 , \"obj\" : { \"_id\" : \"04631\" , \"city\" : \"EASTPORT\" , \"loc\" : [ -67.00739 , 44.919966] , \"pop\" : 2514 , \"state\" : \"ME\"}} ," +
+    assertEquals(fongoRule.parseDBObject("[ { \"dis\" : 20.007390023320283 , \"obj\" : { \"_id\" : \"04631\" , \"city\" : \"EASTPORT\" , \"loc\" : [ -67.00739 , 44.919966] , \"pop\" : 2514 , \"state\" : \"ME\"}} ," +
         " { \"dis\" : 20.04619295098797 , \"obj\" : { \"_id\" : \"04652\" , \"city\" : \"LUBEC\" , \"loc\" : [ -67.046016 , 44.834772] , \"pop\" : 2349 , \"state\" : \"ME\"}} ," +
         " { \"dis\" : 20.093003320979673 , \"obj\" : { \"_id\" : \"04667\" , \"city\" : \"PERRY\" , \"loc\" : [ -67.092882 , 44.988824] , \"pop\" : 781 , \"state\" : \"ME\"}} ," +
         " { \"dis\" : 20.143844748425007 , \"obj\" : { \"_id\" : \"04671\" , \"city\" : \"ROBBINSTON\" , \"loc\" : [ -67.143301 , 45.067007] , \"pop\" : 495 , \"state\" : \"ME\"}} ," +
@@ -156,7 +156,7 @@ public class FongoGeoTest {
     DBObject results = (DBObject) commandResult.get("results");
     assertEquals(10, ((BasicDBList) results).size());
 
-    assertEquals(roundDis(fongoRule.parseDEObject("[ { \"dis\" : 0.24663504266786612 , \"obj\" : { \"_id\" : \"04631\" , \"city\" : \"EASTPORT\" , \"loc\" : [ -67.00739 , 44.919966] , \"pop\" : 2514 , \"state\" : \"ME\"}} ," +
+    assertEquals(roundDis(fongoRule.parseDBObject("[ { \"dis\" : 0.24663504266786612 , \"obj\" : { \"_id\" : \"04631\" , \"city\" : \"EASTPORT\" , \"loc\" : [ -67.00739 , 44.919966] , \"pop\" : 2514 , \"state\" : \"ME\"}} ," +
         " { \"dis\" : 0.24729709096503652 , \"obj\" : { \"_id\" : \"04652\" , \"city\" : \"LUBEC\" , \"loc\" : [ -67.046016 , 44.834772] , \"pop\" : 2349 , \"state\" : \"ME\"}} ," +
         " { \"dis\" : 0.24753718895971535 , \"obj\" : { \"_id\" : \"04667\" , \"city\" : \"PERRY\" , \"loc\" : [ -67.092882 , 44.988824] , \"pop\" : 781 , \"state\" : \"ME\"}} ," +
         " { \"dis\" : 0.24799536619283583 , \"obj\" : { \"_id\" : \"04671\" , \"city\" : \"ROBBINSTON\" , \"loc\" : [ -67.143301 , 45.067007] , \"pop\" : 495 , \"state\" : \"ME\"}} ," +

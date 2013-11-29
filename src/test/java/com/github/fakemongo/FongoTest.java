@@ -1746,6 +1746,55 @@ public class FongoTest {
     assertThat(result.get(0).toMap()).contains(MapEntry.entry("name", "Robert"), MapEntry.entry("_id", objectId));
   }
 
+  // See http://docs.mongodb.org/manual/reference/operator/projection/elemMatch/
+  @Test
+  public void projection_elemMatch() {
+    // Given
+    DBCollection collection = newCollection();
+    this.fongoRule.insertJSON(collection, "[{\n" +
+        " _id: 1,\n" +
+        " zipcode: 63109,\n" +
+        " students: [\n" +
+        "              { name: \"john\", school: 102, age: 10 },\n" +
+        "              { name: \"jess\", school: 102, age: 11 },\n" +
+        "              { name: \"jeff\", school: 108, age: 15 }\n" +
+        "           ]\n" +
+        "}\n," +
+        "{\n" +
+        " _id: 2,\n" +
+        " zipcode: 63110,\n" +
+        " students: [\n" +
+        "              { name: \"ajax\", school: 100, age: 7 },\n" +
+        "              { name: \"achilles\", school: 100, age: 8 }\n" +
+        "           ]\n" +
+        "}\n," +
+        "{\n" +
+        " _id: 3,\n" +
+        " zipcode: 63109,\n" +
+        " students: [\n" +
+        "              { name: \"ajax\", school: 100, age: 7 },\n" +
+        "              { name: \"achilles\", school: 100, age: 8 }\n" +
+        "           ]\n" +
+        "}\n," +
+        "{\n" +
+        " _id: 4,\n" +
+        " zipcode: 63109,\n" +
+        " students: [\n" +
+        "              { name: \"barney\", school: 102, age: 7 }\n" +
+        "           ]\n" +
+        "}]\n");
+
+
+    // When
+    List<DBObject> result = collection.find(fongoRule.parseDBObject("{ zipcode: 63109 },\n" +
+        "                 { students: { $elemMatch: { school: 102 } } }")).toArray();
+
+    // Then
+    assertEquals(fongoRule.parseList("[{ \"_id\" : 1, \"students\" : [ { \"name\" : \"john\", \"school\" : 102, \"age\" : 10 } ] },\n" +
+        "{ \"_id\" : 3 },\n" +
+        "{ \"_id\" : 4, \"students\" : [ { \"name\" : \"barney\", \"school\" : 102, \"age\" : 7 } ] }]"), result);
+  }
+
 
   static class Seq {
     Object[] data;
