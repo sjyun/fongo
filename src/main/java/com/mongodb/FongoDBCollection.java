@@ -157,7 +157,7 @@ public class FongoDBCollection extends DBCollection {
         newDbo.put(entry.getKey(), replaceListAndMap(entry.getValue()));
       }
       replacementValue = newDbo;
-    } else if(replacementValue instanceof Binary) {
+    } else if (replacementValue instanceof Binary) {
       replacementValue = ((Binary) replacementValue).getData();
     }
     return replacementValue;
@@ -195,8 +195,8 @@ public class FongoDBCollection extends DBCollection {
       } else {
         o.put(ID_KEY, Util.clone(o.get(ID_KEY)));
       }
-      @SuppressWarnings("unchecked") List<DBObject> oldObjects = _idIndex.get(o);
-      addToIndexes(Util.clone(o), oldObjects == null ? null : oldObjects.get(0), concern);
+      @SuppressWarnings("unchecked") Iterator<DBObject> oldObjects = _idIndex.retrieveObjects(q).iterator();
+      addToIndexes(Util.clone(o), oldObjects.hasNext() ? oldObjects.next() : null, concern);
       updatedDocuments++;
     } else {
       Filter filter = expressionParser.buildFilter(q);
