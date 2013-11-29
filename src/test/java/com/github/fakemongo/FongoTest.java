@@ -26,6 +26,7 @@ import org.bson.types.Binary;
 import org.bson.types.MaxKey;
 import org.bson.types.MinKey;
 import org.bson.types.ObjectId;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.slf4j.LoggerFactory;
@@ -1748,6 +1749,7 @@ public class FongoTest {
 
   // See http://docs.mongodb.org/manual/reference/operator/projection/elemMatch/
   @Test
+  @Ignore
   public void projection_elemMatch() {
     // Given
     DBCollection collection = newCollection();
