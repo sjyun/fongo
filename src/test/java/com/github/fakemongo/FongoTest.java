@@ -1,6 +1,7 @@
 package com.github.fakemongo;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import org.assertj.core.data.MapEntry;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -1725,6 +1726,26 @@ public class FongoTest {
     assertThat(result.get(0).get("_id")).isEqualTo("friend2".getBytes());
     assertThat(result.get(0).get("date")).isEqualTo(12);
   }
+
+  // can not change _id of a document query={ "_id" : "52986f667f6cc746624b0db5"}, document={ "name" : "Robert" , "_id" : { "$oid" : "52986f667f6cc746624b0db5"}}
+  // See jongo SaveTest#canSaveWithObjectIdAsString
+  @Test
+  public void update_id_is_string_and_objectid() {
+    // Given
+    DBCollection collection = newCollection();
+    ObjectId objectId = ObjectId.get();
+    DBObject query = BasicDBObjectBuilder.start("_id", objectId.toString()).get();
+    DBObject object = BasicDBObjectBuilder.start("_id", objectId).add("name", "Robert").get();
+
+    // When
+    collection.update(query, object, true, false);
+
+    // Then
+    List<DBObject> result = collection.find().toArray();
+    assertThat(result).hasSize(1);
+    assertThat(result.get(0).toMap()).contains(MapEntry.entry("name", "Robert"), MapEntry.entry("_id", objectId));
+  }
+
 
   static class Seq {
     Object[] data;

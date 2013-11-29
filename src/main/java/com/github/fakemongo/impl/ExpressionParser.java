@@ -732,6 +732,14 @@ public class ExpressionParser {
         cc2 = convertFrom((byte[]) cc2);
         checkTypes = false;
       }
+      if(cc1 instanceof ObjectId && cc2 instanceof String && ObjectId.isValid((String) cc2)) {
+        cc2 = ObjectId.massageToObjectId(cc2);
+        checkTypes = false;
+      }
+      if(cc2 instanceof ObjectId && cc1 instanceof String && ObjectId.isValid((String) cc1)) {
+        cc1 = ObjectId.massageToObjectId(cc2);
+        checkTypes = false;
+      }
       if (checkTypes) {
         Integer type1 = CLASS_TO_WEIGHT.get(clazz1);
         Integer type2 = CLASS_TO_WEIGHT.get(clazz2);

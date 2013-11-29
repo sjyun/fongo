@@ -11,6 +11,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.regex.Pattern;
+import static org.assertj.core.api.Assertions.assertThat;
 import org.bson.types.Binary;
 import org.bson.types.MaxKey;
 import org.bson.types.MinKey;
@@ -18,7 +19,6 @@ import org.bson.types.ObjectId;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
-
 
 public class ExpressionParserTest {
 
@@ -607,6 +607,14 @@ public class ExpressionParserTest {
     assertEquals(0, expressionParser.compareObjects(new BasicDBObject(), new BasicDBObject()));
     assertTrue(0 < expressionParser.compareObjects(new BasicDBObject("a", 3), new BasicDBObject("a", 1)));
     assertTrue(0 < expressionParser.compareObjects(new BasicDBObject("a", asList(2, 3)), new BasicDBObject("a", asList(1, 2))));
+  }
+
+  @Test
+  public void compare_objectid_and_string() {
+    ExpressionParser expressionParser = new ExpressionParser();
+    ObjectId objectId = ObjectId.get();
+    assertThat(expressionParser.compareObjects(objectId, objectId.toString())).isEqualTo(0);
+    assertThat(expressionParser.compareObjects(objectId.toString(), objectId)).isEqualTo(0);
   }
 
   @Test
