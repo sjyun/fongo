@@ -744,7 +744,7 @@ public class ExpressionParser {
       }
     }
 
-    LOG.info("\tcompareTo() cc1:{}, cc2:{} => {}", cc1, cc2, ((Comparable) cc1).compareTo(cc2));
+//    LOG.info("\tcompareTo() cc1:[{}], cc2:[{}] => {}", cc1, cc2, ((Comparable) cc1).compareTo(cc2));
     return ((Comparable) cc1).compareTo(cc2);
   }
 
