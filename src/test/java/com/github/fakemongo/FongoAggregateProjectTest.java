@@ -35,7 +35,7 @@ public class FongoAggregateProjectTest {
         "{ _id: 3, item: { sec: \"main\", category: \"pie\", type: \"shepherd's\" } },\n" +
         "{ _id: 4, item: { sec: \"main\", category: \"pie\", type: \"chicken pot\" } }]");
 
-    DBObject project = fongoRule.parseDEObject("{ $project: { food:\n" +
+    DBObject project = fongoRule.parseDBObject("{ $project: { food:\n" +
         "                                       { $concat: [ \"$item.type\",\n" +
         "                                                    \" \",\n" +
         "                                                    \"$item.category\"\n" +
@@ -67,7 +67,7 @@ public class FongoAggregateProjectTest {
         "{ _id: 4, item: { sec: \"main\", category: \"pie\", type: \"chicken pot\" } },\n" +
         "{ _id: 5, item: { sec: \"beverage\", type: \"coffee\" } }]");
 
-    DBObject project = fongoRule.parseDEObject("{ $project: { food:\n" +
+    DBObject project = fongoRule.parseDBObject("{ $project: { food:\n" +
         "                                       { $concat: [ \"$item.type\",\n" +
         "                                                    \" \",\n" +
         "                                                    \"$item.category\"\n" +
@@ -101,7 +101,7 @@ public class FongoAggregateProjectTest {
         "{ _id: 4, item: { sec: \"main\", category: \"pie\", type: \"chicken pot\" } },\n" +
         "{ _id: 5, item: { sec: \"beverage\", type: \"coffee\" } }]");
 
-    DBObject project = fongoRule.parseDEObject("{ $project: { food:\n" +
+    DBObject project = fongoRule.parseDBObject("{ $project: { food:\n" +
         "                                       { $concat: [ { $ifNull: [\"$item.type\", \"<unknown type>\"] },\n" +
         "                                                    \" \",\n" +
         "                                                    { $ifNull: [\"$item.category\", \"<unknown category>\"] }\n" +
@@ -148,7 +148,7 @@ public class FongoAggregateProjectTest {
         "{ _id: 3, item: { sec: \"main\", category: \"pie\", type: \"shepherd's\" } },\n" +
         "{ _id: 4, item: { sec: \"main\", category: \"pie\", type: \"chicken pot\" } }]");
 
-    DBObject project = fongoRule.parseDEObject("{ $project: { food:\n" +
+    DBObject project = fongoRule.parseDBObject("{ $project: { food:\n" +
         "                                       { $strcasecmp: [ \"$item.type\",\n" +
         "                                                    \"$item.category\"\n" +
         "                                                  ]\n" +
@@ -178,7 +178,7 @@ public class FongoAggregateProjectTest {
         "{ _id: 3, item: { sec: \"main\", category: \"pie\", type: \"shepherd's\" } },\n" +
         "{ _id: 4, item: { sec: \"main\", category: \"pie\", type: \"ANN\" } }]");
 
-    DBObject project = fongoRule.parseDEObject("{ $project: { food:\n" +
+    DBObject project = fongoRule.parseDBObject("{ $project: { food:\n" +
         "                                       { $strcasecmp: [ \"$item.type\",\n" +
         "                                                    \"apple\"\n" +
         "                                                  ]\n" +
@@ -209,7 +209,7 @@ public class FongoAggregateProjectTest {
         "{ _id: 3, item: { sec: \"main\", category: \"pie\", type: \"shepherd's\" } },\n" +
         "{ _id: 4, item: { sec: \"main\", category: \"pie\", type: \"chicken pot\" } }]");
 
-    DBObject project = fongoRule.parseDEObject("{ $project: { food:\n" +
+    DBObject project = fongoRule.parseDBObject("{ $project: { food:\n" +
         "                                       { $strcasecmp: [ \"$item.type\"\n" +
         "                                                  ]\n" +
         "                                       }\n" +
@@ -231,7 +231,7 @@ public class FongoAggregateProjectTest {
         "{ _id: 3, item: { sec: \"main\", category: \"pie\", type: \"shepherd's\" } },\n" +
         "{ _id: 4, item: { sec: \"main\", category: \"pie\" } }]");
 
-    DBObject project = fongoRule.parseDEObject("{ $project: { food:\n" +
+    DBObject project = fongoRule.parseDBObject("{ $project: { food:\n" +
         "                                       { $substr: [ \"apple\", 0, 1 ]" +
         "                                       }\n" +
         "                                }\n" +
@@ -259,7 +259,7 @@ public class FongoAggregateProjectTest {
         "{ _id: 3, item: { sec: \"main\", category: \"pie\", type: \"shepherd's\" } },\n" +
         "{ _id: 4, item: { sec: \"main\", category: \"pie\", type: \"chicken pot\" } }]");
 
-    DBObject project = fongoRule.parseDEObject("{ $project: { food:\n" +
+    DBObject project = fongoRule.parseDBObject("{ $project: { food:\n" +
         "                                       { $substr: [ \"$item.type\", 0, 1 ]" +
         "                                       }\n" +
         "                                }\n" +
@@ -287,7 +287,7 @@ public class FongoAggregateProjectTest {
         "{ _id: 3, item: { sec: \"main\", category: \"pie\", type: \"shepherd's\" } },\n" +
         "{ _id: 4, item: { sec: \"main\", category: \"pie\", type: \"chicken pot\" } }]");
 
-    DBObject project = fongoRule.parseDEObject("{ $project: { food:\n" +
+    DBObject project = fongoRule.parseDBObject("{ $project: { food:\n" +
         "                                       { $substr: [ \"$item.type\", 15, 18 ]" +
         "                                       }\n" +
         "                                }\n" +
@@ -315,7 +315,7 @@ public class FongoAggregateProjectTest {
         "{ _id: 3, item: { sec: \"main\", category: \"pie\", type: \"shepherd's\" } },\n" +
         "{ _id: 4, item: { sec: \"main\", category: \"pie\", type: \"chicken pot\" } }]");
 
-    DBObject project = fongoRule.parseDEObject("{ $project: { food:\n" +
+    DBObject project = fongoRule.parseDBObject("{ $project: { food:\n" +
         "                                       { $substr: [ \"$item.type\", 0, 18 ]" +
         "                                       }\n" +
         "                                }\n" +
@@ -343,7 +343,7 @@ public class FongoAggregateProjectTest {
         "{ _id: 3, item: { sec: \"main\", category: \"pie\", type: \"shepherd's\" } },\n" +
         "{ _id: 4, item: { sec: \"main\" }}]");
 
-    DBObject project = fongoRule.parseDEObject("{ $project: { food:\n" +
+    DBObject project = fongoRule.parseDBObject("{ $project: { food:\n" +
         "                                       { $substr: [ \"$item.type\", 0, 1 ]" +
         "                                       }\n" +
         "                                }\n" +
@@ -372,7 +372,7 @@ public class FongoAggregateProjectTest {
         "{ _id: 3, item: { sec: \"main\", category: \"pie\", type: \"shepherd's\" } },\n" +
         "{ _id: 4, item: { sec: \"main\" }}]");
 
-    DBObject project = fongoRule.parseDEObject("{ $project: { food:\n" +
+    DBObject project = fongoRule.parseDBObject("{ $project: { food:\n" +
         "                                       { $substr: [ \"$item.type\", 0 ]" +
         "                                       }\n" +
         "                                }\n" +
@@ -392,7 +392,7 @@ public class FongoAggregateProjectTest {
         "{ _id: 3, item: { sec: \"main\", category: \"pie\", type: \"shepherd's\" } },\n" +
         "{ _id: 4, item: { sec: \"main\", category: \"pie\" } }]");
 
-    DBObject project = fongoRule.parseDEObject("{ $project: { food:\n" +
+    DBObject project = fongoRule.parseDBObject("{ $project: { food:\n" +
         "                                       { $ifNull: [ \"$item.type\",\n" +
         "                                                    \"wasNull\"\n" +
         "                                                  ]\n" +
@@ -422,7 +422,7 @@ public class FongoAggregateProjectTest {
         "{ _id: 3, item: { sec: \"main\", category: \"pie\", type: \"shepherd's\" } },\n" +
         "{ _id: 4, item: { sec: \"main\", category: \"pie\" } }]");
 
-    DBObject project = fongoRule.parseDEObject("{ $project: { food:\n" +
+    DBObject project = fongoRule.parseDBObject("{ $project: { food:\n" +
         "                                       { $ifNull: [ \"$item.type\",\n" +
         "                                                    \"$item.category\"\n" +
         "                                                  ]\n" +
@@ -452,7 +452,7 @@ public class FongoAggregateProjectTest {
         "{ _id: 3, item: { sec: \"main\", category: \"pie\", type: \"shepherd's\" } },\n" +
         "{ _id: 4, item: { sec: \"main\", category: \"pie\", repl : [1,2,3] } }]");
 
-    DBObject project = fongoRule.parseDEObject("{ $project: { food:\n" +
+    DBObject project = fongoRule.parseDBObject("{ $project: { food:\n" +
         "                                       { $ifNull: [ \"$item.type\",\n" +
         "                                                    \"$item.repl\"\n" +
         "                                                  ]\n" +
@@ -483,7 +483,7 @@ public class FongoAggregateProjectTest {
         "{ _id: 3, item: { sec: \"main\", category: \"pie\", type: \"shepherd's\" } },\n" +
         "{ _id: 4, item: { sec: \"main\", category: \"pie\", type: \"chicken pot\" } }]");
 
-    DBObject project = fongoRule.parseDEObject("{ $project: { food:\n" +
+    DBObject project = fongoRule.parseDBObject("{ $project: { food:\n" +
         "                                       { $cmp: [ \"$item.type\",\n" +
         "                                                    \"$item.category\"\n" +
         "                                                  ]\n" +
@@ -510,7 +510,7 @@ public class FongoAggregateProjectTest {
         "{ _id: 3, item: { sec: \"main\", category: \"pie\", type: \"shepherd's\" } },\n" +
         "{ _id: 4, item: { sec: \"main\", category: \"pie\", type: \"chicken pot\" } }]");
 
-    DBObject project = fongoRule.parseDEObject("{ $project: { food:\n" +
+    DBObject project = fongoRule.parseDBObject("{ $project: { food:\n" +
         "                                       { $cmp: [ \"$item.type\",\n" +
         "                                                    \"apple\"\n" +
         "                                                  ]\n" +
@@ -538,7 +538,7 @@ public class FongoAggregateProjectTest {
         "{ _id: 3, item: { sec: \"main\", category: \"pie\", type: \"shepherd's\" } },\n" +
         "{ _id: 4, item: { sec: \"main\", category: \"pie\", type: \"chicken pot\" } }]");
 
-    DBObject project = fongoRule.parseDEObject("{ $project: { food:\n" +
+    DBObject project = fongoRule.parseDBObject("{ $project: { food:\n" +
         "                                       { $cmp: [ \"$item.type\"\n" +
         "                                                  ]\n" +
         "                                       }\n" +
@@ -557,7 +557,7 @@ public class FongoAggregateProjectTest {
         "{ _id: 3, item: { sec: \"main\", category: \"pie\", type: \"shepherd's\" } },\n" +
         "{ _id: 4, item: { sec: \"main\", category: \"pie\", type: \"chicken pot\" } }]");
 
-    DBObject project = fongoRule.parseDEObject("{ $project: { food:\n" +
+    DBObject project = fongoRule.parseDBObject("{ $project: { food:\n" +
         "                                       { $toUpper: \"$item.type\"\n" +
         "                                       }\n" +
         "                                }\n" +
@@ -582,7 +582,7 @@ public class FongoAggregateProjectTest {
         "{ _id: 3, item: { sec: \"main\", category: \"pie\", type: \"shepherd's\" } },\n" +
         "{ _id: 4, item: { sec: \"main\", category: \"pie\" } }]");
 
-    DBObject project = fongoRule.parseDEObject("{ $project: { food:\n" +
+    DBObject project = fongoRule.parseDBObject("{ $project: { food:\n" +
         "                                       { $toUpper: \"$item.type\"\n" +
         "                                       }\n" +
         "                                }\n" +
@@ -607,7 +607,7 @@ public class FongoAggregateProjectTest {
         "{ _id: 3, item: { sec: \"main\", category: \"pie\", type: \"shepherd's\" } },\n" +
         "{ _id: 4, item: { sec: \"main\", category: \"pie\", type: \"chicken pot\" } }]");
 
-    DBObject project = fongoRule.parseDEObject("{ $project: { food:\n" +
+    DBObject project = fongoRule.parseDBObject("{ $project: { food:\n" +
         "                                       { $toUpper: [ \"$item.type\" ]\n" +
         "                                       }\n" +
         "                                }\n" +
@@ -632,7 +632,7 @@ public class FongoAggregateProjectTest {
         "{ _id: 3, item: { sec: \"main\", category: \"pie\", type: \"shepherd's\" } },\n" +
         "{ _id: 4, item: { sec: \"main\", category: \"pie\", type: \"chicken pot\" } }]");
 
-    DBObject project = fongoRule.parseDEObject("{ $project: { food:\n" +
+    DBObject project = fongoRule.parseDBObject("{ $project: { food:\n" +
         "                                       { $toUpper: \"apple\" }\n" +
         "                                }\n" +
         "                   }");
@@ -657,7 +657,7 @@ public class FongoAggregateProjectTest {
         "{ _id: 3, item: { sec: \"main\", category: \"pie\", type: \"shepherd's\" } },\n" +
         "{ _id: 4, item: { sec: \"main\", category: \"pie\", type: \"chicken POT\" } }]");
 
-    DBObject project = fongoRule.parseDEObject("{ $project: { food:\n" +
+    DBObject project = fongoRule.parseDBObject("{ $project: { food:\n" +
         "                                       { $toLower: \"$item.type\"\n" +
         "                                       }\n" +
         "                                }\n" +
@@ -682,7 +682,7 @@ public class FongoAggregateProjectTest {
         "{ _id: 3, item: { sec: \"main\", category: \"pie\", type: \"shepherd's\" } },\n" +
         "{ _id: 4, item: { sec: \"main\", category: \"pie\"} }]");
 
-    DBObject project = fongoRule.parseDEObject("{ $project: { food:\n" +
+    DBObject project = fongoRule.parseDBObject("{ $project: { food:\n" +
         "                                       { $toLower: \"$item.type\"\n" +
         "                                       }\n" +
         "                                }\n" +
@@ -707,7 +707,7 @@ public class FongoAggregateProjectTest {
         "{ _id: 3, item: { sec: \"main\", category: \"pie\", type: \"SHEPHERD'S\" } },\n" +
         "{ _id: 4, item: { sec: \"main\", category: \"pie\", type: \"CHICKEN pot\" } }]");
 
-    DBObject project = fongoRule.parseDEObject("{ $project: { food:\n" +
+    DBObject project = fongoRule.parseDBObject("{ $project: { food:\n" +
         "                                       { $toLower: [ \"$item.type\" ]\n" +
         "                                       }\n" +
         "                                }\n" +
@@ -734,7 +734,7 @@ public class FongoAggregateProjectTest {
         "{ _id: 3, item: { sec: \"main\", category: \"pie\", type: \"SHEPHERD'S\" } },\n" +
         "{ _id: 4, item: { sec: \"main\", category: \"pie\", type: \"CHICKEN pot\" } }]");
 
-    DBObject project = fongoRule.parseDEObject("{ $project: { food:\n" +
+    DBObject project = fongoRule.parseDBObject("{ $project: { food:\n" +
         "                                       { $toLower: [ \"$item.type\", \"$item.category\" ]\n" +
         "                                       }\n" +
         "                                }\n" +
@@ -751,7 +751,7 @@ public class FongoAggregateProjectTest {
         "{ _id: 3, item: { sec: \"main\", category: \"pie\", type: \"shepherd's\" } },\n" +
         "{ _id: 4, item: { sec: \"main\", category: \"pie\", type: \"chicken pot\" } }]");
 
-    DBObject project = fongoRule.parseDEObject("{ $project: { food:\n" +
+    DBObject project = fongoRule.parseDBObject("{ $project: { food:\n" +
         "                                       { $toLower: \"APPLE\" }\n" +
         "                                }\n" +
         "                   }");

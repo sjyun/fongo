@@ -49,7 +49,7 @@ public class FongoAggregateZipTest {
 
 
     List<DBObject> resultAggregate = (List<DBObject>) output.getCommandResult().get("result");
-    Assert.assertEquals(fongoRule.parseDEObject("[ { \"_id\" : \"MA\" , \"totalPop\" : 6016425} , " +
+    Assert.assertEquals(fongoRule.parseDBObject("[ { \"_id\" : \"MA\" , \"totalPop\" : 6016425} , " +
         "{ \"_id\" : \"NJ\" , \"totalPop\" : 7730188} , " +
         "{ \"_id\" : \"NY\" , \"totalPop\" : 12950936}]"), resultAggregate);
   }
