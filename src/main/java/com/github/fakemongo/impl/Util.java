@@ -1,5 +1,7 @@
 package com.github.fakemongo.impl;
 
+import com.mongodb.DB;
+import com.mongodb.DBRef;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -140,12 +142,17 @@ public final class Util {
     return true;
   }
 
-  public static Object clone(Object source) {
+  public static Object clone(DB db, Object source) {
     if (source instanceof DBObject) {
       return clone((DBObject) source);
     }
     if (source instanceof Binary) {
       return ((Binary) source).getData().clone();
+    }
+    if (source instanceof DBRef) {
+      DBRef dbRef = (DBRef) source;
+      DB notNullDB = Util.firstNotNull(dbRef.getDB(), db);
+      return new DBRef(notNullDB, dbRef.getRef(), dbRef.getId());
     }
 //    if(source instanceof Cloneable) {
 //      return ((Cloneable) source).clone();
@@ -209,8 +216,14 @@ public final class Util {
     return (Set<Map.Entry<String, Object>>) object.toMap().entrySet();
   }
 
-  // When inserting, MongoDB set _id in first place.
-  public static DBObject cloneIdFirst(DBObject source) {
+  /**
+   * When inserting, MongoDB set _id in first place.
+   *
+   * @param db     can be null, used for dbref.
+   * @param source source to deep clone, can be null.
+   * @return a cloned version of source, with _id field in first.
+   */
+  public static DBObject cloneIdFirst(DB db, DBObject source) {
     if (source == null) {
       return null;
     }
@@ -242,10 +255,18 @@ public final class Util {
         if (val instanceof DBObject) {
           newobj.put(field, Util.clone((DBObject) val));
         } else {
-          newobj.put(field, val);
+          newobj.put(field, Util.clone(db, val));
         }
       }
     }
     return newobj;
   }
+
+  public static <T> T firstNotNull(T first, T second) {
+    if (first == null) {
+      return second;
+    }
+    return first;
+  }
+
 }

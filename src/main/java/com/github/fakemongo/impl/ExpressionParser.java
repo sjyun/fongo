@@ -740,6 +740,17 @@ public class ExpressionParser {
         cc1 = ObjectId.massageToObjectId(cc2);
         checkTypes = false;
       }
+      if(cc1 instanceof DBRefBase && cc2 instanceof DBRefBase) {
+        DBRefBase a1 = (DBRefBase) cc1;
+        DBRefBase a2 = (DBRefBase) cc2;
+        if(a1.equals(a2)) {
+          return 0;
+        }
+        // Not the idea of the year..
+        cc1 = a1.toString();
+        cc2 = a2.toString();
+        checkTypes = false;
+      }
       if (checkTypes) {
         Integer type1 = CLASS_TO_WEIGHT.get(clazz1);
         Integer type2 = CLASS_TO_WEIGHT.get(clazz2);

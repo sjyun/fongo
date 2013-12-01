@@ -1144,6 +1144,24 @@ public class FongoTest {
   }
 
   @Test
+  public void nullable_db_for_dbref() {
+    // Given
+    DBCollection collection = this.newCollection();
+    DBObject saved = new BasicDBObjectBuilder().add("date", "now").get();
+    collection.save(saved);
+    DBRef dbRef = new DBRef(null, collection.getName(), saved.get("_id"));
+    DBObject ref = new BasicDBObject("ref", dbRef);
+
+    // When
+    collection.save(ref);
+    DBRef result = (DBRef) collection.findOne(new BasicDBObject("_id", ref.get("_id"))).get("ref");
+
+    // Then
+    assertThat(result.getDB()).isNotNull().isEqualTo(collection.getDB());
+    assertThat(result.fetch()).isEqualTo(saved);
+  }
+
+  @Test
   public void testFindAllWithDBList() {
     DBCollection collection = newCollection();
     collection.insert(new BasicDBObject("_id", 1).append("tags", Util.list("mongo", "javascript")));

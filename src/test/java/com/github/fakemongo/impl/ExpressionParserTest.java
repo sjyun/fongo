@@ -1,10 +1,13 @@
 package com.github.fakemongo.impl;
 
+import com.github.fakemongo.Fongo;
 import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 import com.mongodb.BasicDBObjectBuilder;
 import com.mongodb.DBObject;
 import com.mongodb.DBRef;
+import com.mongodb.FongoDB;
+import com.mongodb.FongoDBCollection;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -184,7 +187,7 @@ public class ExpressionParserTest {
   }
 
   @Test
-  public void tesExistsOperator() {
+  public void testExistsOperator() {
     DBObject query = new BasicDBObjectBuilder().push("a").add("$exists", true).pop().get();
     List<DBObject> results = doFilter(
         query,
@@ -615,6 +618,18 @@ public class ExpressionParserTest {
     ObjectId objectId = ObjectId.get();
     assertThat(expressionParser.compareObjects(objectId, objectId.toString())).isEqualTo(0);
     assertThat(expressionParser.compareObjects(objectId.toString(), objectId)).isEqualTo(0);
+  }
+
+  @Test
+  public void compare_dbref() {
+    Fongo fongo = new Fongo("test");
+    ExpressionParser expressionParser = new ExpressionParser();
+    DBRef first = new DBRef(fongo.getDB("test"), "coll", ObjectId.get());
+    DBRef second = new DBRef(fongo.getDB("test"), "coll", ObjectId.get());
+    DBRef third = new DBRef(fongo.getDB("test"), "coll2", first.getId());
+    assertThat(expressionParser.compareObjects(first, first)).isEqualTo(0);
+    assertThat(expressionParser.compareObjects(first, second)).isNotEqualTo(0);
+    assertThat(expressionParser.compareObjects(first, third)).isNotEqualTo(0);
   }
 
   @Test
