@@ -151,6 +151,11 @@ public final class GeoUtil {
         if (dbObject.containsField("lng") && dbObject.containsField("lat")) {
           latLong = new LatLong(((Number) dbObject.get("lat")).doubleValue(), ((Number) dbObject.get("lng")).doubleValue());
         }
+      } else if (value instanceof double[]) {
+    	  double[] array = (double[]) value;
+    	  if (array.length == 2) {
+    		  latLong = new LatLong(((Number) array[1]).doubleValue(), ((Number) array[0]).doubleValue()); 
+    	  }
       }
       if (latLong != null) {
         result.add(latLong);
