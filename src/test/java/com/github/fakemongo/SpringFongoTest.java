@@ -5,6 +5,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 import org.bson.types.ObjectId;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -19,6 +20,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.config.AbstractMongoConfiguration;
 import org.springframework.data.mongodb.core.MongoOperations;
+import org.springframework.data.mongodb.core.index.GeoSpatialIndexed;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -27,6 +29,7 @@ import org.springframework.data.mongodb.repository.config.EnableMongoRepositorie
 import org.springframework.hateoas.Identifiable;
 
 public class SpringFongoTest {
+
 
   @Test
   public void dBRefFindWorks() {
@@ -48,6 +51,23 @@ public class SpringFongoTest {
 
     assertNotNull("should have found an object", foundObject);
     assertEquals("should find a ref to an object", referencedObject.getId(), foundObject.getReferencedObject().getId());
+  }
+
+  @Test
+  public void testGeospacialIndexed() {
+    // Given
+    ApplicationContext ctx = new AnnotationConfigApplicationContext(MongoConfig.class);
+    MongoOperations mongoOperations = (MongoOperations) ctx.getBean("mongoTemplate");
+
+    GeoSpatialIndexedTest object = new GeoSpatialIndexedTest();
+
+    // When
+    mongoOperations.save(object);
+
+    // Then
+    assertEquals(object, mongoOperations.findOne(
+        new Query(Criteria.where("object.$id").is(ObjectId.massageToObjectId(object.getId()))),
+        GeoSpatialIndexedTest.class));
   }
 
   @Test
@@ -202,6 +222,30 @@ public class SpringFongoTest {
 
     public void setReferencedObject(ReferencedObject referencedObject) {
       this.referencedObject = referencedObject;
+    }
+  }
+
+  @Document
+  public class GeoSpatialIndexedTest {
+    @Id
+    private String id;
+    @GeoSpatialIndexed
+    private double[] random = new double[]{new Random().nextDouble(), 0d};
+
+    public String getId() {
+      return id;
+    }
+
+    public void setId(String id) {
+      this.id = id;
+    }
+
+    public double[] getRandom() {
+      return random;
+    }
+
+    public void setRandom(double[] random) {
+      this.random = random;
     }
 
   }
