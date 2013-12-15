@@ -66,7 +66,7 @@ public class SpringFongoTest {
 
     // Then
     assertEquals(object, mongoOperations.findOne(
-        new Query(Criteria.where("object.$id").is(ObjectId.massageToObjectId(object.getId()))),
+        new Query(Criteria.where("id").is(ObjectId.massageToObjectId(object.getId()))),
         GeoSpatialIndexedTest.class));
   }
 
@@ -229,6 +229,7 @@ public class SpringFongoTest {
   public class GeoSpatialIndexedTest {
     @Id
     private String id;
+
     @GeoSpatialIndexed
     private double[] random = new double[]{new Random().nextDouble(), 0d};
 
@@ -242,6 +243,26 @@ public class SpringFongoTest {
 
     public double[] getRandom() {
       return random;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (!(o instanceof GeoSpatialIndexedTest)) return false;
+
+      GeoSpatialIndexedTest that = (GeoSpatialIndexedTest) o;
+
+      if (!id.equals(that.id)) return false;
+      if (!Arrays.equals(random, that.random)) return false;
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      int result = id.hashCode();
+      result = 31 * result + Arrays.hashCode(random);
+      return result;
     }
 
     public void setRandom(double[] random) {
