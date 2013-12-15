@@ -125,3 +125,4 @@ your name to the patch contributers below. Please maintain the same code formatt
 * [William Delanoue](https://github.com/twillouer)
 * [Juan F. Codagnone](https://github.com/jcodagnone)
 * Anton Bobukh
+* [Matthew Reid](https://github.com/drei01)
