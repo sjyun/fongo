@@ -140,28 +140,35 @@ public final class GeoUtil {
       objects = expressionParser.getEmbeddedValues(path, object);
     }
     for (Object value : objects) {
-      LatLong latLong = null;
-      if (value instanceof BasicDBList) {
-        BasicDBList list = (BasicDBList) value;
-        if (list.size() == 2) {
-          latLong = new LatLong(((Number) list.get(1)).doubleValue(), ((Number) list.get(0)).doubleValue());
-        }
-      } else if (value instanceof DBObject) {
-        DBObject dbObject = (DBObject) value;
-        if (dbObject.containsField("lng") && dbObject.containsField("lat")) {
-          latLong = new LatLong(((Number) dbObject.get("lat")).doubleValue(), ((Number) dbObject.get("lng")).doubleValue());
-        }
-      } else if (value instanceof double[]) {
-    	  double[] array = (double[]) value;
-    	  if (array.length == 2) {
-    		  latLong = new LatLong(((Number) array[1]).doubleValue(), ((Number) array[0]).doubleValue()); 
-    	  }
-      }
+      LatLong latLong = getLatLong(value);
       if (latLong != null) {
         result.add(latLong);
       }
     }
     return result;
+  }
+
+  public static LatLong getLatLong(Object value) {
+    LatLong latLong = null;
+    if (value instanceof BasicDBList) {
+      BasicDBList list = (BasicDBList) value;
+      if (list.size() == 2) {
+        latLong = new LatLong(((Number) list.get(1)).doubleValue(), ((Number) list.get(0)).doubleValue());
+      }
+    } else if (value instanceof DBObject) {
+      DBObject dbObject = (DBObject) value;
+      if (dbObject.containsField("lng") && dbObject.containsField("lat")) {
+        latLong = new LatLong(((Number) dbObject.get("lat")).doubleValue(), ((Number) dbObject.get("lng")).doubleValue());
+      } else if (dbObject.containsField("x") && dbObject.containsField("y")) {
+        latLong = new LatLong(((Number) dbObject.get("x")).doubleValue(), ((Number) dbObject.get("y")).doubleValue());
+      }
+    } else if (value instanceof double[]) {
+      double[] array = (double[]) value;
+      if (array.length == 2) {
+        latLong = new LatLong(((Number) array[0]).doubleValue(), ((Number) array[1]).doubleValue());
+      }
+    }
+    return latLong;
   }
 
   public static String encodeGeoHash(LatLong latLong) {

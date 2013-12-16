@@ -20,6 +20,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.config.AbstractMongoConfiguration;
 import org.springframework.data.mongodb.core.MongoOperations;
+import org.springframework.data.mongodb.core.geo.Point;
 import org.springframework.data.mongodb.core.index.GeoSpatialIndexed;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -59,7 +60,8 @@ public class SpringFongoTest {
     ApplicationContext ctx = new AnnotationConfigApplicationContext(MongoConfig.class);
     MongoOperations mongoOperations = (MongoOperations) ctx.getBean("mongoTemplate");
 
-    GeoSpatialIndexedTest object = new GeoSpatialIndexedTest();
+    GeoSpatialIndexedWrapper object = new GeoSpatialIndexedWrapper();
+    object.setGeo(new double[]{12.335D, 13.546D});
 
     // When
     mongoOperations.save(object);
@@ -67,7 +69,13 @@ public class SpringFongoTest {
     // Then
     assertEquals(object, mongoOperations.findOne(
         new Query(Criteria.where("id").is(ObjectId.massageToObjectId(object.getId()))),
-        GeoSpatialIndexedTest.class));
+        GeoSpatialIndexedWrapper.class));
+    assertEquals(object, mongoOperations.findOne(
+        new Query(Criteria.where("geo").is(object.getGeo())),
+        GeoSpatialIndexedWrapper.class));
+    assertEquals(object, mongoOperations.findOne(
+        new Query(Criteria.where("geo").is(new Point(object.getGeo()[0], object.getGeo()[1]))),
+        GeoSpatialIndexedWrapper.class));
   }
 
   @Test
@@ -226,12 +234,12 @@ public class SpringFongoTest {
   }
 
   @Document
-  public class GeoSpatialIndexedTest {
+  public class GeoSpatialIndexedWrapper {
     @Id
     private String id;
 
     @GeoSpatialIndexed
-    private double[] random = new double[]{new Random().nextDouble(), 0d};
+    private double[] geo = new double[]{0D, 0D};
 
     public String getId() {
       return id;
@@ -241,19 +249,19 @@ public class SpringFongoTest {
       this.id = id;
     }
 
-    public double[] getRandom() {
-      return random;
+    public double[] getGeo() {
+      return geo;
     }
 
     @Override
     public boolean equals(Object o) {
       if (this == o) return true;
-      if (!(o instanceof GeoSpatialIndexedTest)) return false;
+      if (!(o instanceof GeoSpatialIndexedWrapper)) return false;
 
-      GeoSpatialIndexedTest that = (GeoSpatialIndexedTest) o;
+      GeoSpatialIndexedWrapper that = (GeoSpatialIndexedWrapper) o;
 
       if (!id.equals(that.id)) return false;
-      if (!Arrays.equals(random, that.random)) return false;
+      if (!Arrays.equals(geo, that.geo)) return false;
 
       return true;
     }
@@ -261,12 +269,12 @@ public class SpringFongoTest {
     @Override
     public int hashCode() {
       int result = id.hashCode();
-      result = 31 * result + Arrays.hashCode(random);
+      result = 31 * result + Arrays.hashCode(geo);
       return result;
     }
 
-    public void setRandom(double[] random) {
-      this.random = random;
+    public void setGeo(double[] geo) {
+      this.geo = geo;
     }
 
   }
