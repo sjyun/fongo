@@ -266,6 +266,21 @@ public class FongoGeoTest {
 
   }
 
+  @Test
+  public void testFindByNearWithLongNamedDBOjectForLoc() {
+    DBCollection collection = fongoRule.newCollection();
+    collection.insert(new BasicDBObject("_id", 1).append("loc", new BasicDBObject("latitude", 0).append("longitude", 0)));
+    collection.insert(new BasicDBObject("_id", 2).append("loc", new BasicDBObject("latitude", 0).append("longitude", 0)));
+    collection.ensureIndex(new BasicDBObject("loc", "2d"));
+
+    List<DBObject> objects = collection.find(new BasicDBObject("loc", new BasicDBObject("$near", Util.list(0, 0)).append("$maxDistance", 5))).toArray();
+    assertEquals(Arrays.asList(
+        new BasicDBObject("_id", 1).append("loc", new BasicDBObject("latitude", 0).append("longitude", 0)),
+        new BasicDBObject("_id", 2).append("loc", new BasicDBObject("latitude", 0).append("longitude", 0))
+    ), objects);
+
+  }
+
   private static DBObject roundDis(DBObject objectList) {
     for (DBObject o : (List<DBObject>) objectList) {
       o.put("dis", round((Double) o.get("dis")));

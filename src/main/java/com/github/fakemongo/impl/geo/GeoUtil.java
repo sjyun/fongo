@@ -161,6 +161,8 @@ public final class GeoUtil {
         latLong = new LatLong(((Number) dbObject.get("lat")).doubleValue(), ((Number) dbObject.get("lng")).doubleValue());
       } else if (dbObject.containsField("x") && dbObject.containsField("y")) {
         latLong = new LatLong(((Number) dbObject.get("x")).doubleValue(), ((Number) dbObject.get("y")).doubleValue());
+      } else if (dbObject.containsField("latitude") && dbObject.containsField("longitude")) {
+          latLong = new LatLong(((Number) dbObject.get("latitude")).doubleValue(), ((Number) dbObject.get("longitude")).doubleValue());
       }
     } else if (value instanceof double[]) {
       double[] array = (double[]) value;
