@@ -7,6 +7,8 @@ import static org.junit.Assert.assertNotNull;
 import com.github.fakemongo.Fongo;
 import org.junit.Test;
 
+import java.util.Collections;
+
 public class FongoMongoTest {
 
   @Test
@@ -27,5 +29,12 @@ public class FongoMongoTest {
     Fongo fongo = new Fongo("test");
     assertEquals(WriteConcern.ACKNOWLEDGED, fongo.getMongo().getWriteConcern());
     assertEquals(WriteConcern.ACKNOWLEDGED, fongo.getWriteConcern());
+  }
+
+  @Test
+  public void mongoAllAdressOverride() {
+    MongoClient mongoClient = new Fongo("test").getMongo();
+    assertNotNull(mongoClient.getAllAddress());
+    assertEquals(Collections.emptyList(), mongoClient.getAllAddress());
   }
 }
