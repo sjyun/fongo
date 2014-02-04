@@ -3,6 +3,7 @@ package com.mongodb;
 import com.github.fakemongo.Fongo;
 import java.net.UnknownHostException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import org.objenesis.ObjenesisStd;
 
@@ -70,5 +71,11 @@ public class MockMongoClient extends MongoClient {
   @Override
   public MongoClientOptions getMongoClientOptions() {
     return clientOptions;
+  }
+
+  @Override
+  public List<ServerAddress> getAllAddress() {
+    if (super.getConnector() != null) return super.getAllAddress();
+    return Collections.emptyList();
   }
 }
