@@ -784,6 +784,19 @@ public class ExpressionParserTest {
     ), results);
   }
 
+  @Test
+  public void testWhereExpression() {
+    assertQuery(new BasicDBObject("$where", "this.n == 'fred'"), Arrays.<DBObject>asList(
+        new BasicDBObject("n", "fred").append("a", 2)
+    ));
+    assertQuery(new BasicDBObject("$where", "this.a <= 3"), Arrays.<DBObject>asList(
+        new BasicDBObject("a", null),
+        new BasicDBObject("n", "neil").append("a", 1),
+        new BasicDBObject("n", "fred").append("a", 2),
+        new BasicDBObject("n", "ted").append("a", 3)
+    ));
+  }
+
   private void assertQuery(BasicDBObject query, List<DBObject> expected) {
     List<DBObject> results = doFilter(
         query,
