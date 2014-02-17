@@ -829,7 +829,14 @@ public class ExpressionParser {
   }
 
   private int compareDBObjects(DBObject db0, DBObject db1) {
-    for (String key : db0.keySet()) {
+    Set<String> db0KeySet = db0.keySet();
+    Set<String> db1KeySet = db1.keySet();
+    int db0Size = db0KeySet.size();
+    int db1Size = db1KeySet.size();
+    if (db0Size != db1Size) {
+      return (db0Size < db1Size ? -1 : (db0Size > db1Size ? 1 : 0));
+    }
+    for (String key : db0KeySet) {
       int compareValue = compareObjects(db0.get(key), db1.get(key));
       if (compareValue != 0) {
         return compareValue;
