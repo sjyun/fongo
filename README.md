@@ -128,4 +128,4 @@ your name to the patch contributers below. Please maintain the same code formatt
 * [Matthew Reid](https://github.com/drei01)
 * [jasondemorrow](https://github.com/jasondemorrow)
 * [lldata](https://github.com/lldata)
-* [enej-github](https://github.com/renej-github)
+* [renej-github](https://github.com/renej-github)
