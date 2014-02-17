@@ -213,8 +213,6 @@ public class ExpressionParser {
 
       try {
         Scriptable scope = cx.initStandardObjects();
-        //scope.put("this", scope, o);
-        //scope.put("obj", scope, o);
         String json = JSON.serialize(o);
         String expr = "obj=" + json + ";\n" + expression.replace("this.", "obj.") + ";\n";
         try {
