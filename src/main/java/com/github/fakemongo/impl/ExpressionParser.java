@@ -5,6 +5,7 @@ import com.github.fakemongo.impl.geo.GeoUtil;
 import com.github.fakemongo.impl.geo.LatLong;
 import java.math.BigDecimal;
 import com.mongodb.*;
+import com.mongodb.util.JSON;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -24,6 +25,8 @@ import org.bson.types.MinKey;
 import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.Scriptable;
 
 public class ExpressionParser {
   private static final Logger LOG = LoggerFactory.getLogger(ExpressionParser.class);
@@ -49,6 +52,7 @@ public class ExpressionParser {
   public final static String NEAR_SPHERE = "$nearSphere";
   public final static String MAX_DISTANCE = "$maxDistance";
   public final static String ELEM_MATCH = QueryOperators.ELEM_MATCH;
+  public final static String WHERE = "$where";
 
   // TODO : http://docs.mongodb.org/manual/reference/operator/query-geospatial/
   // TODO : http://docs.mongodb.org/manual/reference/operator/geoWithin/#op._S_geoWithin
@@ -194,6 +198,35 @@ public class ExpressionParser {
 
     abstract boolean compare(Object queryValue, Object storedValue);
 
+  }
+
+  private final class WhereFilter implements Filter {
+    private final String expression;
+
+    public WhereFilter(String expression) {
+      this.expression = expression;
+    }
+
+    @Override
+    public boolean apply(DBObject o) {
+      Context cx = Context.enter();
+
+      try {
+        Scriptable scope = cx.initStandardObjects();
+        String json = JSON.serialize(o);
+        String expr = "obj=" + json + ";\n" + expression.replace("this.", "obj.") + ";\n";
+        try {
+          boolean result = (Boolean) cx.evaluateString(scope, expr, "<$where>", 0, null);
+          return result;
+        } catch (Exception e) {
+          LOG.error("Exception evaluating javascript expression {}", expression, e);
+        }
+      } finally {
+        cx.exit();
+      }
+
+      return false;
+    }
   }
 
   @SuppressWarnings("all")
@@ -596,6 +629,8 @@ public class ExpressionParser {
         andFilter.addFilter(buildFilter(query));
       }
       return andFilter;
+    } else if (WHERE.equals(path.get(0))) {
+      return new WhereFilter((String) expression);
     } else if (expression instanceof DBObject || expression instanceof Map) {
       DBObject ref = expression instanceof DBObject ? (DBObject) expression : new BasicDBObject((Map) expression);
 

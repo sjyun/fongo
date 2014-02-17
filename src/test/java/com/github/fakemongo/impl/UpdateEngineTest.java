@@ -67,7 +67,16 @@ public class UpdateEngineTest {
     assertEquals(new BasicDBObject("_id", 1).append("a", new BasicDBObject()),
         updateEngine.doUpdate(new BasicDBObject("_id", 1).append("a", new BasicDBObject("b",1)), update));
   }
-  
+ 
+  @Test
+  public void testEmbeddedRenameOperation() {
+    UpdateEngine updateEngine = new UpdateEngine();
+    DBObject update = new BasicDBObjectBuilder().push("$rename").append("a.b", "a.c").append("x", "y").append("h.i", "u.r").pop().get();
+
+    assertEquals(new BasicDBObject("_id", 1).append("a", new BasicDBObject("c", 1)).append("y", 3).append("u", new BasicDBObject("r", 8)).append("h", new BasicDBObject()),
+        updateEngine.doUpdate(new BasicDBObject("_id", 1).append("a", new BasicDBObject("b", 1)).append("x", 3).append("h", new BasicDBObject("i", 8)), update));
+  }
+
   @Test
   public void testIncOperation() {
     UpdateEngine updateEngine = new UpdateEngine();
