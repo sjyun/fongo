@@ -399,6 +399,16 @@ public class ExpressionParserTest {
   }
 
   @Test
+  public void testEmptyDocumentQueryValue() {
+    DBObject query = new BasicDBObject("a", new BasicDBObject());
+    List<DBObject> results = doFilter(
+      query,
+      new BasicDBObject("a", new BasicDBObject("b", 1))
+    );
+    assertTrue(results.isEmpty());
+  }
+
+  @Test
   public void testEmbeddedEmptyMatch() {
     DBObject query = new BasicDBObject("a.b.c", 1);
     List<DBObject> results = doFilter(
