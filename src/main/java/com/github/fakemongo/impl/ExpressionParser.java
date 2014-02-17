@@ -831,8 +831,10 @@ public class ExpressionParser {
   private int compareDBObjects(DBObject db0, DBObject db1) {
     Set<String> db0KeySet = db0.keySet();
     Set<String> db1KeySet = db1.keySet();
-    if (db0KeySet.size() != db1KeySet.size()) {
-      return Integer.compare(db0KeySet.size(), db1KeySet.size());
+    int db0Size = db0KeySet.size();
+    int db1Size = db1KeySet.size();
+    if (db0Size != db1Size) {
+      return (db0Size < db1Size ? -1 : (db0Size > db1Size ? 1 : 0));
     }
     for (String key : db0KeySet) {
       int compareValue = compareObjects(db0.get(key), db1.get(key));
