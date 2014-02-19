@@ -84,6 +84,7 @@ public class FongoDBCollection extends DBCollection {
         LOG.debug("insert: " + cloned);
       }
       ObjectId id = putIdIfNotPresent(cloned);
+      // Save the id field in the caller.
       if (!(obj instanceof LazyDBObject) && obj.get(ID_KEY) == null) {
         obj.put(ID_KEY, Util.clone(id));
       }

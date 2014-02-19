@@ -1,5 +1,10 @@
 package com.github.fakemongo.impl;
 
+import com.mongodb.BasicDBList;
+import com.mongodb.BasicDBObject;
+import com.mongodb.DBObject;
+import com.mongodb.FongoDBCollection;
+import com.mongodb.gridfs.GridFSFile;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -8,15 +13,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import org.bson.LazyBSONObject;
 import org.bson.LazyDBList;
-
-import com.mongodb.BasicDBList;
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBObject;
-import com.mongodb.FongoDBCollection;
-import com.mongodb.gridfs.GridFSFile;
 import org.bson.types.Binary;
 
 public final class Util {
@@ -209,7 +207,12 @@ public final class Util {
     return (Set<Map.Entry<String, Object>>) object.toMap().entrySet();
   }
 
-  // When inserting, MongoDB set _id in first place.
+  /**
+   * When inserting, MongoDB set _id in first place.
+   *
+   * @param source source to deep clone, can be null.
+   * @return a cloned version of source, with _id field in first.
+   */
   public static DBObject cloneIdFirst(DBObject source) {
     if (source == null) {
       return null;
@@ -242,10 +245,18 @@ public final class Util {
         if (val instanceof DBObject) {
           newobj.put(field, Util.clone((DBObject) val));
         } else {
-          newobj.put(field, val);
+          newobj.put(field, Util.clone(val));
         }
       }
     }
     return newobj;
   }
+
+  public static <T> T firstNotNull(T first, T second) {
+    if (first == null) {
+      return second;
+    }
+    return first;
+  }
+
 }
