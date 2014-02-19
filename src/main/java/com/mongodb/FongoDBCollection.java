@@ -1,5 +1,16 @@
 package com.mongodb;
 
+import com.github.fakemongo.FongoException;
+import com.github.fakemongo.impl.ExpressionParser;
+import com.github.fakemongo.impl.Filter;
+import com.github.fakemongo.impl.Tuple2;
+import com.github.fakemongo.impl.UpdateEngine;
+import com.github.fakemongo.impl.Util;
+import com.github.fakemongo.impl.geo.GeoUtil;
+import com.github.fakemongo.impl.geo.LatLong;
+import com.github.fakemongo.impl.index.GeoIndex;
+import com.github.fakemongo.impl.index.IndexAbstract;
+import com.github.fakemongo.impl.index.IndexFactory;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -14,17 +25,6 @@ import java.util.Set;
 import org.bson.BSON;
 import org.bson.types.Binary;
 import org.bson.types.ObjectId;
-import com.github.fakemongo.FongoException;
-import com.github.fakemongo.impl.ExpressionParser;
-import com.github.fakemongo.impl.Filter;
-import com.github.fakemongo.impl.Tuple2;
-import com.github.fakemongo.impl.UpdateEngine;
-import com.github.fakemongo.impl.Util;
-import com.github.fakemongo.impl.geo.GeoUtil;
-import com.github.fakemongo.impl.geo.LatLong;
-import com.github.fakemongo.impl.index.GeoIndex;
-import com.github.fakemongo.impl.index.IndexAbstract;
-import com.github.fakemongo.impl.index.IndexFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -79,7 +79,7 @@ public class FongoDBCollection extends DBCollection {
   @Override
   public synchronized WriteResult insert(List<DBObject> toInsert, WriteConcern concern, DBEncoder encoder) {
     for (DBObject obj : toInsert) {
-      DBObject cloned = filterLists(Util.cloneIdFirst(this.getDB(), obj));
+      DBObject cloned = filterLists(Util.cloneIdFirst(obj));
       if (LOG.isDebugEnabled()) {
         LOG.debug("insert: " + cloned);
       }
@@ -431,6 +431,12 @@ public class FongoDBCollection extends DBCollection {
           DBObject clonedDbo = Util.clone(dbo);
           if (nonIdCollection) {
             clonedDbo.removeField(ID_KEY);
+          }
+          for (String key : clonedDbo.keySet()) {
+            Object value = clonedDbo.get(key);
+            if (value instanceof DBRef && ((DBRef) value).getDB() == null) {
+              clonedDbo.put(key, new DBRef(this.getDB(), ((DBRef) value).getRef(), ((DBRef) value).getId()));
+            }
           }
           results.add(clonedDbo);
         }
@@ -799,7 +805,7 @@ public class FongoDBCollection extends DBCollection {
       }
     }
 
-    DBObject idFirst = Util.cloneIdFirst(this.getDB(), object);
+    DBObject idFirst = Util.cloneIdFirst(object);
     Set<String> oldQueryFields = oldObject == null ? Collections.<String>emptySet() : oldObject.keySet();
     for (IndexAbstract index : indexes) {
       if (index.canHandle(queryFields)) {

@@ -2,7 +2,6 @@ package com.github.fakemongo.impl;
 
 import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
-import com.mongodb.DB;
 import com.mongodb.DBObject;
 import com.mongodb.FongoDBCollection;
 import com.mongodb.gridfs.GridFSFile;
@@ -211,11 +210,10 @@ public final class Util {
   /**
    * When inserting, MongoDB set _id in first place.
    *
-   * @param db     can be null, used for dbref.
    * @param source source to deep clone, can be null.
    * @return a cloned version of source, with _id field in first.
    */
-  public static DBObject cloneIdFirst(DB db, DBObject source) {
+  public static DBObject cloneIdFirst(DBObject source) {
     if (source == null) {
       return null;
     }
