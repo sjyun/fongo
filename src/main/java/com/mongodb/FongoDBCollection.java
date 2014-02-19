@@ -383,18 +383,25 @@ public class FongoDBCollection extends DBCollection {
    * note: decoder, readPref, options are ignored
    */
   @Override
-  synchronized Iterator<DBObject> __find(DBObject ref, DBObject fields, int numToSkip, int batchSize, int limit,
+  synchronized Iterator<DBObject> __find(final DBObject pRef, DBObject fields, int numToSkip, int batchSize, int limit,
                                          int options,
                                          ReadPreference readPref, DBDecoder decoder) throws MongoException {
-    ref = filterLists(ref);
+    DBObject ref = filterLists(pRef);
+    long maxScan = Long.MAX_VALUE;
+//    ref = filterLists(ref);
     if (LOG.isDebugEnabled()) {
       LOG.debug("find({}, {}).skip({}).limit({})", ref, fields, numToSkip, limit);
-      LOG.debug("the db looks like {}", _idIndex.values());
+      LOG.debug("the db {} looks like {}", this.getDB().getName(), _idIndex.size());
     }
 
     DBObject orderby = null;
-    if (ref.containsField("$query") && ref.containsField("$orderby")) {
+    if (ref.containsField("$orderby")) {
       orderby = (DBObject) ref.get("$orderby");
+    }
+    if (ref.containsField("$maxScan")) {
+      maxScan = ((Number) ref.get("$maxScan")).longValue();
+    }
+    if (ref.containsField("$query")) {
       ref = (DBObject) ref.get("$query");
     }
 
@@ -423,7 +430,7 @@ public class FongoDBCollection extends DBCollection {
     }
     int seen = 0;
     Iterable<DBObject> objectsToSearch = sortObjects(orderby, objectsFromIndex);
-    for (Iterator<DBObject> iter = objectsToSearch.iterator(); iter.hasNext() && foundCount <= upperLimit; ) {
+    for (Iterator<DBObject> iter = objectsToSearch.iterator(); iter.hasNext() && foundCount <= upperLimit && maxScan-- > 0; ) {
       DBObject dbo = iter.next();
       if (filter.apply(dbo)) {
         if (seen++ >= numToSkip) {
@@ -521,6 +528,9 @@ public class FongoDBCollection extends DBCollection {
    * TODO: Support for projection operators: http://docs.mongodb.org/manual/reference/operator/projection/
    */
   public static DBObject applyProjections(DBObject result, DBObject projectionObject) {
+    if (projectionObject == null) {
+      return Util.cloneIdFirst(result);
+    }
 
     int inclusionCount = 0;
     int exclusionCount = 0;
@@ -647,6 +657,7 @@ public class FongoDBCollection extends DBCollection {
 
   @Override
   public synchronized DBObject findAndModify(DBObject query, DBObject fields, DBObject sort, boolean remove, DBObject update, boolean returnNew, boolean upsert) {
+    LOG.debug("findAndModify({}, {}, {}, {}, {}, {}, {}", query, fields, sort, remove, update, returnNew, upsert);
     query = filterLists(query);
     update = filterLists(update);
     Filter filter = expressionParser.buildFilter(query);
@@ -669,7 +680,7 @@ public class FongoDBCollection extends DBCollection {
       }
     }
     if (beforeObject != null && !returnNew) {
-      return beforeObject;
+      return applyProjections(beforeObject, fields);
     }
     if (beforeObject == null && upsert && !remove) {
       beforeObject = new BasicDBObject();
@@ -677,9 +688,9 @@ public class FongoDBCollection extends DBCollection {
       fInsert(updateEngine.doUpdate(afterObject, update, query), getWriteConcern());
     }
     if (returnNew) {
-      return Util.clone(afterObject);
+      return applyProjections(afterObject, fields);
     } else {
-      return Util.clone(beforeObject);
+      return applyProjections(beforeObject, fields);
     }
   }
 

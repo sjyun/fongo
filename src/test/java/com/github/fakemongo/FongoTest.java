@@ -1,38 +1,6 @@
 package com.github.fakemongo;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import org.assertj.core.data.MapEntry;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.Pattern;
-
-import org.bson.BSON;
-import org.bson.Transformer;
-import org.bson.types.Binary;
-import org.bson.types.MaxKey;
-import org.bson.types.MinKey;
-import org.bson.types.ObjectId;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
-import org.slf4j.LoggerFactory;
-
 import ch.qos.logback.classic.Level;
-
 import com.github.fakemongo.impl.ExpressionParser;
 import com.github.fakemongo.impl.Util;
 import com.mongodb.BasicDBList;
@@ -50,6 +18,34 @@ import com.mongodb.QueryBuilder;
 import com.mongodb.WriteConcern;
 import com.mongodb.WriteResult;
 import com.mongodb.util.JSON;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
+import static org.assertj.core.api.Assertions.assertThat;
+import org.assertj.core.data.MapEntry;
+import org.bson.BSON;
+import org.bson.Transformer;
+import org.bson.types.Binary;
+import org.bson.types.MaxKey;
+import org.bson.types.MinKey;
+import org.bson.types.ObjectId;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import org.junit.Ignore;
+import org.junit.Rule;
+import org.junit.Test;
+import org.slf4j.LoggerFactory;
 
 public class FongoTest {
 
@@ -1142,7 +1138,7 @@ public class FongoTest {
     assertEquals(coll2oid, ref.getId());
     assertEquals(coll2doc, ref.fetch());
   }
-  
+
   @Test
   public void testDbRefsWithoutDbSet() {
     Fongo fong = newFongo();
@@ -1833,6 +1829,63 @@ public class FongoTest {
         "{ \"_id\" : 4, \"students\" : [ { \"name\" : \"barney\", \"school\" : 102, \"age\" : 7 } ] }]"), result);
   }
 
+  @Test
+  public void find_and_modify_with_projection_old_object() {
+    // Given
+    DBCollection collection = newCollection();
+    collection.insert(fongoRule.parseDBObject("{ \"name\" : \"John\" , \"address\" : \"Jermin Street\"}"));
+
+    // When
+    DBObject result = collection.findAndModify(new BasicDBObject("name", "John"), new BasicDBObject("name", 1),
+        null, false, new BasicDBObject("$set", new BasicDBObject("name", "Robert")), false, false);
+
+    // Then
+    assertThat(result.get("name")).isNotNull().isEqualTo("John");
+    assertFalse("Bad Projection", result.containsField("address"));
+  }
+
+  @Test
+  public void find_and_modify_with_projection_new_object() {
+    // Given
+    DBCollection collection = newCollection();
+    collection.insert(fongoRule.parseDBObject("{ \"name\" : \"John\" , \"address\" : \"Jermin Street\"}"));
+
+    // When
+    DBObject result = collection.findAndModify(new BasicDBObject("name", "John"), new BasicDBObject("name", 1),
+        null, false, new BasicDBObject("$set", new BasicDBObject("name", "Robert")), true, false);
+
+    // Then
+    assertThat(result.get("name")).isNotNull().isEqualTo("Robert");
+    assertFalse("Bad Projection", result.containsField("address"));
+  }
+
+  @Test
+  public void find_and_modify_with_projection_new_object_upsert() {
+    // Given
+    DBCollection collection = newCollection();
+
+    // When
+    DBObject result = collection.findAndModify(new BasicDBObject("name", "Rob"), new BasicDBObject("name", 1),
+        null, false, new BasicDBObject("$set", new BasicDBObject("name", "Robert")), true, true);
+
+    // Then
+    assertThat(result.get("name")).isNotNull().isEqualTo("Robert");
+    assertFalse("Bad Projection", result.containsField("address"));
+  }
+
+  @Test
+  public void find_with_maxScan() {
+    // Given
+    DBCollection collection = newCollection();
+    collection.insert(fongoRule.parseDBObject("{ \"name\" : \"John\" , \"address\" : \"Jermin Street\"}"));
+    collection.insert(fongoRule.parseDBObject("{ \"name\" : \"Robert\" , \"address\" : \"Jermin Street\"}"));
+
+    // When
+    List<DBObject> objects = collection.find().addSpecial("$maxScan", 1).toArray();
+
+    // Then
+    assertThat(objects).hasSize(1);
+  }
 
   static class Seq {
     Object[] data;
