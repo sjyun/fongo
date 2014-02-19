@@ -1142,6 +1142,24 @@ public class FongoTest {
     assertEquals(coll2oid, ref.getId());
     assertEquals(coll2doc, ref.fetch());
   }
+  
+  @Test
+  public void testDbRefsWithoutDbSet() {
+    Fongo fong = newFongo();
+    DB db = fong.getDB("db");
+    DBCollection coll1 = db.getCollection("coll");
+    DBCollection coll2 = db.getCollection("coll2");
+    final String coll2oid = "coll2id";
+    BasicDBObject coll2doc = new BasicDBObject("_id", coll2oid);
+    coll2.insert(coll2doc);
+    coll1.insert(new BasicDBObject("ref", new DBRef(null, "coll2", coll2oid)));
+
+    DBRef ref = (DBRef) coll1.findOne().get("ref");
+    assertNotNull(ref.getDB());
+    assertEquals("coll2", ref.getRef());
+    assertEquals(coll2oid, ref.getId());
+    assertEquals(coll2doc, ref.fetch());
+  }
 
   @Test
   public void testFindAllWithDBList() {
