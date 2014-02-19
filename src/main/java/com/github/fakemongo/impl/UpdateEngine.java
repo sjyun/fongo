@@ -39,7 +39,7 @@ public class UpdateEngine {
       this.createMissing = createMissing;
     }
      
-    abstract void mergeAction(String subKey, DBObject subObject, Object object);
+    abstract void mergeAction(String subKey, DBObject subObject, Object object, DBObject objOriginal);
     
     public DBObject doUpdate(DBObject obj, DBObject update, Set<String> seenKeys, DBObject query){
       DBObject updateObject = (DBObject) update.get(command);
@@ -74,7 +74,7 @@ public class UpdateEngine {
         }
         Object value = obj.get(subKey);
         if ((value instanceof List) && "$".equals(path.get(i+1))) {
-          handlePositionalUpdate(updateKey, object, (List)value, obj, query);
+          handlePositionalUpdate(updateKey, object, (List)value, obj, query, objOriginal);
         } else if (value instanceof DBObject){
           obj = (DBObject) value;
         } else if (value instanceof List) {
@@ -89,13 +89,13 @@ public class UpdateEngine {
       if (!isPositional) {
         
         LOG.debug("Subobject is {}", obj);
-        mergeAction(subKey, obj, object);
+        mergeAction(subKey, obj, object, objOriginal);
         LOG.debug("Full object is {}", objOriginal);
 
       }
     }
 
-    public void handlePositionalUpdate(final String updateKey, Object object, List valueList, DBObject ownerObj, DBObject query) {
+    public void handlePositionalUpdate(final String updateKey, Object object, List valueList, DBObject ownerObj, DBObject query, DBObject objOriginal) {
       int dollarIndex = updateKey.indexOf("$");
       String postPath = (dollarIndex == updateKey.length() -1 )  ? "" : updateKey.substring(dollarIndex + 2);
       String prePath = updateKey.substring(0, dollarIndex - 1);
@@ -133,7 +133,7 @@ public class UpdateEngine {
             BasicDBList newList = new BasicDBList();
             newList.addAll(valueList);
             ownerObj.put(prePath, newList);
-            mergeAction(String.valueOf(i), newList, object);
+            mergeAction(String.valueOf(i), newList, object, objOriginal);
             break;
           }
         }
@@ -162,13 +162,13 @@ public class UpdateEngine {
   final List<BasicUpdate> commands = Arrays.<BasicUpdate>asList(
       new BasicUpdate("$set", true) {
         @Override
-        void mergeAction(String subKey, DBObject subObject, Object object) {
+        void mergeAction(String subKey, DBObject subObject, Object object, DBObject objOriginal) {
           subObject.put(subKey, object);
         }
       },
       new BasicUpdate("$inc", true) {
         @Override
-        void mergeAction(String subKey, DBObject subObject, Object object) {
+        void mergeAction(String subKey, DBObject subObject, Object object, DBObject objOriginal) {
           Number updateNumber = expressionParser.typecast(command + " value", object, Number.class);
           Object oldValue = subObject.get(subKey);
           if (oldValue == null){
@@ -181,13 +181,21 @@ public class UpdateEngine {
       },
       new BasicUpdate("$unset", false) {
         @Override
-        void mergeAction(String subKey, DBObject subObject, Object object) {
+        void mergeAction(String subKey, DBObject subObject, Object object, DBObject objOriginal) {
           subObject.removeField(subKey);
+        }
+      },
+      new BasicUpdate("$rename", true) {
+        @Override
+        void mergeAction(String subKey, DBObject subObject, Object object, DBObject objOriginal) {
+          Object objValue = subObject.removeField(subKey);
+          String newKey = (String) object;
+          Util.putValue(objOriginal, newKey, objValue);
         }
       },
       new BasicUpdate("$push", true) {
         @Override
-        void mergeAction(String subKey, DBObject subObject, Object object) {
+        void mergeAction(String subKey, DBObject subObject, Object object, DBObject objOriginal) {
           if (!subObject.containsField(subKey)){
             subObject.put(subKey, asDbList(object));
           } else {
@@ -199,7 +207,7 @@ public class UpdateEngine {
       },
       new BasicUpdate("$pushAll", true) {
         @Override
-        void mergeAction(String subKey, DBObject subObject, Object object) {
+        void mergeAction(String subKey, DBObject subObject, Object object, DBObject objOriginal) {
           List newList = expressionParser.typecast(command + " value", object, List.class);
           if (!subObject.containsField(subKey)){
             subObject.put(subKey, newList);
@@ -212,7 +220,7 @@ public class UpdateEngine {
       },
       new BasicUpdate("$addToSet", true) {
         @Override
-        void mergeAction(String subKey, DBObject subObject, Object object) {
+        void mergeAction(String subKey, DBObject subObject, Object object, DBObject objOriginal) {
           boolean isEach = false;
           BasicDBList currentValue = expressionParser.typecast(subKey, subObject.get(subKey), BasicDBList.class);
           currentValue = (currentValue == null) ? new BasicDBList() : currentValue;
@@ -241,7 +249,7 @@ public class UpdateEngine {
       },
       new BasicUpdate("$pop", false) {
         @Override
-        void mergeAction(String subKey, DBObject subObject, Object object) {
+        void mergeAction(String subKey, DBObject subObject, Object object, DBObject objOriginal) {
           BasicDBList currentList = expressionParser.typecast(command, subObject.get(subKey), BasicDBList.class);
           if (currentList != null && currentList.size() > 0){
             int direction = expressionParser.typecast(command, object, Number.class).intValue();
@@ -255,7 +263,7 @@ public class UpdateEngine {
       },
       new BasicUpdate("$pull", false) {
         @Override
-        void mergeAction(String subKey, DBObject subObject, Object object) {
+        void mergeAction(String subKey, DBObject subObject, Object object, DBObject objOriginal) {
           BasicDBList currentList = expressionParser.typecast(command + " only works on arrays", subObject.get(subKey), BasicDBList.class);
           if (currentList != null && currentList.size() > 0){
             BasicDBList newList = new BasicDBList();
@@ -279,7 +287,7 @@ public class UpdateEngine {
       },
       new BasicUpdate("$pullAll", false) {
         @Override
-        void mergeAction(String subKey, DBObject subObject, Object object) {
+        void mergeAction(String subKey, DBObject subObject, Object object, DBObject objOriginal) {
           BasicDBList currentList = expressionParser.typecast(command + " only works on arrays", subObject.get(subKey), BasicDBList.class);
           if (currentList != null && currentList.size() > 0){
             Set pullSet = new HashSet(expressionParser.typecast(command, object, List.class));
@@ -295,7 +303,7 @@ public class UpdateEngine {
       },
       new BasicUpdate("$bit", false) {
         @Override
-        void mergeAction(String subKey, DBObject subObject, Object object) {
+        void mergeAction(String subKey, DBObject subObject, Object object, DBObject objOriginal) {
           Number currentNumber = expressionParser.typecast(command + " only works on integers", subObject.get(subKey), Number.class);
           if (currentNumber != null){
             if (currentNumber instanceof Float || currentNumber instanceof Double){
@@ -328,7 +336,7 @@ public class UpdateEngine {
   final Map<String, BasicUpdate> commandMap = createCommandMap();
   private final BasicUpdate basicUpdateForUpsert = new BasicUpdate("upsert", true){
     @Override
-    void mergeAction(String subKey, DBObject subObject, Object object) {
+    void mergeAction(String subKey, DBObject subObject, Object object, DBObject objOriginal) {
       subObject.put(subKey, object);
     }};
     

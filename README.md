@@ -12,7 +12,7 @@ Add dependency to your project:
 <dependency>
   <groupId>com.github.fakemongo</groupId>
   <artifactId>fongo</artifactId>
-  <version>1.3.2</version>
+  <version>1.3.5</version>
   <scope>test</scope>
 </dependency>
 ```
@@ -125,3 +125,8 @@ your name to the patch contributers below. Please maintain the same code formatt
 * [William Delanoue](https://github.com/twillouer)
 * [Juan F. Codagnone](https://github.com/jcodagnone)
 * Anton Bobukh
+* [Matthew Reid](https://github.com/drei01)
+* [jasondemorrow](https://github.com/jasondemorrow)
+* [lldata](https://github.com/lldata)
+* [renej-github](https://github.com/renej-github)
+* [mathieubodin](https://github.com/mathieubodin)

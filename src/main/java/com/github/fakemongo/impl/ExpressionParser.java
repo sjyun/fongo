@@ -3,8 +3,14 @@ package com.github.fakemongo.impl;
 import com.github.fakemongo.FongoException;
 import com.github.fakemongo.impl.geo.GeoUtil;
 import com.github.fakemongo.impl.geo.LatLong;
+import com.mongodb.BasicDBList;
+import com.mongodb.BasicDBObject;
+import com.mongodb.DBObject;
+import com.mongodb.DBRefBase;
+import com.mongodb.LazyDBObject;
+import com.mongodb.QueryOperators;
+import com.mongodb.util.JSON;
 import java.math.BigDecimal;
-import com.mongodb.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -22,6 +28,8 @@ import org.bson.types.Binary;
 import org.bson.types.MaxKey;
 import org.bson.types.MinKey;
 import org.bson.types.ObjectId;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.Scriptable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,6 +57,7 @@ public class ExpressionParser {
   public final static String NEAR_SPHERE = "$nearSphere";
   public final static String MAX_DISTANCE = "$maxDistance";
   public final static String ELEM_MATCH = QueryOperators.ELEM_MATCH;
+  public final static String WHERE = "$where";
 
   // TODO : http://docs.mongodb.org/manual/reference/operator/query-geospatial/
   // TODO : http://docs.mongodb.org/manual/reference/operator/geoWithin/#op._S_geoWithin
@@ -194,6 +203,35 @@ public class ExpressionParser {
 
     abstract boolean compare(Object queryValue, Object storedValue);
 
+  }
+
+  private final class WhereFilter implements Filter {
+    private final String expression;
+
+    public WhereFilter(String expression) {
+      this.expression = expression;
+    }
+
+    @Override
+    public boolean apply(DBObject o) {
+      Context cx = Context.enter();
+
+      try {
+        Scriptable scope = cx.initStandardObjects();
+        String json = JSON.serialize(o);
+        String expr = "obj=" + json + ";\n" + expression.replace("this.", "obj.") + ";\n";
+        try {
+          boolean result = (Boolean) cx.evaluateString(scope, expr, "<$where>", 0, null);
+          return result;
+        } catch (Exception e) {
+          LOG.error("Exception evaluating javascript expression {}", expression, e);
+        }
+      } finally {
+        cx.exit();
+      }
+
+      return false;
+    }
   }
 
   @SuppressWarnings("all")
@@ -596,6 +634,8 @@ public class ExpressionParser {
         andFilter.addFilter(buildFilter(query));
       }
       return andFilter;
+    } else if (WHERE.equals(path.get(0))) {
+      return new WhereFilter((String) expression);
     } else if (expression instanceof DBObject || expression instanceof Map) {
       DBObject ref = expression instanceof DBObject ? (DBObject) expression : new BasicDBObject((Map) expression);
 
@@ -732,18 +772,27 @@ public class ExpressionParser {
         cc2 = convertFrom((byte[]) cc2);
         checkTypes = false;
       }
-      if(cc1 instanceof ObjectId && cc2 instanceof String && ObjectId.isValid((String) cc2)) {
+      if (cc1 instanceof ObjectId && cc2 instanceof String && ObjectId.isValid((String) cc2)) {
         cc2 = ObjectId.massageToObjectId(cc2);
         checkTypes = false;
       }
-      if(cc2 instanceof ObjectId && cc1 instanceof String && ObjectId.isValid((String) cc1)) {
+      if (cc2 instanceof ObjectId && cc1 instanceof String && ObjectId.isValid((String) cc1)) {
         cc1 = ObjectId.massageToObjectId(cc2);
         checkTypes = false;
       }
-      if(cc1 instanceof DBRefBase && cc2 instanceof DBRefBase) {
+      LatLong ll1 = GeoUtil.getLatLong(cc1);
+      if (ll1 != null) {
+        LatLong ll2 = GeoUtil.getLatLong(cc2);
+        if (ll2 != null) {
+          cc1 = ll1;
+          cc2 = ll2;
+          checkTypes = false;
+        }
+      }
+      if (cc1 instanceof DBRefBase && cc2 instanceof DBRefBase) {
         DBRefBase a1 = (DBRefBase) cc1;
         DBRefBase a2 = (DBRefBase) cc2;
-        if(a1.equals(a2)) {
+        if (a1.equals(a2)) {
           return 0;
         }
         // Not the idea of the year..
@@ -796,7 +845,14 @@ public class ExpressionParser {
   }
 
   private int compareDBObjects(DBObject db0, DBObject db1) {
-    for (String key : db0.keySet()) {
+    Set<String> db0KeySet = db0.keySet();
+    Set<String> db1KeySet = db1.keySet();
+    int db0Size = db0KeySet.size();
+    int db1Size = db1KeySet.size();
+    if (db0Size != db1Size) {
+      return (db0Size < db1Size ? -1 : (db0Size > db1Size ? 1 : 0));
+    }
+    for (String key : db0KeySet) {
       int compareValue = compareObjects(db0.get(key), db1.get(key));
       if (compareValue != 0) {
         return compareValue;
@@ -934,6 +990,7 @@ public class ExpressionParser {
       }
       return false;
     }
+
   }
 
   public static final Filter AllFilter = new Filter() {

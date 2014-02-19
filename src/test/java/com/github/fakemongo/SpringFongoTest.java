@@ -5,6 +5,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 import org.bson.types.ObjectId;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -19,6 +20,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.config.AbstractMongoConfiguration;
 import org.springframework.data.mongodb.core.MongoOperations;
+import org.springframework.data.mongodb.core.geo.Point;
+import org.springframework.data.mongodb.core.index.GeoSpatialIndexed;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -27,6 +30,7 @@ import org.springframework.data.mongodb.repository.config.EnableMongoRepositorie
 import org.springframework.hateoas.Identifiable;
 
 public class SpringFongoTest {
+
 
   @Test
   public void dBRefFindWorks() {
@@ -48,6 +52,30 @@ public class SpringFongoTest {
 
     assertNotNull("should have found an object", foundObject);
     assertEquals("should find a ref to an object", referencedObject.getId(), foundObject.getReferencedObject().getId());
+  }
+
+  @Test
+  public void testGeospacialIndexed() {
+    // Given
+    ApplicationContext ctx = new AnnotationConfigApplicationContext(MongoConfig.class);
+    MongoOperations mongoOperations = (MongoOperations) ctx.getBean("mongoTemplate");
+
+    GeoSpatialIndexedWrapper object = new GeoSpatialIndexedWrapper();
+    object.setGeo(new double[]{12.335D, 13.546D});
+
+    // When
+    mongoOperations.save(object);
+
+    // Then
+    assertEquals(object, mongoOperations.findOne(
+        new Query(Criteria.where("id").is(ObjectId.massageToObjectId(object.getId()))),
+        GeoSpatialIndexedWrapper.class));
+    assertEquals(object, mongoOperations.findOne(
+        new Query(Criteria.where("geo").is(object.getGeo())),
+        GeoSpatialIndexedWrapper.class));
+    assertEquals(object, mongoOperations.findOne(
+        new Query(Criteria.where("geo").is(new Point(object.getGeo()[0], object.getGeo()[1]))),
+        GeoSpatialIndexedWrapper.class));
   }
 
   @Test
@@ -202,6 +230,51 @@ public class SpringFongoTest {
 
     public void setReferencedObject(ReferencedObject referencedObject) {
       this.referencedObject = referencedObject;
+    }
+  }
+
+  @Document
+  public class GeoSpatialIndexedWrapper {
+    @Id
+    private String id;
+
+    @GeoSpatialIndexed
+    private double[] geo = new double[]{0D, 0D};
+
+    public String getId() {
+      return id;
+    }
+
+    public void setId(String id) {
+      this.id = id;
+    }
+
+    public double[] getGeo() {
+      return geo;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (!(o instanceof GeoSpatialIndexedWrapper)) return false;
+
+      GeoSpatialIndexedWrapper that = (GeoSpatialIndexedWrapper) o;
+
+      if (!id.equals(that.id)) return false;
+      if (!Arrays.equals(geo, that.geo)) return false;
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      int result = id.hashCode();
+      result = 31 * result + Arrays.hashCode(geo);
+      return result;
+    }
+
+    public void setGeo(double[] geo) {
+      this.geo = geo;
     }
 
   }

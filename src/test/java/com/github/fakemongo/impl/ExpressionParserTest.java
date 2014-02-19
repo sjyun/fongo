@@ -402,6 +402,16 @@ public class ExpressionParserTest {
   }
 
   @Test
+  public void testEmptyDocumentQueryValue() {
+    DBObject query = new BasicDBObject("a", new BasicDBObject());
+    List<DBObject> results = doFilter(
+      query,
+      new BasicDBObject("a", new BasicDBObject("b", 1))
+    );
+    assertTrue(results.isEmpty());
+  }
+
+  @Test
   public void testEmbeddedEmptyMatch() {
     DBObject query = new BasicDBObject("a.b.c", 1);
     List<DBObject> results = doFilter(
@@ -797,6 +807,19 @@ public class ExpressionParserTest {
         new BasicDBObject("a", asList(1, 2, 3)),
         new BasicDBObject("a", asDbList(1, 2, 3))
     ), results);
+  }
+
+  @Test
+  public void testWhereExpression() {
+    assertQuery(new BasicDBObject("$where", "this.n == 'fred'"), Arrays.<DBObject>asList(
+        new BasicDBObject("n", "fred").append("a", 2)
+    ));
+    assertQuery(new BasicDBObject("$where", "this.a <= 3"), Arrays.<DBObject>asList(
+        new BasicDBObject("a", null),
+        new BasicDBObject("n", "neil").append("a", 1),
+        new BasicDBObject("n", "fred").append("a", 2),
+        new BasicDBObject("n", "ted").append("a", 3)
+    ));
   }
 
   private void assertQuery(BasicDBObject query, List<DBObject> expected) {

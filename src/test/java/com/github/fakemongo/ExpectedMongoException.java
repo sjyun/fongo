@@ -4,7 +4,7 @@ import com.mongodb.CommandFailureException;
 import com.mongodb.MongoException;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
-import org.junit.internal.matchers.TypeSafeMatcher;
+import org.hamcrest.TypeSafeMatcher;
 import org.junit.rules.ExpectedException;
 
 public final class ExpectedMongoException {

@@ -86,7 +86,7 @@ public class FongoDBCollection extends DBCollection {
       ObjectId id = putIdIfNotPresent(cloned);
       // Save the id field in the caller.
       if (!(obj instanceof LazyDBObject) && obj.get(ID_KEY) == null) {
-        obj.put(ID_KEY, Util.clone(this.getDB(), id));
+        obj.put(ID_KEY, Util.clone(id));
       }
 
       putSizeCheck(cloned, concern);
@@ -104,7 +104,7 @@ public class FongoDBCollection extends DBCollection {
     if (object == null) {
       ObjectId id = new ObjectId();
       id.notNew();
-      obj.put(ID_KEY, Util.clone(this.getDB(), id));
+      obj.put(ID_KEY, Util.clone(id));
       return id;
     } else if (object instanceof ObjectId) {
       ObjectId id = (ObjectId) object;
@@ -193,9 +193,9 @@ public class FongoDBCollection extends DBCollection {
 
     if (idOnlyUpdate && isNotUpdateCommand(o)) {
       if (!o.containsField(ID_KEY)) {
-        o.put(ID_KEY, Util.clone(this.getDB(), q.get(ID_KEY)));
+        o.put(ID_KEY, Util.clone(q.get(ID_KEY)));
       } else {
-        o.put(ID_KEY, Util.clone(this.getDB(), o.get(ID_KEY)));
+        o.put(ID_KEY, Util.clone(o.get(ID_KEY)));
       }
       @SuppressWarnings("unchecked") Iterator<DBObject> oldObjects = _idIndex.retrieveObjects(q).iterator();
       addToIndexes(Util.clone(o), oldObjects.hasNext() ? oldObjects.next() : null, concern);
@@ -248,7 +248,7 @@ public class FongoDBCollection extends DBCollection {
         return Collections.emptyList();
       }
     }
-    return Collections.singletonList(Util.clone(this.getDB(), idValue));
+    return Collections.singletonList(Util.clone(idValue));
   }
 
   protected BasicDBObject createUpsertObject(DBObject q) {
@@ -256,7 +256,7 @@ public class FongoDBCollection extends DBCollection {
     List idsIn = idsIn(q);
 
     if (!idsIn.isEmpty()) {
-      newObject.put(ID_KEY, Util.clone(this.getDB(), idsIn.get(0)));
+      newObject.put(ID_KEY, Util.clone(idsIn.get(0)));
     } else {
       BasicDBObject filteredQuery = new BasicDBObject();
       for (String key : q.keySet()) {
@@ -563,7 +563,7 @@ public class FongoDBCollection extends DBCollection {
     } else {
       ret = new BasicDBObject();
       if (!wasIdExcluded) {
-        ret.append(ID_KEY, Util.clone(null, result.get(ID_KEY)));
+        ret.append(ID_KEY, Util.clone(result.get(ID_KEY)));
       }
     }
 

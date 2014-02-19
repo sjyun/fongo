@@ -1,7 +1,11 @@
 package com.github.fakemongo.impl;
 
+import com.mongodb.BasicDBList;
+import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
-import com.mongodb.DBRef;
+import com.mongodb.DBObject;
+import com.mongodb.FongoDBCollection;
+import com.mongodb.gridfs.GridFSFile;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -10,15 +14,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import org.bson.LazyBSONObject;
 import org.bson.LazyDBList;
-
-import com.mongodb.BasicDBList;
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBObject;
-import com.mongodb.FongoDBCollection;
-import com.mongodb.gridfs.GridFSFile;
 import org.bson.types.Binary;
 
 public final class Util {
@@ -142,17 +139,12 @@ public final class Util {
     return true;
   }
 
-  public static Object clone(DB db, Object source) {
+  public static Object clone(Object source) {
     if (source instanceof DBObject) {
       return clone((DBObject) source);
     }
     if (source instanceof Binary) {
       return ((Binary) source).getData().clone();
-    }
-    if (source instanceof DBRef) {
-      DBRef dbRef = (DBRef) source;
-      DB notNullDB = Util.firstNotNull(dbRef.getDB(), db);
-      return new DBRef(notNullDB, dbRef.getRef(), dbRef.getId());
     }
 //    if(source instanceof Cloneable) {
 //      return ((Cloneable) source).clone();
@@ -255,7 +247,7 @@ public final class Util {
         if (val instanceof DBObject) {
           newobj.put(field, Util.clone((DBObject) val));
         } else {
-          newobj.put(field, Util.clone(db, val));
+          newobj.put(field, Util.clone(val));
         }
       }
     }
