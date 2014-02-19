@@ -431,6 +431,12 @@ public class FongoDBCollection extends DBCollection {
           if (nonIdCollection) {
             clonedDbo.removeField(ID_KEY);
           }
+          for (String key : clonedDbo.keySet()) {
+			Object value = clonedDbo.get(key);
+			if (value instanceof DBRef && ((DBRef)value).getDB() == null) {
+				clonedDbo.put(key, new DBRef(this.getDB(),((DBRef) value).getRef(), ((DBRef) value).getId()));
+			}
+          }
           results.add(clonedDbo);
         }
       }
