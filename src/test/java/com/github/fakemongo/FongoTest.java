@@ -352,6 +352,35 @@ public class FongoTest {
   }
 
   @Test
+  public void testFindWithWhere() {
+    DBCollection collection = newCollection();
+    collection.insert(new BasicDBObject("_id", 1).append("say", "hi").append("n", 3),
+                      new BasicDBObject("_id", 2).append("say", "hello").append("n", 5));
+
+    DBCursor cursor = collection.find(new BasicDBObject("$where", "this.say == 'hello'"));
+    assertEquals(Arrays.asList(
+       new BasicDBObject("_id", 2).append("say", "hello").append("n", 5)
+    ), cursor.toArray());
+
+    cursor = collection.find(new BasicDBObject("$where", "this.n < 4"));
+    assertEquals(Arrays.asList(
+       new BasicDBObject("_id", 1).append("say", "hi").append("n", 3)
+    ), cursor.toArray());
+  }
+
+  @Test
+  public void findWithEmptyQueryFieldValue() {
+    DBCollection collection = newCollection();
+    collection.insert(new BasicDBObject("_id", 1).append("a", 2));
+    collection.insert(new BasicDBObject("_id", 2).append("a", new BasicDBObject()));
+
+    DBCursor cursor = collection.find(new BasicDBObject("a", new BasicDBObject()));
+    assertEquals(Arrays.asList(
+       new BasicDBObject("_id", 2).append("a", new BasicDBObject())
+    ), cursor.toArray());
+  }
+
+  @Test
   public void testIdInQueryResultsInIndexOrder() {
     DBCollection collection = newCollection();
     collection.insert(new BasicDBObject("_id", 4));
@@ -630,6 +659,35 @@ public class FongoTest {
         new BasicDBObject("_id", 2).append("n", 1)
     ), results);
 
+  }
+
+  @Test
+  public void testUpdateWithOneRename() {
+    DBCollection collection = newCollection();
+    collection.insert(new BasicDBObject("_id", 1).append("a", new BasicDBObject("b", 1)));
+    collection.update(new BasicDBObject("_id", 1), new BasicDBObject("$rename", new BasicDBObject("a.b", "a.c")));
+    List<DBObject> results = collection.find().toArray();
+    assertEquals(Arrays.asList(
+      new BasicDBObject("_id", 1).append("a", new BasicDBObject("c", 1))
+    ), results);
+  }
+
+  @Test
+  public void testUpdateWithMultipleRenames() {
+    DBCollection collection = newCollection();
+    collection.insert(new BasicDBObject("_id", 1).append("a", new BasicDBObject("b", 1))
+                                                 .append("x", 3)
+                                                 .append("h", new BasicDBObject("i", 8)));
+    collection.update(new BasicDBObject("_id", 1), new BasicDBObject("$rename", new BasicDBObject("a.b", "a.c")
+                                                                                          .append("x", "y")
+                                                                                          .append("h.i", "u.r")));
+    List<DBObject> results = collection.find().toArray();
+    assertEquals(Arrays.asList(
+      new BasicDBObject("_id", 1).append("a", new BasicDBObject("c", 1))
+                                 .append("y", 3)
+                                 .append("u", new BasicDBObject("r", 8))
+                                 .append("h", new BasicDBObject())
+    ), results);
   }
 
   @Test
