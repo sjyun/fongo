@@ -1,5 +1,16 @@
 package com.mongodb;
 
+import com.github.fakemongo.FongoException;
+import com.github.fakemongo.impl.ExpressionParser;
+import com.github.fakemongo.impl.Filter;
+import com.github.fakemongo.impl.Tuple2;
+import com.github.fakemongo.impl.UpdateEngine;
+import com.github.fakemongo.impl.Util;
+import com.github.fakemongo.impl.geo.GeoUtil;
+import com.github.fakemongo.impl.geo.LatLong;
+import com.github.fakemongo.impl.index.GeoIndex;
+import com.github.fakemongo.impl.index.IndexAbstract;
+import com.github.fakemongo.impl.index.IndexFactory;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -14,17 +25,6 @@ import java.util.Set;
 import org.bson.BSON;
 import org.bson.types.Binary;
 import org.bson.types.ObjectId;
-import com.github.fakemongo.FongoException;
-import com.github.fakemongo.impl.ExpressionParser;
-import com.github.fakemongo.impl.Filter;
-import com.github.fakemongo.impl.Tuple2;
-import com.github.fakemongo.impl.UpdateEngine;
-import com.github.fakemongo.impl.Util;
-import com.github.fakemongo.impl.geo.GeoUtil;
-import com.github.fakemongo.impl.geo.LatLong;
-import com.github.fakemongo.impl.index.GeoIndex;
-import com.github.fakemongo.impl.index.IndexAbstract;
-import com.github.fakemongo.impl.index.IndexFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -84,6 +84,7 @@ public class FongoDBCollection extends DBCollection {
         LOG.debug("insert: " + cloned);
       }
       ObjectId id = putIdIfNotPresent(cloned);
+      // Save the id field in the caller.
       if (!(obj instanceof LazyDBObject) && obj.get(ID_KEY) == null) {
         obj.put(ID_KEY, Util.clone(id));
       }
@@ -382,18 +383,25 @@ public class FongoDBCollection extends DBCollection {
    * note: decoder, readPref, options are ignored
    */
   @Override
-  synchronized Iterator<DBObject> __find(DBObject ref, DBObject fields, int numToSkip, int batchSize, int limit,
+  synchronized Iterator<DBObject> __find(final DBObject pRef, DBObject fields, int numToSkip, int batchSize, int limit,
                                          int options,
                                          ReadPreference readPref, DBDecoder decoder) throws MongoException {
-    ref = filterLists(ref);
+    DBObject ref = filterLists(pRef);
+    long maxScan = Long.MAX_VALUE;
+//    ref = filterLists(ref);
     if (LOG.isDebugEnabled()) {
       LOG.debug("find({}, {}).skip({}).limit({})", ref, fields, numToSkip, limit);
-      LOG.debug("the db looks like {}", _idIndex.values());
+      LOG.debug("the db {} looks like {}", this.getDB().getName(), _idIndex.size());
     }
 
     DBObject orderby = null;
-    if (ref.containsField("$query") && ref.containsField("$orderby")) {
+    if (ref.containsField("$orderby")) {
       orderby = (DBObject) ref.get("$orderby");
+    }
+    if (ref.containsField("$maxScan")) {
+      maxScan = ((Number) ref.get("$maxScan")).longValue();
+    }
+    if (ref.containsField("$query")) {
       ref = (DBObject) ref.get("$query");
     }
 
@@ -422,7 +430,7 @@ public class FongoDBCollection extends DBCollection {
     }
     int seen = 0;
     Iterable<DBObject> objectsToSearch = sortObjects(orderby, objectsFromIndex);
-    for (Iterator<DBObject> iter = objectsToSearch.iterator(); iter.hasNext() && foundCount <= upperLimit; ) {
+    for (Iterator<DBObject> iter = objectsToSearch.iterator(); iter.hasNext() && foundCount <= upperLimit && maxScan-- > 0; ) {
       DBObject dbo = iter.next();
       if (filter.apply(dbo)) {
         if (seen++ >= numToSkip) {
@@ -430,6 +438,12 @@ public class FongoDBCollection extends DBCollection {
           DBObject clonedDbo = Util.clone(dbo);
           if (nonIdCollection) {
             clonedDbo.removeField(ID_KEY);
+          }
+          for (String key : clonedDbo.keySet()) {
+            Object value = clonedDbo.get(key);
+            if (value instanceof DBRef && ((DBRef) value).getDB() == null) {
+              clonedDbo.put(key, new DBRef(this.getDB(), ((DBRef) value).getRef(), ((DBRef) value).getId()));
+            }
           }
           results.add(clonedDbo);
         }
@@ -514,6 +528,9 @@ public class FongoDBCollection extends DBCollection {
    * TODO: Support for projection operators: http://docs.mongodb.org/manual/reference/operator/projection/
    */
   public static DBObject applyProjections(DBObject result, DBObject projectionObject) {
+    if (projectionObject == null) {
+      return Util.cloneIdFirst(result);
+    }
 
     int inclusionCount = 0;
     int exclusionCount = 0;
@@ -640,6 +657,7 @@ public class FongoDBCollection extends DBCollection {
 
   @Override
   public synchronized DBObject findAndModify(DBObject query, DBObject fields, DBObject sort, boolean remove, DBObject update, boolean returnNew, boolean upsert) {
+    LOG.debug("findAndModify({}, {}, {}, {}, {}, {}, {}", query, fields, sort, remove, update, returnNew, upsert);
     query = filterLists(query);
     update = filterLists(update);
     Filter filter = expressionParser.buildFilter(query);
@@ -662,7 +680,7 @@ public class FongoDBCollection extends DBCollection {
       }
     }
     if (beforeObject != null && !returnNew) {
-      return beforeObject;
+      return applyProjections(beforeObject, fields);
     }
     if (beforeObject == null && upsert && !remove) {
       beforeObject = new BasicDBObject();
@@ -670,9 +688,9 @@ public class FongoDBCollection extends DBCollection {
       fInsert(updateEngine.doUpdate(afterObject, update, query), getWriteConcern());
     }
     if (returnNew) {
-      return Util.clone(afterObject);
+      return applyProjections(afterObject, fields);
     } else {
-      return Util.clone(beforeObject);
+      return applyProjections(beforeObject, fields);
     }
   }
 
