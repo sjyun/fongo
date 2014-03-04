@@ -1,5 +1,20 @@
 package com.github.fakemongo;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import java.util.Arrays;
+import java.util.List;
+
+import com.github.fakemongo.junit.FongoRule;
+import org.junit.Ignore;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
+import org.junit.rules.RuleChain;
+
 import com.github.fakemongo.impl.Util;
 import com.github.fakemongo.impl.index.IndexAbstract;
 import com.mongodb.BasicDBObject;
@@ -9,17 +24,6 @@ import com.mongodb.DBObject;
 import com.mongodb.FongoDBCollection;
 import com.mongodb.MongoException;
 import com.mongodb.WriteConcernException;
-import java.util.Arrays;
-import java.util.List;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-import org.junit.rules.RuleChain;
 
 public class FongoIndexTest {
 
@@ -199,6 +203,29 @@ public class FongoIndexTest {
   public void testUpdateObjectOnUniqueIndex() {
     DBCollection collection = fongoRule.newCollection();
     collection.ensureIndex(new BasicDBObject("n", 1), "n_1", true);
+
+    collection.insert(new BasicDBObject("n", 1));
+    collection.insert(new BasicDBObject("n", 2));
+
+    // Update same.
+    try {
+      collection.update(new BasicDBObject("n", 2), new BasicDBObject("n", 1));
+      fail("Must send MongoException");
+    } catch (MongoException me) {
+      assertEquals(11000, me.getCode());
+    }
+
+    assertEquals(1, collection.count(new BasicDBObject("n", 2)));
+    assertEquals(1, collection.count(new BasicDBObject("n", 1)));
+  }
+
+  /**
+   * Try to update an object but with same value as existing.
+   */
+  @Test
+  public void testUpdateObjectOnUniqueIndexWithCreatingWithOption() {
+    DBCollection collection = fongoRule.newCollection();
+    collection.ensureIndex(new BasicDBObject("n", 1), new BasicDBObject("unique", 1));
 
     collection.insert(new BasicDBObject("n", 1));
     collection.insert(new BasicDBObject("n", 2));
