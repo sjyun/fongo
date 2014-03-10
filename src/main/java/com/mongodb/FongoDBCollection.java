@@ -572,6 +572,9 @@ public class FongoDBCollection extends DBCollection {
       ret = new BasicDBObject();
       if (!wasIdExcluded) {
         ret.append(ID_KEY, Util.clone(result.get(ID_KEY)));
+      } else if (inclusionCount == 0) {
+        ret = (BasicDBObject) Util.clone(result);
+        ret.removeField(ID_KEY);
       }
     }
 
