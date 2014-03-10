@@ -271,6 +271,18 @@ public class FongoTest {
     assertEquals("should return all documents", 5, cursor4.toArray().size());
   }
 
+  @Test
+  public void testFindExcludingOnlyId() {
+    DBCollection collection = newCollection();
+
+    collection.insert(new BasicDBObject("_id", "1").append("a", 1));
+    collection.insert(new BasicDBObject("_id", "2").append("a", 2));
+
+    DBCursor cursor = collection.find(new BasicDBObject(), new BasicDBObject("_id", 0));
+    assertEquals("should have 2 documents", 2, cursor.toArray().size());
+    assertEquals(Arrays.asList(new BasicDBObject("a", 1), new BasicDBObject("a", 2)), cursor.toArray());
+  }
+
   // See http://docs.mongodb.org/manual/reference/operator/elemMatch/
   @Test
   public void testFindElemMatch() {
