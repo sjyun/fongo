@@ -532,8 +532,8 @@ public class FongoDBCollection extends DBCollection {
     List<Tuple2<List<String>, Boolean>> projections = new ArrayList<Tuple2<List<String>, Boolean>>();
     for (String projectionKey : projectionObject.keySet()) {
       final Object projectionValue = projectionObject.get(projectionKey);
-      Boolean included = false;
-      Boolean project = false;
+      boolean included = false;
+      boolean project = false;
       if (projectionValue instanceof Number) {
         included = ((Number) projectionValue).intValue() > 0;
       } else if (projectionValue instanceof Boolean) {
@@ -597,19 +597,36 @@ public class FongoDBCollection extends DBCollection {
           continue;
         }
         final Object projectionValue = projectionObject.get(projectionKey);
-        final Boolean isElemMatch = ((BasicDBObject) projectionObject.get(projectionKey)).containsField("$elemMatch");
+        final boolean isElemMatch = 
+                ((BasicDBObject) projectionObject.get(projectionKey)).containsField(QueryOperators.ELEM_MATCH);
         if (isElemMatch) {
           ret.removeField(projectionKey);
           List searchIn = ((BasicDBList) result.get(projectionKey));
-          DBObject searchFor = (BasicDBObject) ((BasicDBObject) projectionObject.get(projectionKey)).get("$elemMatch");
+          DBObject searchFor = 
+                  (BasicDBObject)((BasicDBObject) projectionObject.get(projectionKey)).get(QueryOperators.ELEM_MATCH);
           String searchKey = (String) searchFor.keySet().toArray()[0];
-          Object searchValue = searchFor.get(searchKey);
           int pos = -1;
-          for (int i = 0; i < searchIn.size(); i++) {
-            DBObject fieldToSearch = (BasicDBObject) searchIn.get(i);
-            if (fieldToSearch.containsField(searchKey) && fieldToSearch.get(searchKey).equals(searchValue)){
-              pos = i;
-              break;
+          for (int i = 0; i < searchIn.size(); i++) {       
+            boolean matches = false;
+            DBObject fieldToSearch = (BasicDBObject) searchIn.get(i);  
+            if (fieldToSearch.containsField(searchKey)){
+              if(searchFor.get(searchKey) instanceof ObjectId
+                      && fieldToSearch.get(searchKey) instanceof String){
+                ObjectId m1 = new ObjectId(searchFor.get(searchKey).toString());
+                ObjectId m2 = new ObjectId(String.valueOf(fieldToSearch.get(searchKey)));
+                matches = m1.equals(m2);
+              } else if(searchFor.get(searchKey) instanceof String 
+                      && fieldToSearch.get(searchKey) instanceof ObjectId){
+                ObjectId m1 = new ObjectId(String.valueOf(searchFor.get(searchKey)));
+                ObjectId m2 = new ObjectId(fieldToSearch.get(searchKey).toString());
+                matches = m1.equals(m2);
+              } else {
+                matches = fieldToSearch.get(searchKey).equals(searchFor.get(searchKey));
+              }
+              if(matches){
+                pos = i;
+                break;
+              }
             }
           }
           if (pos != -1) {
