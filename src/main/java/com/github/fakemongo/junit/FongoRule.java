@@ -129,4 +129,12 @@ public class FongoRule extends ExternalResource {
     return fongo;
   }
 
+  public DB getDb() {
+     return this.db;
+  }
+
+  public Mongo getMongo() {
+    return this.mongo;
+  }
+
 }
