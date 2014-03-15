@@ -1986,8 +1986,8 @@ public class FongoTest {
 
 
     // When
-    List<DBObject> result = collection.find(fongoRule.parseDBObject("{ zipcode: 63109 }"),
-        fongoRule.parseDBObject("{ students: { $elemMatch: { school: 102 } } }")).toArray();
+    List<DBObject> result = collection.find(fongoRule.parseDBObject("{ zipcode: 63109 },\n"
+            + "{ students: { $elemMatch: { school: 102 } } }")).toArray();
 
     // Then
     assertEquals(fongoRule.parseList("[{ \"_id\" : 1, \"students\" : [ { \"name\" : \"john\", \"school\" : 102, \"age\" : 10 } ] },\n" +
