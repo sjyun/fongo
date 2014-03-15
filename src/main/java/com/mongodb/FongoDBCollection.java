@@ -1,13 +1,5 @@
 package com.mongodb;
 
-import java.util.*;
-
-import org.bson.BSON;
-import org.bson.types.Binary;
-import org.bson.types.ObjectId;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.github.fakemongo.FongoException;
 import com.github.fakemongo.impl.ExpressionParser;
 import com.github.fakemongo.impl.Filter;
@@ -19,6 +11,22 @@ import com.github.fakemongo.impl.geo.LatLong;
 import com.github.fakemongo.impl.index.GeoIndex;
 import com.github.fakemongo.impl.index.IndexAbstract;
 import com.github.fakemongo.impl.index.IndexFactory;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
+import java.util.Set;
+import org.bson.BSON;
+import org.bson.types.Binary;
+import org.bson.types.ObjectId;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * fongo override of com.mongodb.DBCollection
@@ -481,7 +489,9 @@ public class FongoDBCollection extends DBCollection {
 
     for (DBObject result : results) {
       DBObject projectionMacthedResult = applyProjections(result, projection);
-      if(null != projectionMacthedResult)ret.add(projectionMacthedResult);
+      if (null != projectionMacthedResult) {
+        ret.add(projectionMacthedResult);
+      }
     }
 
     return ret;
@@ -527,7 +537,7 @@ public class FongoDBCollection extends DBCollection {
 
     int inclusionCount = 0;
     int exclusionCount = 0;
-    List<String> projectionFields = new ArrayList();
+    List<String> projectionFields = new ArrayList<String>();
 
     boolean wasIdExcluded = false;
     List<Tuple2<List<String>, Boolean>> projections = new ArrayList<Tuple2<List<String>, Boolean>>();
@@ -538,7 +548,7 @@ public class FongoDBCollection extends DBCollection {
       if (projectionValue instanceof Number) {
         included = ((Number) projectionValue).intValue() > 0;
       } else if (projectionValue instanceof Boolean) {
-        included = ((Boolean) projectionValue).booleanValue();
+        included = (Boolean) projectionValue;
       } else if (projectionValue instanceof DBObject) {
         project = true;
         projectionFields.add(projectionKey);
@@ -598,33 +608,33 @@ public class FongoDBCollection extends DBCollection {
           continue;
         }
         final Object projectionValue = projectionObject.get(projectionKey);
-        final boolean isElemMatch = 
-                ((BasicDBObject) projectionObject.get(projectionKey)).containsField(QueryOperators.ELEM_MATCH);
+        final boolean isElemMatch =
+            ((BasicDBObject) projectionObject.get(projectionKey)).containsField(QueryOperators.ELEM_MATCH);
         if (isElemMatch) {
           ret.removeField(projectionKey);
           List searchIn = ((BasicDBList) result.get(projectionKey));
-          DBObject searchFor = 
-                  (BasicDBObject)((BasicDBObject) projectionObject.get(projectionKey)).get(QueryOperators.ELEM_MATCH);
+          DBObject searchFor =
+              (BasicDBObject) ((BasicDBObject) projectionObject.get(projectionKey)).get(QueryOperators.ELEM_MATCH);
           String searchKey = (String) searchFor.keySet().toArray()[0];
           int pos = -1;
-          for (int i = 0; i < searchIn.size(); i++) {       
-            boolean matches = false;
-            DBObject fieldToSearch = (BasicDBObject) searchIn.get(i);  
-            if (fieldToSearch.containsField(searchKey)){
-              if(searchFor.get(searchKey) instanceof ObjectId
-                      && fieldToSearch.get(searchKey) instanceof String){
+          for (int i = 0; i < searchIn.size(); i++) {
+            boolean matches;
+            DBObject fieldToSearch = (BasicDBObject) searchIn.get(i);
+            if (fieldToSearch.containsField(searchKey)) {
+              if (searchFor.get(searchKey) instanceof ObjectId
+                  && fieldToSearch.get(searchKey) instanceof String) {
                 ObjectId m1 = new ObjectId(searchFor.get(searchKey).toString());
                 ObjectId m2 = new ObjectId(String.valueOf(fieldToSearch.get(searchKey)));
                 matches = m1.equals(m2);
-              } else if(searchFor.get(searchKey) instanceof String 
-                      && fieldToSearch.get(searchKey) instanceof ObjectId){
+              } else if (searchFor.get(searchKey) instanceof String
+                  && fieldToSearch.get(searchKey) instanceof ObjectId) {
                 ObjectId m1 = new ObjectId(String.valueOf(searchFor.get(searchKey)));
                 ObjectId m2 = new ObjectId(fieldToSearch.get(searchKey).toString());
                 matches = m1.equals(m2);
               } else {
                 matches = fieldToSearch.get(searchKey).equals(searchFor.get(searchKey));
               }
-              if(matches){
+              if (matches) {
                 pos = i;
                 break;
               }
@@ -632,7 +642,7 @@ public class FongoDBCollection extends DBCollection {
           }
           if (pos != -1) {
             BasicDBList append = new BasicDBList();
-            append.add((BasicDBObject) searchIn.get(pos));
+            append.add(searchIn.get(pos));
             ret.append(projectionKey, append);
             LOG.debug("$elemMatch projection of field \"{}\", gave result: {} ({})", projectionKey, ret, ret.getClass());
           }
