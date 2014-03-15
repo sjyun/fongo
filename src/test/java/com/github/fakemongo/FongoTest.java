@@ -43,7 +43,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.slf4j.LoggerFactory;
@@ -1852,8 +1851,53 @@ public class FongoTest {
 
   // See http://docs.mongodb.org/manual/reference/operator/projection/elemMatch/
   @Test
-  @Ignore
   public void projection_elemMatch() {
+    // Given
+    DBCollection collection = newCollection();
+    this.fongoRule.insertJSON(collection, "[{\n"
+        + " _id: 1,\n"
+        + " zipcode: 63109,\n"
+        + " students: [\n"
+        + "              { name: \"john\"},\n"
+        + "              { name: \"jess\"},\n"
+        + "              { name: \"jeff\"}\n"
+        + "           ]\n"
+        + "}\n,"
+        + "{\n"
+        + " _id: 2,\n"
+        + " zipcode: 63110,\n"
+        + " students: [\n"
+        + "              { name: \"ajax\"},\n"
+        + "              { name: \"achilles\"}\n"
+        + "           ]\n"
+        + "}\n,"
+        + "{\n"
+        + " _id: 3,\n"
+        + " zipcode: 63109,\n"
+        + " students: [\n"
+        + "              { name: \"ajax\"},\n"
+        + "              { name: \"achilles\"}\n"
+        + "           ]\n"
+        + "}\n,"
+        + "{\n"
+        + " _id: 4,\n"
+        + " zipcode: 63109,\n"
+        + " students: [\n"
+        + "              { name: \"barney\"}\n"
+        + "           ]\n"
+        + "}]\n");
+
+    // When
+    List<DBObject> result = collection.find(fongoRule.parseDBObject("{ zipcode: 63109 },\n"),
+        fongoRule.parseDBObject("{ students: { $elemMatch: { name: \"achilles\" } } }")).toArray();
+
+    // Then
+    assertEquals(fongoRule.parseList("[{ \"_id\" : 1}, "
+        + "{ \"_id\" : 3, \"students\" : [ { name: \"achilles\"} ] }, { \"_id\" : 4}]"), result);
+	}
+
+	@Test
+	public void projection_elemMatchWithBigSubdocument() {
     // Given
     DBCollection collection = newCollection();
     this.fongoRule.insertJSON(collection, "[{\n" +
@@ -1891,8 +1935,8 @@ public class FongoTest {
 
 
     // When
-    List<DBObject> result = collection.find(fongoRule.parseDBObject("{ zipcode: 63109 },\n" +
-        "                 { students: { $elemMatch: { school: 102 } } }")).toArray();
+    List<DBObject> result = collection.find(fongoRule.parseDBObject("{ zipcode: 63109 }"),
+        fongoRule.parseDBObject("{ students: { $elemMatch: { school: 102 } } }")).toArray();
 
     // Then
     assertEquals(fongoRule.parseList("[{ \"_id\" : 1, \"students\" : [ { \"name\" : \"john\", \"school\" : 102, \"age\" : 10 } ] },\n" +

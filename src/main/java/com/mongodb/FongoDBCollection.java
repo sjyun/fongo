@@ -480,7 +480,8 @@ public class FongoDBCollection extends DBCollection {
     final List<DBObject> ret = new ArrayList<DBObject>(results.size());
 
     for (DBObject result : results) {
-      ret.add(applyProjections(result, projection));
+      DBObject projectionMacthedResult = applyProjections(result, projection);
+      if(null != projectionMacthedResult)ret.add(projectionMacthedResult);
     }
 
     return ret;
@@ -643,7 +644,6 @@ public class FongoDBCollection extends DBCollection {
           throw new IllegalArgumentException(msg);
         }
       }
-
     }
 
     return ret;
