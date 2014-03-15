@@ -271,6 +271,18 @@ public class FongoTest {
     assertEquals("should return all documents", 5, cursor4.toArray().size());
   }
 
+  @Test
+  public void testFindExcludingOnlyId() {
+    DBCollection collection = newCollection();
+
+    collection.insert(new BasicDBObject("_id", "1").append("a", 1));
+    collection.insert(new BasicDBObject("_id", "2").append("a", 2));
+
+    DBCursor cursor = collection.find(new BasicDBObject(), new BasicDBObject("_id", 0));
+    assertEquals("should have 2 documents", 2, cursor.toArray().size());
+    assertEquals(Arrays.asList(new BasicDBObject("a", 1), new BasicDBObject("a", 2)), cursor.toArray());
+  }
+
   // See http://docs.mongodb.org/manual/reference/operator/elemMatch/
   @Test
   public void testFindElemMatch() {
@@ -1840,8 +1852,53 @@ public class FongoTest {
 
   // See http://docs.mongodb.org/manual/reference/operator/projection/elemMatch/
   @Test
-  @Ignore
   public void projection_elemMatch() {
+    // Given
+    DBCollection collection = newCollection();
+    this.fongoRule.insertJSON(collection, "[{\n"
+        + " _id: 1,\n"
+        + " zipcode: 63109,\n"
+        + " students: [\n"
+        + "              { name: \"john\"},\n"
+        + "              { name: \"jess\"},\n"
+        + "              { name: \"jeff\"}\n"
+        + "           ]\n"
+        + "}\n,"
+        + "{\n"
+        + " _id: 2,\n"
+        + " zipcode: 63110,\n"
+        + " students: [\n"
+        + "              { name: \"ajax\"},\n"
+        + "              { name: \"achilles\"}\n"
+        + "           ]\n"
+        + "}\n,"
+        + "{\n"
+        + " _id: 3,\n"
+        + " zipcode: 63109,\n"
+        + " students: [\n"
+        + "              { name: \"ajax\"},\n"
+        + "              { name: \"achilles\"}\n"
+        + "           ]\n"
+        + "}\n,"
+        + "{\n"
+        + " _id: 4,\n"
+        + " zipcode: 63109,\n"
+        + " students: [\n"
+        + "              { name: \"barney\"}\n"
+        + "           ]\n"
+        + "}]\n");
+
+    // When
+    List<DBObject> result = collection.find(fongoRule.parseDBObject("{ zipcode: 63109 },\n"),
+        fongoRule.parseDBObject("{ students: { $elemMatch: { name: \"achilles\" } } }")).toArray();
+
+    // Then
+    assertEquals(fongoRule.parseList("[{ \"_id\" : 1}, "
+        + "{ \"_id\" : 3, \"students\" : [ { name: \"achilles\"} ] }, { \"_id\" : 4}]"), result);
+	}
+
+	@Test
+	public void projection_elemMatchWithBigSubdocument() {
     // Given
     DBCollection collection = newCollection();
     this.fongoRule.insertJSON(collection, "[{\n" +
@@ -1879,8 +1936,58 @@ public class FongoTest {
 
 
     // When
-    List<DBObject> result = collection.find(fongoRule.parseDBObject("{ zipcode: 63109 },\n" +
-        "                 { students: { $elemMatch: { school: 102 } } }")).toArray();
+    List<DBObject> result = collection.find(fongoRule.parseDBObject("{ zipcode: 63109 }"),
+        fongoRule.parseDBObject("{ students: { $elemMatch: { school: 102 } } }")).toArray();
+
+    // Then
+    assertEquals(fongoRule.parseList("[{ \"_id\" : 1, \"students\" : [ { \"name\" : \"john\", \"school\" : 102, \"age\" : 10 } ] },\n" +
+        "{ \"_id\" : 3 },\n" +
+        "{ \"_id\" : 4, \"students\" : [ { \"name\" : \"barney\", \"school\" : 102, \"age\" : 7 } ] }]"), result);
+  }
+  
+    // See http://docs.mongodb.org/manual/reference/operator/query/elemMatch/
+  @Test
+  @Ignore
+	public void query_elemMatch() {
+    // Given
+    DBCollection collection = newCollection();
+    this.fongoRule.insertJSON(collection, "[{\n" +
+        " _id: 1,\n" +
+        " zipcode: 63109,\n" +
+        " students: [\n" +
+        "              { name: \"john\", school: 102, age: 10 },\n" +
+        "              { name: \"jess\", school: 102, age: 11 },\n" +
+        "              { name: \"jeff\", school: 108, age: 15 }\n" +
+        "           ]\n" +
+        "}\n," +
+        "{\n" +
+        " _id: 2,\n" +
+        " zipcode: 63110,\n" +
+        " students: [\n" +
+        "              { name: \"ajax\", school: 100, age: 7 },\n" +
+        "              { name: \"achilles\", school: 100, age: 8 }\n" +
+        "           ]\n" +
+        "}\n," +
+        "{\n" +
+        " _id: 3,\n" +
+        " zipcode: 63109,\n" +
+        " students: [\n" +
+        "              { name: \"ajax\", school: 100, age: 7 },\n" +
+        "              { name: \"achilles\", school: 100, age: 8 }\n" +
+        "           ]\n" +
+        "}\n," +
+        "{\n" +
+        " _id: 4,\n" +
+        " zipcode: 63109,\n" +
+        " students: [\n" +
+        "              { name: \"barney\", school: 102, age: 7 }\n" +
+        "           ]\n" +
+        "}]\n");
+
+
+    // When
+    List<DBObject> result = collection.find(fongoRule.parseDBObject("{ zipcode: 63109 },\n"
+            + "{ students: { $elemMatch: { school: 102 } } }")).toArray();
 
     // Then
     assertEquals(fongoRule.parseList("[{ \"_id\" : 1, \"students\" : [ { \"name\" : \"john\", \"school\" : 102, \"age\" : 10 } ] },\n" +
