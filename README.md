@@ -150,3 +150,4 @@ your name to the patch contributers below. Please maintain the same code formatt
 * [lldata](https://github.com/lldata)
 * [renej-github](https://github.com/renej-github)
 * [mathieubodin](https://github.com/mathieubodin)
+* [elennaro](https://github.com/elennaro)
