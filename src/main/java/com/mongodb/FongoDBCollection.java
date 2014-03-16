@@ -38,6 +38,8 @@ public class FongoDBCollection extends DBCollection {
   private final static Logger LOG = LoggerFactory.getLogger(FongoDBCollection.class);
 
   public static final String ID_KEY = "_id";
+
+  private static final String ID_NAME_INDEX = "_id_";
   private final FongoDB fongoDb;
   private final ExpressionParser expressionParser;
   private final UpdateEngine updateEngine;
@@ -56,6 +58,9 @@ public class FongoDBCollection extends DBCollection {
     this.objectComparator = expressionParser.buildObjectComparator(true);
     this._idIndex = IndexFactory.create("_id", new BasicDBObject("_id", 1), true);
     this.indexes.add(_idIndex);
+    if (!this.nonIdCollection) {
+      this.createIndex(new BasicDBObject("_id", 1), new BasicDBObject("name", ID_NAME_INDEX));
+    }
   }
 
   private CommandResult insertResult(int updateCount) {
@@ -350,7 +355,7 @@ public class FongoDBCollection extends DBCollection {
       if (!notUnique.isEmpty()) {
         // Duplicate key.
         if (enforceDuplicates(getWriteConcern())) {
-          fongoDb.errorResult(11000, "E11000 duplicate key error index: " + getFullName() + "." + rec.get("name") + "  dup key: { : " + notUnique + " }").throwOnError();
+          fongoDb.errorResult(11000, "E11000 duplicate key error index: " + getFullName() + ".$" + rec.get("name") + "  dup key: { : " + notUnique + " }").throwOnError();
         }
         return;
       }
@@ -799,7 +804,9 @@ public class FongoDBCollection extends DBCollection {
     List<DBObject> indexes = fongoDb.getCollection("system.indexes").find().toArray();
     // Two step for no concurrent modification exception
     for (DBObject index : indexes) {
-      dropIndexes(index.get("name").toString());
+      if (!ID_NAME_INDEX.equals(index.get("name").toString())) {
+        dropIndexes(index.get("name").toString());
+      }
     }
   }
 
@@ -876,7 +883,7 @@ public class FongoDBCollection extends DBCollection {
       if (!error.isEmpty()) {
         // TODO formatting : E11000 duplicate key error index: test.zip.$city_1_state_1_pop_1  dup key: { : "BARRE", : "MA", : 4546.0 }
         if (enforceDuplicates(concern)) {
-          fongoDb.errorResult(11000, "E11000 duplicate key error index: " + this.getFullName() + "." + index.getName() + "  dup key : {" + error + " }").throwOnError();
+          fongoDb.errorResult(11001, "E11000 duplicate key error index: " + this.getFullName() + "." + index.getName() + "  dup key : {" + error + " }").throwOnError();
         }
         return; // silently ignore.
       }

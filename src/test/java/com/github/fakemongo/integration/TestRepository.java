@@ -1,4 +1,4 @@
-package com.github.fakemongo;
+package com.github.fakemongo.integration;
 
 import org.springframework.data.mongodb.repository.MongoRepository;
 

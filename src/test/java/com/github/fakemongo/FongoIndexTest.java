@@ -1,22 +1,8 @@
 package com.github.fakemongo;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.util.Arrays;
-import java.util.List;
-
-import com.github.fakemongo.junit.FongoRule;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-import org.junit.rules.RuleChain;
-
 import com.github.fakemongo.impl.Util;
 import com.github.fakemongo.impl.index.IndexAbstract;
+import com.github.fakemongo.junit.FongoRule;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
@@ -24,6 +10,18 @@ import com.mongodb.DBObject;
 import com.mongodb.FongoDBCollection;
 import com.mongodb.MongoException;
 import com.mongodb.WriteConcernException;
+import java.util.Arrays;
+import java.util.List;
+import org.assertj.core.api.Assertions;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import org.junit.Ignore;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
+import org.junit.rules.RuleChain;
 
 public class FongoIndexTest {
 
@@ -42,6 +40,7 @@ public class FongoIndexTest {
     List<DBObject> indexes = collection.getIndexInfo();
     assertEquals(
         Arrays.asList(
+            new BasicDBObject("v", 1).append("key", new BasicDBObject("_id", 1)).append("ns", "db.coll").append("name", "_id_"),
             new BasicDBObject("v", 1).append("key", new BasicDBObject("n", 1)).append("ns", "db.coll").append("name", "n_1"),
             new BasicDBObject("v", 1).append("key", new BasicDBObject("b", 1)).append("ns", "db.coll").append("name", "b_1")
         ), indexes);
@@ -58,6 +57,7 @@ public class FongoIndexTest {
     List<DBObject> indexes = collection.getIndexInfo();
     assertEquals(
         Arrays.asList(
+            new BasicDBObject("v", 1).append("key", new BasicDBObject("_id", 1)).append("ns", "db.coll").append("name", "_id_"),
             new BasicDBObject("v", 1).append("key", new BasicDBObject("n", 1)).append("ns", "db.coll").append("name", "n_1")
         ), indexes);
   }
@@ -73,6 +73,7 @@ public class FongoIndexTest {
     List<DBObject> indexes = collection.getIndexInfo();
     assertEquals(
         Arrays.asList(
+            new BasicDBObject("v", 1).append("key", new BasicDBObject("_id", 1)).append("ns", "db.coll").append("name", "_id_"),
             new BasicDBObject("v", 1).append("key", new BasicDBObject("n", 1)).append("ns", "db.coll").append("name", "n_1")
         ), indexes);
   }
@@ -85,6 +86,7 @@ public class FongoIndexTest {
     List<DBObject> indexes = collection.getIndexInfo();
     assertEquals(
         Arrays.asList(
+            new BasicDBObject("v", 1).append("key", new BasicDBObject("_id", 1)).append("ns", "db.coll").append("name", "_id_"),
             new BasicDBObject("v", 1).append("key", new BasicDBObject("n", 1)).append("ns", "db.coll").append("name", "n_1"),
             new BasicDBObject("v", 1).append("key", new BasicDBObject("n", -1)).append("ns", "db.coll").append("name", "n_-1")
         ), indexes);
@@ -98,6 +100,7 @@ public class FongoIndexTest {
     List<DBObject> indexes = collection.getIndexInfo();
     assertEquals(
         Arrays.asList(
+            new BasicDBObject("v", 1).append("key", new BasicDBObject("_id", 1)).append("ns", "db.coll").append("name", "_id_"),
             new BasicDBObject("v", 1).append("key", new BasicDBObject("n", 1)).append("ns", "db.coll").append("name", "n_1"),
             new BasicDBObject("v", 1).append("key", new BasicDBObject("n", -1)).append("ns", "db.coll").append("name", "n_-1")
         ), indexes);
@@ -114,6 +117,7 @@ public class FongoIndexTest {
     List<DBObject> indexes = collection.getIndexInfo();
     assertEquals(
         Arrays.asList(
+            new BasicDBObject("v", 1).append("key", new BasicDBObject("_id", 1)).append("ns", "db.coll").append("name", "_id_"),
             new BasicDBObject("v", 1).append("key", new BasicDBObject("n", 1)).append("ns", "db.coll").append("name", "n_1"),
             new BasicDBObject("v", 1).append("key", new BasicDBObject("b", 1)).append("ns", "db.coll").append("name", "b_1")
         ), indexes);
@@ -122,6 +126,7 @@ public class FongoIndexTest {
     indexes = collection.getIndexInfo();
     assertEquals(
         Arrays.asList(
+            new BasicDBObject("v", 1).append("key", new BasicDBObject("_id", 1)).append("ns", "db.coll").append("name", "_id_"),
             new BasicDBObject("v", 1).append("key", new BasicDBObject("b", 1)).append("ns", "db.coll").append("name", "b_1")
         ), indexes);
   }
@@ -135,13 +140,14 @@ public class FongoIndexTest {
     List<DBObject> indexes = collection.getIndexInfo();
     assertEquals(
         Arrays.asList(
+            new BasicDBObject("v", 1).append("key", new BasicDBObject("_id", 1)).append("ns", "db.coll").append("name", "_id_"),
             new BasicDBObject("v", 1).append("key", new BasicDBObject("n", 1)).append("ns", "db.coll").append("name", "n_1"),
             new BasicDBObject("v", 1).append("key", new BasicDBObject("b", 1)).append("ns", "db.coll").append("name", "b_1")
         ), indexes);
 
     collection.dropIndexes();
     indexes = collection.getIndexInfo();
-    assertEquals(0, indexes.size());
+    assertEquals(1, indexes.size());
   }
 
   // Data are already here, but duplicated.
@@ -156,8 +162,7 @@ public class FongoIndexTest {
       fail("need MongoException on duplicate key.");
     } catch (MongoException me) {
       assertEquals(11000, me.getCode());
-      assertTrue(me.getMessage() + " doesn't contains " + "E11000 duplicate key error index: " + collection.getFullName() + ".n_1  dup key: { : [[1]] }",
-          me.getMessage().contains("E11000 duplicate key error index: " + collection.getFullName() + ".n_1  dup key: { : [[1]] }")); // TODO [[ instead of " : \"1\""
+      Assertions.assertThat(me.getMessage()).contains("E11000 duplicate key error index: " + collection.getFullName() + ".$n_1  dup key: { : [[1]] }");// TODO [[ instead of " : \"1\""
     }
   }
 
@@ -212,7 +217,7 @@ public class FongoIndexTest {
       collection.update(new BasicDBObject("n", 2), new BasicDBObject("n", 1));
       fail("Must send MongoException");
     } catch (MongoException me) {
-      assertEquals(11000, me.getCode());
+      assertEquals(11001, me.getCode());
     }
 
     assertEquals(1, collection.count(new BasicDBObject("n", 2)));
@@ -235,7 +240,7 @@ public class FongoIndexTest {
       collection.update(new BasicDBObject("n", 2), new BasicDBObject("n", 1));
       fail("Must send MongoException");
     } catch (MongoException me) {
-      assertEquals(11000, me.getCode());
+      assertEquals(11001, me.getCode());
     }
 
     assertEquals(1, collection.count(new BasicDBObject("n", 2)));
@@ -254,7 +259,7 @@ public class FongoIndexTest {
     try {
       collection.insert(new BasicDBObject("date", 1));
     } catch (MongoException me) {
-      assertEquals(11000, me.getCode());
+      assertEquals(11001, me.getCode()); // TODO diff from mongo, need 11000
     }
   }
 
@@ -267,16 +272,18 @@ public class FongoIndexTest {
     collection.ensureIndex(new BasicDBObject("string", 1), "stringIndex", true);
 
     List<DBObject> indexInfos = collection.getIndexInfo();
-    assertEquals(3, indexInfos.size());
-    assertEquals("date_1", indexInfos.get(0).get("name"));
-    assertEquals("fieldIndex", indexInfos.get(1).get("name"));
-    assertEquals("stringIndex", indexInfos.get(2).get("name"));
+    assertEquals(4, indexInfos.size());
+    assertEquals("_id_", indexInfos.get(0).get("name"));
+    assertEquals("date_1", indexInfos.get(1).get("name"));
+    assertEquals("fieldIndex", indexInfos.get(2).get("name"));
+    assertEquals("stringIndex", indexInfos.get(3).get("name"));
 
     collection.dropIndex("fieldIndex");
     indexInfos = collection.getIndexInfo();
-    assertEquals(2, indexInfos.size());
-    assertEquals("date_1", indexInfos.get(0).get("name"));
-    assertEquals("stringIndex", indexInfos.get(1).get("name"));
+    assertEquals(3, indexInfos.size());
+    assertEquals("_id_", indexInfos.get(0).get("name"));
+    assertEquals("date_1", indexInfos.get(1).get("name"));
+    assertEquals("stringIndex", indexInfos.get(2).get("name"));
   }
 
   @Test
@@ -354,7 +361,8 @@ public class FongoIndexTest {
       collection.update(new BasicDBObject("_id", 2), new BasicDBObject("date", 1));
       fail("should throw MongoException");
     } catch (MongoException me) {
-      assertEquals(11000, me.getCode());
+      me.printStackTrace();
+      assertEquals(11001, me.getCode());
     }
 
     // Verify object is NOT modify
@@ -376,7 +384,7 @@ public class FongoIndexTest {
       collection.update(new BasicDBObject("date", 2), new BasicDBObject("date", 1));
       fail("should throw MongoException");
     } catch (MongoException me) {
-      assertEquals(11000, me.getCode());
+      assertEquals(11001, me.getCode());
     }
 
     // Verify object is NOT modify

@@ -1,12 +1,13 @@
-package com.github.fakemongo;
+package com.github.fakemongo.integration;
 
+import com.github.fakemongo.Fongo;
 import com.mongodb.Mongo;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Random;
 import org.bson.types.ObjectId;
+import org.junit.Assert;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import org.junit.Test;
@@ -30,7 +31,6 @@ import org.springframework.data.mongodb.repository.config.EnableMongoRepositorie
 import org.springframework.hateoas.Identifiable;
 
 public class SpringFongoTest {
-
 
   @Test
   public void dBRefFindWorks() {
@@ -90,7 +90,7 @@ public class SpringFongoTest {
     mongoRepository.save(referencedObject);
 
     // Then
-    assertEquals(referencedObject, mongoRepository.findOne(referencedObject.getId()));
+    Assert.assertEquals(referencedObject, mongoRepository.findOne(referencedObject.getId()));
   }
 
   @Test
