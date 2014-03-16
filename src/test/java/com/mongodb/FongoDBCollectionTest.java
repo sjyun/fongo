@@ -1,5 +1,6 @@
 package com.mongodb;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -191,4 +192,16 @@ public class FongoDBCollectionTest {
     assertTrue(r != object);
   }
 
+  @Test
+  public void setResultObjectClass() {
+    final BasicDBObject object = new BasicDBObject().append("_id", "_id")
+                                                     .append("a", "a")
+                                                     .append("b", "b");
+    collection.insert(object);
+    collection.setObjectClass(TestResultObject.class);
+
+    final TestResultObject result = (TestResultObject) collection.findAndModify(object, new BasicDBObject());
+    final String id = result.getEntityId();
+    assertThat(id).isEqualTo("_id");
+  }
 }
