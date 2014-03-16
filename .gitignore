@@ -14,3 +14,4 @@ test-output
 bin
 *.sublime-project
 *.sublime-workspace
+*.log
