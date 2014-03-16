@@ -361,7 +361,6 @@ public class FongoIndexTest {
       collection.update(new BasicDBObject("_id", 2), new BasicDBObject("date", 1));
       fail("should throw MongoException");
     } catch (MongoException me) {
-      me.printStackTrace();
       assertEquals(11001, me.getCode());
     }
 
