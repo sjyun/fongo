@@ -932,7 +932,7 @@ public class FongoDBCollection extends DBCollection {
 
   //see http://docs.mongodb.org/manual/tutorial/search-for-text/ for mongo v 2.4.9
   //NOTE: Languages support will not be implamented in Fongo yet
-  public synchronized DBObject text(String search, Number limit, String language) {
+  public synchronized DBObject text(String search, Number limit, DBObject project, String language) {
     LOG.debug("Will try to emulate text search on collection \"" + this.getFullName() + "\"");
     throw new UnsupportedOperationException("Not supported yet.");
   }
