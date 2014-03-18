@@ -3,9 +3,14 @@ package com.github.fakemongo.impl;
 import com.github.fakemongo.FongoException;
 import com.github.fakemongo.impl.geo.GeoUtil;
 import com.github.fakemongo.impl.geo.LatLong;
-import java.math.BigDecimal;
-import com.mongodb.*;
+import com.mongodb.BasicDBList;
+import com.mongodb.BasicDBObject;
+import com.mongodb.DBObject;
+import com.mongodb.DBRefBase;
+import com.mongodb.LazyDBObject;
+import com.mongodb.QueryOperators;
 import com.mongodb.util.JSON;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -23,10 +28,10 @@ import org.bson.types.Binary;
 import org.bson.types.MaxKey;
 import org.bson.types.MinKey;
 import org.bson.types.ObjectId;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ExpressionParser {
   private static final Logger LOG = LoggerFactory.getLogger(ExpressionParser.class);
@@ -52,7 +57,7 @@ public class ExpressionParser {
   public final static String NEAR_SPHERE = "$nearSphere";
   public final static String MAX_DISTANCE = "$maxDistance";
   public final static String ELEM_MATCH = QueryOperators.ELEM_MATCH;
-  public final static String WHERE = "$where";
+  public final static String WHERE = QueryOperators.WHERE;
 
   // TODO : http://docs.mongodb.org/manual/reference/operator/query-geospatial/
   // TODO : http://docs.mongodb.org/manual/reference/operator/geoWithin/#op._S_geoWithin
@@ -216,8 +221,7 @@ public class ExpressionParser {
         String json = JSON.serialize(o);
         String expr = "obj=" + json + ";\n" + expression.replace("this.", "obj.") + ";\n";
         try {
-          boolean result = (Boolean) cx.evaluateString(scope, expr, "<$where>", 0, null);
-          return result;
+          return (Boolean) cx.evaluateString(scope, expr, "<$where>", 0, null);
         } catch (Exception e) {
           LOG.error("Exception evaluating javascript expression {}", expression, e);
         }
@@ -783,6 +787,17 @@ public class ExpressionParser {
           cc2 = ll2;
           checkTypes = false;
         }
+      }
+      if (cc1 instanceof DBRefBase && cc2 instanceof DBRefBase) {
+        DBRefBase a1 = (DBRefBase) cc1;
+        DBRefBase a2 = (DBRefBase) cc2;
+        if (a1.equals(a2)) {
+          return 0;
+        }
+        // Not the idea of the year..
+        cc1 = a1.toString();
+        cc2 = a2.toString();
+        checkTypes = false;
       }
       if (checkTypes) {
         Integer type1 = CLASS_TO_WEIGHT.get(clazz1);

@@ -11,19 +11,19 @@ class UtilScalaTest extends FunSuite {
   test("extractField must handle simple case") {
     val obj = new BasicDBObject("field", "value")
 
-    assert("value" === Util.extractField(obj, "field"))
+    assert("value" === Util.extractField(obj, "field").asInstanceOf[String])
   }
 
   test("extractField must handle one step case") {
     val obj = new BasicDBObject("field", new BasicDBObject("field2", "value"))
 
-    assert("value" === Util.extractField(obj, "field.field2"))
+    assert("value" === Util.extractField(obj, "field.field2").asInstanceOf[String])
   }
 
   test("extractField must handle tree step case") {
     val obj = new BasicDBObject("field", new BasicDBObject("field1", "badvalue").append("field2", new BasicDBObject("field1", "value")))
 
-    assert("value" === Util.extractField(obj, "field.field2.field1"))
+    assert("value" === Util.extractField(obj, "field.field2.field1").asInstanceOf[String])
   }
 
   test("contains Field must return true for simple case") {

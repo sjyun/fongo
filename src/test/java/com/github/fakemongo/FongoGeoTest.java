@@ -2,6 +2,7 @@ package com.github.fakemongo;
 
 import com.github.fakemongo.impl.geo.GeoUtil;
 import com.github.fakemongo.impl.Util;
+import com.github.fakemongo.junit.FongoRule;
 import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 import com.mongodb.CommandResult;

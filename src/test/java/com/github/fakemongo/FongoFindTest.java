@@ -2,6 +2,7 @@ package com.github.fakemongo;
 
 import static org.junit.Assert.assertEquals;
 
+import com.github.fakemongo.junit.FongoRule;
 import org.junit.Rule;
 import org.junit.Test;
 

@@ -1,5 +1,6 @@
-package com.github.fakemongo;
+package com.github.fakemongo.junit;
 
+import com.github.fakemongo.Fongo;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
@@ -17,6 +18,16 @@ import java.net.UnknownHostException;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Create a Junit Rule to use with annotation
+ *
+ * @Rule
+ * public FongoRule rule = new FongoRule().
+ *
+ * Note than you can switch to a realmongodb on your localhost (for now).
+ *
+ * WARNING : database is dropped after the test !!
+ */
 public class FongoRule extends ExternalResource {
 
   /**
@@ -116,6 +127,14 @@ public class FongoRule extends ExternalResource {
   public Fongo newFongo() {
     Fongo fongo = new Fongo("test");
     return fongo;
+  }
+
+  public DB getDb() {
+     return this.db;
+  }
+
+  public Mongo getMongo() {
+    return this.mongo;
   }
 
 }

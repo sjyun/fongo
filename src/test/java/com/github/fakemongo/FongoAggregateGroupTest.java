@@ -1,5 +1,6 @@
 package com.github.fakemongo;
 
+import com.github.fakemongo.junit.FongoRule;
 import com.mongodb.AggregationOutput;
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;

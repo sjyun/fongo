@@ -12,7 +12,7 @@ Add dependency to your project:
 <dependency>
   <groupId>com.github.fakemongo</groupId>
   <artifactId>fongo</artifactId>
-  <version>1.3.5</version>
+  <version>1.3.7</version>
   <scope>test</scope>
 </dependency>
 ```
@@ -51,7 +51,7 @@ It also has a "provided" dependency on sl4j-api for logging.  If you don't alrea
 <dependency> 
   <groupId>ch.qos.logback</groupId>
   <artifactId>logback-classic</artifactId>
-  <version>1.0.13</version>
+  <version>1.1.1</version>
   <scope>test</test>
 </dependency>
 ```
@@ -92,6 +92,26 @@ If you use Spring, you can configure fongo in your XML configuration context:
 </bean>
 ```
 
+## Junit
+
+If you use JUnit in your project, you can use Rule to instanciate a Fongo object :
+
+```java
+@Rule
+public FongoRule fongoRule = new FongoRule();
+```
+
+If you need, you can easely swith to your real MongoDB server (on localhost for now).
+
+```java
+@Rule
+public FongoRule fongoRule = new FongoRule(true);
+```
+
+WARNING : in this case, the database WILL BE DROPPED when test is finish.
+So, use UUID, random database, BUT NOT your real database.
+
+
 ## Todo
 
 * more testing
@@ -129,3 +149,5 @@ your name to the patch contributers below. Please maintain the same code formatt
 * [jasondemorrow](https://github.com/jasondemorrow)
 * [lldata](https://github.com/lldata)
 * [renej-github](https://github.com/renej-github)
+* [mathieubodin](https://github.com/mathieubodin)
+* [elennaro](https://github.com/elennaro)

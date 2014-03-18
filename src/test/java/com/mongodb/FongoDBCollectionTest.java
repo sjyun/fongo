@@ -12,6 +12,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.github.fakemongo.Fongo;
+import org.bson.types.ObjectId;
 
 public class FongoDBCollectionTest {
   private FongoDBCollection collection;
@@ -27,6 +28,49 @@ public class FongoDBCollectionTest {
     DBObject actual = collection.applyProjections(obj, new BasicDBObject().append("b", 1));
     DBObject expected = new BasicDBObject().append("_id", "_id").append("b", "b");
 
+    assertEquals("applied", expected, actual);
+  }
+	
+  @Test
+  public void applyElemMatchProjectionsInclusionsOnly() {
+    BasicDBList dbl = new BasicDBList();
+    dbl.add(new BasicDBObject("a","a"));
+    dbl.add(new BasicDBObject("b","b"));
+    BasicDBObject obj = new BasicDBObject().append("_id", "_id").append("list", dbl);
+    DBObject actual = collection.applyProjections(obj, 
+        new BasicDBObject().append("list", new BasicDBObject("$elemMatch", new BasicDBObject("b", "b"))));
+    BasicDBList expextedDbl = new BasicDBList();
+    expextedDbl.add(new BasicDBObject("b","b"));
+    DBObject expected = new BasicDBObject().append("_id", "_id").append("list", expextedDbl);
+    assertEquals("applied", expected, actual);
+  }
+	
+  @Test
+  public void applyElemMatchProjectionsMultiFieldInclusionsOnly() {
+    BasicDBList dbl = new BasicDBList();
+    dbl.add(new BasicDBObject("a","a").append("b", "b"));
+    dbl.add(new BasicDBObject("c","c").append("d", "d"));
+    BasicDBObject obj = new BasicDBObject().append("_id", "_id").append("list", dbl);
+    DBObject actual = collection.applyProjections(obj, 
+        new BasicDBObject().append("list", new BasicDBObject("$elemMatch", new BasicDBObject("d", "d"))));
+    BasicDBList expextedDbl = new BasicDBList();
+    expextedDbl.add(new BasicDBObject("c","c").append("d", "d"));
+    DBObject expected = new BasicDBObject().append("_id", "_id").append("list", expextedDbl);
+    assertEquals("applied", expected, actual);
+  }
+	
+  @Test
+  public void applyElemMatchProjectionsMultiFieldWithIdInclusionsOnly() {
+    BasicDBList dbl = new BasicDBList();
+    dbl.add(new BasicDBObject("c","a").append("_id", "531ef0060bd4d252a197bdaf"));
+    dbl.add(new BasicDBObject("c","c").append("_id", "531ef0060bd4d252a197bda7"));
+    BasicDBObject obj = new BasicDBObject().append("_id", "_id").append("list", dbl);
+    DBObject actual = collection.applyProjections(obj, 
+        new BasicDBObject().append("list", new BasicDBObject("$elemMatch", 
+                new BasicDBObject("_id", new ObjectId("531ef0060bd4d252a197bda7")))));
+    BasicDBList expextedDbl = new BasicDBList();
+    expextedDbl.add(new BasicDBObject("c","c").append("_id", "531ef0060bd4d252a197bda7"));
+    DBObject expected = new BasicDBObject().append("_id", "_id").append("list", expextedDbl);
     assertEquals("applied", expected, actual);
   }
 
