@@ -929,4 +929,11 @@ public class FongoDBCollection extends DBCollection {
     List<LatLong> latLongs = GeoUtil.latLon(Collections.<String>emptyList(), near);
     return ((GeoIndex) matchingIndex).geoNear(query == null ? new BasicDBObject() : query, latLongs, limit == null ? 100 : limit.intValue(), spherical);
   }
+
+  //see http://docs.mongodb.org/manual/tutorial/search-for-text/ for mongo v 2.4.9
+  //NOTE: Languages support will not be implamented in Fongo yet
+  public synchronized DBObject text(String search, Number limit, String language) {
+    LOG.debug("Will try to emulate text search on collection \"" + this.getFullName() + "\"");
+    throw new UnsupportedOperationException("Not supported yet.");
+  }
 }

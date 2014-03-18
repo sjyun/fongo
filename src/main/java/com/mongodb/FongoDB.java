@@ -84,6 +84,11 @@ public class FongoDB extends DB {
     return coll.geoNear(near, query, limit, maxDistance, spherical);
   }
 
+  //see http://docs.mongodb.org/manual/tutorial/search-for-text/ for mongodb v 2.4.9
+  private DBObject doTextSearchCollection(String collection, String search, Integer limit, String language) {
+    FongoDBCollection coll = doGetCollection(collection);
+    return coll.text(search, limit, language);
+  }
 
   @Override
   public Set<String> getCollectionNames() throws MongoException {
@@ -242,6 +247,20 @@ public class FongoDB extends DB {
       } catch (MongoException me) {
         CommandResult result = errorResult(me.getCode(), me.getMessage());
         return result;
+      }
+    } else {
+      String collectionName = cmd.toMap().keySet().toArray()[0].toString();
+      if(collectionExists(collectionName)){
+        DBObject newCmd = (DBObject)cmd.get(collectionName);
+        if(newCmd.containsField("text") && ((DBObject)newCmd.get("text")).containsField("search")){
+           DBObject result = doTextSearchCollection(collectionName,
+           (String) ((DBObject)newCmd.get("text")).get("search"),
+           (Integer) ((DBObject)newCmd.get("text")).get("limit"),
+           (String) ((DBObject)newCmd.get("text")).get("language"));
+           if (result == null) {
+             return notOkErrorResult("can't perform text search");
+           }
+        }
       }
     }
     String command = cmd.toString();
