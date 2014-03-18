@@ -865,6 +865,33 @@ public class FongoDBCollection extends DBCollection {
 
     return result;
   }
+  
+   /**
+   * Search the text index.
+   *
+   * @return the text index, or null.
+   */
+  private synchronized IndexAbstract searchTextIndex(boolean unique) {
+    IndexAbstract result = null;
+    for (IndexAbstract index : indexes) {
+      DBObject keys = index.getKeys();
+      for (String field : (Set<String>)index.getFields()){
+        if (keys.get(field).equals("text")) {
+          if (result != null && unique) {
+            this.fongoDb.notOkErrorResult(-5, "more than one text index, not sure which to run text search on").throwOnError();
+          }
+          result = index;
+          if (!unique) {
+            break;
+          }
+        }
+      }
+    }
+
+    LOG.debug("searchTextIndex() found index {}", result);
+
+    return result;
+  }
 
   /**
    * Add entry to index.
@@ -932,8 +959,15 @@ public class FongoDBCollection extends DBCollection {
 
   //see http://docs.mongodb.org/manual/tutorial/search-for-text/ for mongo v 2.4.9
   //NOTE: Languages support will not be implamented in Fongo yet
-  public synchronized DBObject text(String search, Number limit, DBObject project, String language) {
-    LOG.debug("Will try to emulate text search on collection \"" + this.getFullName() + "\"");
+  public synchronized DBObject text(String search, Integer limit, DBObject project, String language) {
+    IndexAbstract matchingIndex = searchTextIndex(true);
+    limit = (null != limit)? limit : ((limit > 100) ? 100 : limit);
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Will try to emulate text search on collection \"" + this.getFullName() + "\"");
+      LOG.debug("search: \"{}\"; limit {}", search, limit);
+      LOG.debug("the db {} looks like {}", this.getDB().getName(), _idIndex.size());
+    }
+    
     throw new UnsupportedOperationException("Not supported yet.");
   }
 }
