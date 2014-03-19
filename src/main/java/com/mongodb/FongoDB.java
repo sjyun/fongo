@@ -27,6 +27,8 @@ public class FongoDB extends DB {
 
   private final Map<String, FongoDBCollection> collMap = Collections.synchronizedMap(new HashMap<String, FongoDBCollection>());
   private final Fongo fongo;
+  
+  private MongoCredential mongoCredential;
 
   public FongoDB(Fongo fongo, String name) {
     super(fongo.getMongo(), name);
@@ -103,7 +105,7 @@ public class FongoDB extends DB {
   public WriteConcern getWriteConcern() {
     return fongo.getWriteConcern();
   }
-
+  
   @Override
   public ReadPreference getReadPreference() {
     return ReadPreference.primaryPreferred();
@@ -119,10 +121,16 @@ public class FongoDB extends DB {
 
   @Override
   CommandResult doAuthenticate(MongoCredential credentials) {
+    this.mongoCredential = credentials;
     return okResult();
   }
 
-  /**
+  @Override
+  MongoCredential getAuthenticationCredentials() {
+    return this.mongoCredential;
+  }
+
+/**
    * Executes a database command.
    *
    * @param cmd       dbobject representing the command to execute
