@@ -7,26 +7,27 @@ import com.mongodb.DBObject;
 import com.mongodb.Mongo;
 import com.mongodb.MongoClient;
 import com.mongodb.util.JSON;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import org.junit.rules.ExternalResource;
-
 import java.net.UnknownHostException;
 import java.util.List;
 import java.util.UUID;
+import org.junit.rules.ExternalResource;
 
 /**
  * Create a Junit Rule to use with annotation
- *
- * @Rule
+ * <p>
+ * &#64;Rule
  * public FongoRule rule = new FongoRule().
- *
+ * </p>
+ * <p>
  * Note than you can switch to a realmongodb on your localhost (for now).
- *
+ * </p>
+ * <p><b>
  * WARNING : database is dropped after the test !!
+ * </b></P>
  */
 public class FongoRule extends ExternalResource {
 
@@ -44,7 +45,8 @@ public class FongoRule extends ExternalResource {
   /**
    * Setup a rule with a real MongoDB.
    *
-   * @param realMongo
+   * @param dbName    the dbName to use.
+   * @param realMongo set to true if you want to use a real mongoDB.
    */
   public FongoRule(String dbName, boolean realMongo) {
     this.dbName = dbName;
@@ -130,7 +132,7 @@ public class FongoRule extends ExternalResource {
   }
 
   public DB getDb() {
-     return this.db;
+    return this.db;
   }
 
   public Mongo getMongo() {
