@@ -1,18 +1,16 @@
 package com.mongodb;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
+import com.github.fakemongo.Fongo;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-
 import org.bson.BSONObject;
+import org.bson.types.ObjectId;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import org.junit.Before;
 import org.junit.Test;
-
-import com.github.fakemongo.Fongo;
-import org.bson.types.ObjectId;
 
 public class FongoDBCollectionTest {
   private FongoDBCollection collection;
@@ -233,6 +231,30 @@ public class FongoDBCollectionTest {
 
     DBObject r = collection.filterLists(object);
     assertTrue(r != object);
+  }
+
+  @Test
+  public void textSearch() {
+    BasicDBObject obj1 = new BasicDBObject().append("_id", "_id1")
+            .append("textField", "tomorrow, and tomorrow, and tomorrow, creeps in this petty pace");
+    BasicDBObject obj2 = new BasicDBObject().append("_id", "_id2")
+            .append("textField", "eee, abc def");
+    BasicDBObject obj3 = new BasicDBObject().append("_id", "_id3")
+            .append("textField", "bbb, ccc");
+    BasicDBObject obj4 = new BasicDBObject().append("_id", "_id4")
+            .append("textField", "aaa, bbb");
+    BasicDBObject obj5 = new BasicDBObject().append("_id", "_id5")
+            .append("textField", "bbb, fff");
+    System.out.println("AAAAAAAAAAAAAAA1");
+    collection.insert(obj1);
+    collection.insert(obj2);
+    collection.insert(obj3);
+    collection.insert(obj4);
+    collection.insert(obj5);
+    collection.createIndex(new BasicDBObject("textField", "text"));
+    DBObject result = collection.text("aaa bbb -ccc -ddd -яяя \"abc def\" \"def bca\"", 0, new BasicDBObject());
+    BasicDBObject expected = new BasicDBObject().append("_id", "_id").append("a", "a");
+
   }
 
 }

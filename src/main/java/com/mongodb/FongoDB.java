@@ -85,9 +85,9 @@ public class FongoDB extends DB {
   }
 
   //see http://docs.mongodb.org/manual/tutorial/search-for-text/ for mongodb v 2.4.9
-  private DBObject doTextSearchCollection(String collection, String search, Integer limit, DBObject project, String language) {
+  private DBObject doTextSearchCollection(String collection, String search, Integer limit, DBObject project) {
     FongoDBCollection coll = doGetCollection(collection);
-    return coll.text(search, limit, project, language);
+    return coll.text(search, limit, project);
   }
 
   @Override
@@ -252,12 +252,19 @@ public class FongoDB extends DB {
       String collectionName = cmd.toMap().keySet().toArray()[0].toString();
       if(collectionExists(collectionName)){
         DBObject newCmd = (DBObject)cmd.get(collectionName);
-        if(newCmd.containsField("text") && ((DBObject)newCmd.get("text")).containsField("search")){
+        if((newCmd.containsField("text") && ((DBObject)newCmd.get("text")).containsField("search"))){
            DBObject result = doTextSearchCollection(collectionName,
            (String) ((DBObject)newCmd.get("text")).get("search"),
            (Integer) ((DBObject)newCmd.get("text")).get("limit"),
-           (DBObject) ((DBObject)newCmd.get("text")).get("project"),
-           (String) ((DBObject)newCmd.get("text")).get("language"));
+           (DBObject) ((DBObject)newCmd.get("text")).get("project"));
+           if (result == null) {
+             return notOkErrorResult("can't perform text search");
+           }
+        } else if((newCmd.containsField("$text") && ((DBObject)newCmd.get("$text")).containsField("$search"))){
+           DBObject result = doTextSearchCollection(collectionName,
+           (String) ((DBObject)newCmd.get("$text")).get("$search"),
+           (Integer) ((DBObject)newCmd.get("text")).get("limit"),
+           (DBObject) ((DBObject)newCmd.get("text")).get("project"));
            if (result == null) {
              return notOkErrorResult("can't perform text search");
            }
