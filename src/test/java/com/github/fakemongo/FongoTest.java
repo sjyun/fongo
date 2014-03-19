@@ -738,6 +738,16 @@ public class FongoTest {
   }
 
   @Test
+  public void testAuthentication() {
+    Fongo fongo = newFongo();
+    DB fongoDB = fongo.getDB("testDB");
+    assertFalse(fongoDB.isAuthenticated());
+    // Once authenticated, fongoDB should be available to answer yes, whatever the credentials were. 
+    assertTrue(fongoDB.authenticate("login", "password".toCharArray()));
+    assertTrue(fongoDB.isAuthenticated());
+  }
+  
+  @Test
   public void testUpsertOnIdWithPush() {
     DBCollection collection = newCollection();
 
