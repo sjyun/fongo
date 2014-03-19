@@ -1029,13 +1029,13 @@ public class FongoDBCollection extends DBCollection {
     resp.put("language", "english");
 
     //Prepare Search Queries
-    int keysCount = textIndexFields.size();
+    Iterator textKeyIterator;
 
     // Find Negations
+    textKeyIterator = textIndexFields.iterator();
     int negatedWordsCount = negatedWords.size();
     BasicDBObject findNegatedQuery;
     BasicDBList ors = new BasicDBList();
-    Iterator textKeyIterator = textIndexFields.iterator();
     while (textKeyIterator.hasNext()) {
       String key = (String) textKeyIterator.next();
       for (int i = 0; i < negatedWordsCount; i++) {
@@ -1051,7 +1051,27 @@ public class FongoDBCollection extends DBCollection {
     while (negationSearchResult.hasNext()) {
       negatedSearchResults.add(negationSearchResult.next());
     }
+    
+    //Find Phrases
+    int phrasesCount = fullPhrases.size();
+    textKeyIterator = textIndexFields.iterator();
+    BasicDBObject findPhrasesQuery;
+    ors = new BasicDBList();
+        while (textKeyIterator.hasNext()) {
+      String key = (String) textKeyIterator.next();
+      for (int i = 0; i < phrasesCount; i++) {
+        ors.add(new BasicDBObject(key, java.util.regex.Pattern.compile(fullPhrases.get(i))));
+      }
+    }
+    findPhrasesQuery = new BasicDBObject("$or", ors);
 
+    DBCursor fullPhrasesSearchResult = find(findPhrasesQuery);
+
+    List<DBObject> phrasesSearchResult = new ArrayList<DBObject>();
+    
+    while (fullPhrasesSearchResult.hasNext()) {
+      phrasesSearchResult.add(fullPhrasesSearchResult.next());
+    }
     //Build Query
 //        "results" : [ ],
 //        "stats" : {
