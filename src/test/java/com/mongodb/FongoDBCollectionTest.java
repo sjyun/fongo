@@ -245,16 +245,25 @@ public class FongoDBCollectionTest {
             .append("textField", "aaa, bbb");
     BasicDBObject obj5 = new BasicDBObject().append("_id", "_id5")
             .append("textField", "bbb, fff");
-    System.out.println("AAAAAAAAAAAAAAA1");
     collection.insert(obj1);
     collection.insert(obj2);
     collection.insert(obj3);
     collection.insert(obj4);
     collection.insert(obj5);
     collection.createIndex(new BasicDBObject("textField", "text"));
-    DBObject result = collection.text("aaa bbb -ccc -ddd -яяя \"abc def\" \"def bca\"", 0, new BasicDBObject());
-    BasicDBObject expected = new BasicDBObject().append("_id", "_id").append("a", "a");
-
+    DBObject actual = collection.text("aaa bbb -ccc -ddd -яяя \"abc def\" \"def bca\"", 0, new BasicDBObject());
+    
+    
+    DBObject expected = new BasicDBObject("queryDebugString", "aaa|bbb|abc|def|bca||ccc|ddd|яяя||abc def|def bca||");
+    BasicDBList results = new BasicDBList();
+      results.add(new BasicDBObject("score", 2.5).append("obj", new BasicDBObject("_id", "_id2").append("textField", "eee, abc def")));
+      results.add(new BasicDBObject("score", 2.333333333333333).append("obj", new BasicDBObject("_id", "_id5").append("textField", "bbb, fff")));
+      results.add(new BasicDBObject("score", 2.333333333333333).append("obj", new BasicDBObject("_id", "_id4").append("textField", "aaa, bbb")));
+    expected.put("language", "english");
+    expected.put("results", results);            
+    expected.put("stats", "it's fake, sorry");
+    expected.put("ok", 1);
+    assertEquals("applied", expected, actual);
   }
 
 }

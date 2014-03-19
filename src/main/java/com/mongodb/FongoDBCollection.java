@@ -16,6 +16,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -559,7 +560,7 @@ public class FongoDBCollection extends DBCollection {
       } else if (projectionValue instanceof DBObject) {
         project = true;
         projectionFields.add(projectionKey);
-      } else if (!projectionValue.toString().equals("text")){
+      } else if (!projectionValue.toString().equals("text")) {
         final String msg = "Projection `" + projectionKey
                 + "' has a value that Fongo doesn't know how to handle: " + projectionValue
                 + " (" + (projectionValue == null ? " " : projectionValue.getClass() + ")");
@@ -965,7 +966,7 @@ public class FongoDBCollection extends DBCollection {
   //NOTE: Languages support will not be implamented in Fongo yet "english" will be always returned as search language
   public synchronized DBObject text(String search, Integer limit, DBObject project) {
     Set<String> textIndexFields = searchTextIndexFields(true);
-    limit = (null != limit) ? limit : ((limit > 100) ? 100 : limit);
+    limit = (null != limit) ? ((limit > 100 || limit == 0) ? 100 : limit) : 100;
     if (LOG.isDebugEnabled()) {
       LOG.debug("Will try to emulate text search on collection \"" + this.getFullName() + "\"");
       LOG.debug("search: \"{}\"; limit {}", search, limit);
@@ -978,8 +979,8 @@ public class FongoDBCollection extends DBCollection {
 
     //Words Lists
     List<String> allWords = new ArrayList();
-    List<String> fullPhrases = new ArrayList();
-    List<String> negatedWords = new ArrayList();
+    List<String> fullPhrasesToSearch = new ArrayList();
+    List<String> negatedWordsToSearch = new ArrayList();
     List<String> wordsToSearch = new ArrayList();
     //Debug Strings
     StringBuilder queryDebugString = new StringBuilder();
@@ -998,20 +999,20 @@ public class FongoDBCollection extends DBCollection {
     Matcher matcherFP = Pattern.compile("\"\\s*(.*?)\\s*\"").matcher(search);
     while (matcherFP.find()) {
       String matchPhrase = matcherFP.group(1);
-      fullPhrases.add(matchPhrase);
+      fullPhrasesToSearch.add(matchPhrase);
       querySearchPhrases.append(matchPhrase).append("|");
     }
     //Negated words
     Matcher matcherNW = Pattern.compile("-(.\\S*)\\s*").matcher(search);
     while (matcherNW.find()) {
       String matchPhrase = matcherNW.group(1);
-      negatedWords.add(matchPhrase);
+      negatedWordsToSearch.add(matchPhrase);
       queryNegatedWords.append(matchPhrase).append("|");
     }
 
     //Words To Search
     for (String word : allWords) {
-      if (!negatedWords.contains(word)
+      if (!negatedWordsToSearch.contains(word)
               && !wordsToSearch.contains(word)) {
         wordsToSearch.add(word);
         querySearchWords.append(word).append("|");
@@ -1033,58 +1034,123 @@ public class FongoDBCollection extends DBCollection {
 
     // Find Negations
     textKeyIterator = textIndexFields.iterator();
-    int negatedWordsCount = negatedWords.size();
+    int negatedWordsCount = negatedWordsToSearch.size();
     BasicDBObject findNegatedQuery;
     BasicDBList ors = new BasicDBList();
     while (textKeyIterator.hasNext()) {
       String key = (String) textKeyIterator.next();
       for (int i = 0; i < negatedWordsCount; i++) {
-        ors.add(new BasicDBObject(key, java.util.regex.Pattern.compile(negatedWords.get(i))));
+        ors.add(new BasicDBObject(key, java.util.regex.Pattern.compile(negatedWordsToSearch.get(i))));
       }
     }
     findNegatedQuery = new BasicDBObject("$or", ors);
 
-    DBCursor negationSearchResult = find(findNegatedQuery);
+    DBCursor negationSearchResultCursor = find(findNegatedQuery, project);
 
     List<DBObject> negatedSearchResults = new ArrayList<DBObject>();
-    
-    while (negationSearchResult.hasNext()) {
-      negatedSearchResults.add(negationSearchResult.next());
+
+    while (negationSearchResultCursor.hasNext()) {
+      negatedSearchResults.add(negationSearchResultCursor.next());
     }
-    
+
     //Find Phrases
-    int phrasesCount = fullPhrases.size();
+    int phrasesCount = fullPhrasesToSearch.size();
     textKeyIterator = textIndexFields.iterator();
     BasicDBObject findPhrasesQuery;
     ors = new BasicDBList();
-        while (textKeyIterator.hasNext()) {
+    while (textKeyIterator.hasNext()) {
       String key = (String) textKeyIterator.next();
       for (int i = 0; i < phrasesCount; i++) {
-        ors.add(new BasicDBObject(key, java.util.regex.Pattern.compile(fullPhrases.get(i))));
+        ors.add(new BasicDBObject(key, java.util.regex.Pattern.compile(fullPhrasesToSearch.get(i))));
       }
     }
     findPhrasesQuery = new BasicDBObject("$or", ors);
 
-    DBCursor fullPhrasesSearchResult = find(findPhrasesQuery);
+    DBCursor phrasesSearchResultCursor = find(findPhrasesQuery, project);
 
     List<DBObject> phrasesSearchResult = new ArrayList<DBObject>();
-    
-    while (fullPhrasesSearchResult.hasNext()) {
-      phrasesSearchResult.add(fullPhrasesSearchResult.next());
+
+    while (phrasesSearchResultCursor.hasNext()) {
+      phrasesSearchResult.add(phrasesSearchResultCursor.next());
     }
-    //Build Query
-//        "results" : [ ],
-//        "stats" : {
-//                "nscanned" : 0,
-//                "nscannedObjects" : 0,
-//                "n" : 0,
-//                "nfound" : 0,
-//                "timeMicros" : 115
-//        },
-//        "ok" : 1
-    //Find eatch match and apply weight and put in responce object
-    //return
-    throw new UnsupportedOperationException(
-            "Not supported yet.");
+
+    //Find Words
+    int wordsCount = wordsToSearch.size();
+    textKeyIterator = textIndexFields.iterator();
+    BasicDBObject findWordsQuery;
+    ors = new BasicDBList();
+    while (textKeyIterator.hasNext()) {
+      String key = (String) textKeyIterator.next();
+      for (int i = 0; i < wordsCount; i++) {
+        ors.add(new BasicDBObject(key, java.util.regex.Pattern.compile(wordsToSearch.get(i))));
+      }
+    }
+    findWordsQuery = new BasicDBObject("$or", ors);
+
+    DBCursor wordsSearchResultCursor = find(findWordsQuery, project);
+
+    List<DBObject> wordsSearchResult = new ArrayList<DBObject>();
+
+    while (wordsSearchResultCursor.hasNext()) {
+      wordsSearchResult.add(wordsSearchResultCursor.next());
+    }
+
+    //Generating results
+    List<DBObject> alreadyFound = new ArrayList();
+    Map results = new HashMap<Double, DBObject>();
+    for (DBObject phrase : phrasesSearchResult) {
+      Double score;
+      if (negatedSearchResults.contains(phrase)) {
+        continue;
+      } else if (alreadyFound.contains(phrase)) {
+        int count = (Collections.frequency(alreadyFound, phrase));
+        score = 2.5 + (1.75 * (count - 1));
+      } else {
+        score = 2.333333333333333;
+      }
+      DBObject obj = phrase;
+      alreadyFound.add(phrase);
+      results.put(obj, score);
+    }
+    
+    for (DBObject word : wordsSearchResult) {
+      Double score;
+      if (negatedSearchResults.contains(word)) {
+        continue;
+      } else if (alreadyFound.contains(word)) {
+        int count = (Collections.frequency(alreadyFound, word));
+        score = 2.5 + (1.75 * (count - 1));
+      } else {
+        score = 2.333333333333333;
+      }
+      DBObject obj = word;
+      alreadyFound.add(word);
+      results.put(obj, score);
+    }
+
+    List<Map.Entry> sortedRes = new ArrayList<Map.Entry>(results.entrySet());
+    Collections.sort(sortedRes,
+            new Comparator() {
+              @Override
+              public int compare(Object o1, Object o2) {
+                Map.Entry e1 = (Map.Entry) o1;
+                Map.Entry e2 = (Map.Entry) o2;
+                return ((Comparable) e2.getValue()).compareTo(e1.getValue());
+              }
+            });
+
+    BasicDBList res = new BasicDBList();
+    int till = 0;
+    for (Map.Entry e : sortedRes) {
+      res.add(new BasicDBObject("score", e.getValue()).append("obj", e.getKey()));
+      till++;
+      if(till>=limit) break;
+    }
+    
+    resp.put("results", res);
+    resp.put("stats", "it's fake, sorry");
+    resp.put("ok", 1);
+    
+    return resp;
   }
 }
