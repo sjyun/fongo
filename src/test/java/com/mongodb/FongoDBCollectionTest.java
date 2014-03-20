@@ -253,8 +253,6 @@ public class FongoDBCollectionTest {
     collection.createIndex(new BasicDBObject("textField", "text"));
     DBObject actual = collection.text("aaa bbb -ccc -ddd -яяя \"abc def\" \"def bca\"", 0, new BasicDBObject());
     
-    
-    DBObject expected = new BasicDBObject("queryDebugString", "aaa|bbb|abc|def|bca||ccc|ddd|яяя||abc def|def bca||");
     BasicDBList resultsExpected = new BasicDBList();
       resultsExpected.add(new BasicDBObject("score", 2.5)
               .append("obj", new BasicDBObject("_id", "_id2").append("textField", "eee, abc def")));
@@ -262,7 +260,7 @@ public class FongoDBCollectionTest {
               .append("obj", new BasicDBObject("_id", "_id5").append("textField", "bbb, fff")));
       resultsExpected.add(new BasicDBObject("score", 1.25)
               .append("obj", new BasicDBObject("_id", "_id4").append("textField", "aaa, bbb")));
-    expected.put("language", "english");
+    DBObject expected = new BasicDBObject("language", "english");
     expected.put("results", resultsExpected);            
     expected.put("stats", "it's fake, sorry");
     expected.put("ok", 1);
@@ -297,14 +295,12 @@ public class FongoDBCollectionTest {
     collection.createIndex(new BasicDBObject("textField", "text"));
     DBObject actual = collection.text("aaa", 0, new BasicDBObject("textField", 1));
     
-    
-    DBObject expected = new BasicDBObject("queryDebugString", "aaa||||||");
     BasicDBList resultsExpected = new BasicDBList();
       resultsExpected.add(new BasicDBObject("score", 1.25)
               .append("obj", new BasicDBObject("_id", "_id4").append("textField", "aaa, bbb")));
       resultsExpected.add(new BasicDBObject("score", 1.25)
               .append("obj", new BasicDBObject("_id", "_id6").append("textField", "aaa aaa eee, abc def")));
-    expected.put("language", "english");
+    DBObject expected = new BasicDBObject("language", "english");
     expected.put("results", resultsExpected);            
     expected.put("stats", "it's fake, sorry");
     expected.put("ok", 1);

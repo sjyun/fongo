@@ -15,7 +15,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -157,33 +156,7 @@ public class TextSearch {
   }
 
   private DBObject BuildResponce(BasicDBList results) {
-    BasicDBObject res;
-    StringBuilder queryDebugString = new StringBuilder();
-
-    for (String string : new LinkedHashSet<String>(wordsToSearch)) {
-      queryDebugString.append(string).append("|");
-    }
-    if (wordsToSearch.size() == 0) {
-      queryDebugString.append("|");
-    }
-    queryDebugString.append("|");
-    for (String string : new LinkedHashSet<String>(negatedWordsToSearch)) {
-      queryDebugString.append(string).append("|");
-    }
-    if (negatedWordsToSearch.size() == 0) {
-      queryDebugString.append("|");
-    }
-    queryDebugString.append("|");
-    for (String string : new LinkedHashSet<String>(fullPhrasesToSearch)) {
-      queryDebugString.append(string).append("|");
-    }
-    if (negatedWordsToSearch.size() == 0) {
-      queryDebugString.append("|");
-    }
-    queryDebugString.append("|");
-
-    res = new BasicDBObject("queryDebugString", queryDebugString.toString());
-    res.put("language", "english");
+    BasicDBObject res = new BasicDBObject("language", "english");
     res.put("results", results);
     res.put("stats", "it's fake, sorry");
     res.put("ok", 1);
