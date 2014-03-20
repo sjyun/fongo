@@ -125,7 +125,8 @@ public class TextSearch {
     while (textKeyIterator.hasNext()) {
       String key = (String) textKeyIterator.next();
       for (int i = 0; i < wordsCount; i++) {
-        ors.add(new BasicDBObject(key, java.util.regex.Pattern.compile("\\b" + stringsToSearch.get(i) + "\\b")));
+        ors.add(new BasicDBObject(key, 
+                java.util.regex.Pattern.compile("\\b" + stringsToSearch.get(i) + "\\b", Pattern.CASE_INSENSITIVE)));
       }
     }
     findQuery = new BasicDBObject("$or", ors);
