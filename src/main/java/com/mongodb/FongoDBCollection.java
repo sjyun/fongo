@@ -11,21 +11,18 @@ import com.github.fakemongo.impl.geo.LatLong;
 import com.github.fakemongo.impl.index.GeoIndex;
 import com.github.fakemongo.impl.index.IndexAbstract;
 import com.github.fakemongo.impl.index.IndexFactory;
+import com.github.fakemongo.impl.text.TextSearch;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import org.bson.BSON;
 import org.bson.types.Binary;
 import org.bson.types.ObjectId;
@@ -869,35 +866,6 @@ public class FongoDBCollection extends DBCollection {
   }
 
   /**
-   * Search the text index fields.
-   *
-   * @return the text index, or null.
-   */
-  private synchronized Set<String> searchTextIndexFields(boolean unique) {
-    IndexAbstract result = null;
-    Set<String> indexFields = new TreeSet<String>();
-    for (IndexAbstract index : indexes) {
-      DBObject keys = index.getKeys();
-      for (String field : (Set<String>) index.getFields()) {
-        if (keys.get(field).equals("text")) {
-          if (result != null && unique) {
-            this.fongoDb.notOkErrorResult(-5, "more than one text index, not sure which to run text search on").throwOnError();
-          }
-          result = index;
-          indexFields.add(field);
-          if (!unique) {
-            break;
-          }
-        }
-      }
-    }
-
-    LOG.debug("searchTextIndex() found index {}", result);
-
-    return indexFields;
-  }
-
-  /**
    * Add entry to index. If necessary, remove oldObject from index.
    *
    * @param object new object to insert.
@@ -963,194 +931,8 @@ public class FongoDBCollection extends DBCollection {
   }
 
   //Text search Emulation see http://docs.mongodb.org/manual/tutorial/search-for-text/ for mongo v 2.4.9
-  //NOTE: Languages support will not be implamented in Fongo yet "english" will be always returned as search language
-  public synchronized DBObject text(String search, Integer limit, DBObject project) {
-    Set<String> textIndexFields = searchTextIndexFields(true);
-    limit = (null != limit) ? ((limit > 100 || limit == 0) ? 100 : limit) : 100;
-    if (LOG.isDebugEnabled()) {
-      LOG.debug("Will try to emulate text search on collection \"" + this.getFullName() + "\"");
-      LOG.debug("search: \"{}\"; limit {}", search, limit);
-      LOG.debug("the db {} looks like {}", this.getDB().getName(), _idIndex.size());
-    }
-
-    if (textIndexFields.isEmpty()) {
-      return null;
-    }
-
-    //Words Lists
-    List<String> allWords = new ArrayList();
-    List<String> fullPhrasesToSearch = new ArrayList();
-    List<String> negatedWordsToSearch = new ArrayList();
-    List<String> wordsToSearch = new ArrayList();
-    //Debug Strings
-    StringBuilder queryDebugString = new StringBuilder();
-    StringBuilder querySearchWords = new StringBuilder();
-    StringBuilder queryNegatedWords = new StringBuilder();
-    StringBuilder querySearchPhrases = new StringBuilder();
-
-    //Analyse Search String
-    //All Words
-    Matcher matcherSW = Pattern.compile("([[^\\p{Space}\\\\\\\"-]&&\\p{Alnum}&&[^\\p{Space}\\\\\\\"]]+)").matcher(search);
-    while (matcherSW.find()) {
-      String matchPhrase = matcherSW.group(1);
-      allWords.add(matchPhrase);
-    }
-    //Full Phrases
-    Matcher matcherFP = Pattern.compile("\"\\s*(.*?)\\s*\"").matcher(search);
-    while (matcherFP.find()) {
-      String matchPhrase = matcherFP.group(1);
-      fullPhrasesToSearch.add(matchPhrase);
-      querySearchPhrases.append(matchPhrase).append("|");
-    }
-    //Negated words
-    Matcher matcherNW = Pattern.compile("-(.\\S*)\\s*").matcher(search);
-    while (matcherNW.find()) {
-      String matchPhrase = matcherNW.group(1);
-      negatedWordsToSearch.add(matchPhrase);
-      queryNegatedWords.append(matchPhrase).append("|");
-    }
-
-    //Words To Search
-    for (String word : allWords) {
-      if (!negatedWordsToSearch.contains(word)
-              && !wordsToSearch.contains(word)) {
-        wordsToSearch.add(word);
-        querySearchWords.append(word).append("|");
-      }
-    }
-
-    //Create responce object
-    DBObject resp
-            = new BasicDBObject("queryDebugString",
-                    new StringBuilder()
-                    .append(querySearchWords).append("|")
-                    .append(queryNegatedWords).append("|")
-                    .append(querySearchPhrases).append("|")
-                    .toString());
-    resp.put("language", "english");
-
-    //Prepare Search Queries
-    Iterator textKeyIterator;
-
-    // Find Negations
-    textKeyIterator = textIndexFields.iterator();
-    int negatedWordsCount = negatedWordsToSearch.size();
-    BasicDBObject findNegatedQuery;
-    BasicDBList ors = new BasicDBList();
-    while (textKeyIterator.hasNext()) {
-      String key = (String) textKeyIterator.next();
-      for (int i = 0; i < negatedWordsCount; i++) {
-        ors.add(new BasicDBObject(key, java.util.regex.Pattern.compile(negatedWordsToSearch.get(i))));
-      }
-    }
-    findNegatedQuery = new BasicDBObject("$or", ors);
-
-    DBCursor negationSearchResultCursor = find(findNegatedQuery, project);
-
-    List<DBObject> negatedSearchResults = new ArrayList<DBObject>();
-
-    while (negationSearchResultCursor.hasNext()) {
-      negatedSearchResults.add(negationSearchResultCursor.next());
-    }
-
-    //Find Phrases
-    int phrasesCount = fullPhrasesToSearch.size();
-    textKeyIterator = textIndexFields.iterator();
-    BasicDBObject findPhrasesQuery;
-    ors = new BasicDBList();
-    while (textKeyIterator.hasNext()) {
-      String key = (String) textKeyIterator.next();
-      for (int i = 0; i < phrasesCount; i++) {
-        ors.add(new BasicDBObject(key, java.util.regex.Pattern.compile(fullPhrasesToSearch.get(i))));
-      }
-    }
-    findPhrasesQuery = new BasicDBObject("$or", ors);
-
-    DBCursor phrasesSearchResultCursor = find(findPhrasesQuery, project);
-
-    List<DBObject> phrasesSearchResult = new ArrayList<DBObject>();
-
-    while (phrasesSearchResultCursor.hasNext()) {
-      phrasesSearchResult.add(phrasesSearchResultCursor.next());
-    }
-
-    //Find Words
-    int wordsCount = wordsToSearch.size();
-    textKeyIterator = textIndexFields.iterator();
-    BasicDBObject findWordsQuery;
-    ors = new BasicDBList();
-    while (textKeyIterator.hasNext()) {
-      String key = (String) textKeyIterator.next();
-      for (int i = 0; i < wordsCount; i++) {
-        ors.add(new BasicDBObject(key, java.util.regex.Pattern.compile(wordsToSearch.get(i))));
-      }
-    }
-    findWordsQuery = new BasicDBObject("$or", ors);
-
-    DBCursor wordsSearchResultCursor = find(findWordsQuery, project);
-
-    List<DBObject> wordsSearchResult = new ArrayList<DBObject>();
-
-    while (wordsSearchResultCursor.hasNext()) {
-      wordsSearchResult.add(wordsSearchResultCursor.next());
-    }
-
-    //Generating results
-    List<DBObject> alreadyFound = new ArrayList();
-    Map results = new HashMap<Double, DBObject>();
-    for (DBObject phrase : phrasesSearchResult) {
-      Double score;
-      if (negatedSearchResults.contains(phrase)) {
-        continue;
-      } else if (alreadyFound.contains(phrase)) {
-        int count = (Collections.frequency(alreadyFound, phrase));
-        score = 2.5 + (1.75 * (count - 1));
-      } else {
-        score = 2.333333333333333;
-      }
-      DBObject obj = phrase;
-      alreadyFound.add(phrase);
-      results.put(obj, score);
-    }
-    
-    for (DBObject word : wordsSearchResult) {
-      Double score;
-      if (negatedSearchResults.contains(word)) {
-        continue;
-      } else if (alreadyFound.contains(word)) {
-        int count = (Collections.frequency(alreadyFound, word));
-        score = 2.5 + (1.75 * (count - 1));
-      } else {
-        score = 2.333333333333333;
-      }
-      DBObject obj = word;
-      alreadyFound.add(word);
-      results.put(obj, score);
-    }
-
-    List<Map.Entry> sortedRes = new ArrayList<Map.Entry>(results.entrySet());
-    Collections.sort(sortedRes,
-            new Comparator() {
-              @Override
-              public int compare(Object o1, Object o2) {
-                Map.Entry e1 = (Map.Entry) o1;
-                Map.Entry e2 = (Map.Entry) o2;
-                return ((Comparable) e2.getValue()).compareTo(e1.getValue());
-              }
-            });
-
-    BasicDBList res = new BasicDBList();
-    int till = 0;
-    for (Map.Entry e : sortedRes) {
-      res.add(new BasicDBObject("score", e.getValue()).append("obj", e.getKey()));
-      till++;
-      if(till>=limit) break;
-    }
-    
-    resp.put("results", res);
-    resp.put("stats", "it's fake, sorry");
-    resp.put("ok", 1);
-    
-    return resp;
+  public synchronized DBObject text(String search, int limit, DBObject project) {
+    TextSearch ts = new TextSearch(this);
+    return ts.findByTextSearch(search, project, limit);
   }
 }
