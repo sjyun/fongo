@@ -131,7 +131,7 @@ The results of text search are qute similar to real, but not exactly.
 * Filter (maybe in future)
 * Weights in text index (we plan to support them in future)
 
-### Limitations, Diferences
+### Limitations, Differences:
 
 * Only [text command](http://docs.mongodb.org/manual/reference/command/text/) search is supported. We will support [find query with $text operator](http://docs.mongodb.org/master/reference/operator/query/text/) probably in future.
 * Scores in returned results are not always the same as the real Mongo's scores.
