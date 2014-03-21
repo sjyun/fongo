@@ -125,7 +125,7 @@ public class TextSearch {
     while (textKeyIterator.hasNext()) {
       String key = (String) textKeyIterator.next();
       for (int i = 0; i < wordsCount; i++) {
-        ors.add(new BasicDBObject(key, 
+        ors.add(new BasicDBObject(key,
                 java.util.regex.Pattern.compile("\\b" + stringsToSearch.get(i) + "\\b", Pattern.CASE_INSENSITIVE)));
       }
     }
@@ -139,6 +139,30 @@ public class TextSearch {
       result.add(negationSearchResultCursor.next());
     }
     return result;
+  }
+
+  private BasicDBList sortByScoreAndLimit(Map mapToSotr, int limit) {
+    List<Map.Entry> sortedRes = new ArrayList<Map.Entry>(mapToSotr.entrySet());
+    Collections.sort(sortedRes,
+            new Comparator() {
+              @Override
+              public int compare(Object o1, Object o2) {
+                Map.Entry e1 = (Map.Entry) o1;
+                Map.Entry e2 = (Map.Entry) o2;
+                return ((Comparable) e2.getValue()).compareTo(e1.getValue());
+              }
+            });
+
+    BasicDBList res = new BasicDBList();
+    int till = 0;
+    for (Map.Entry e : sortedRes) {
+      res.add(new BasicDBObject("score", e.getValue()).append("obj", e.getKey()));
+      till++;
+      if (till >= limit) {
+        break;
+      }
+    }
+    return res;
   }
 
   private void buildResultsFromList(List<DBObject> resultsToInclude, List<DBObject> resultsNotToInclude) {
@@ -198,26 +222,7 @@ public class TextSearch {
     buildResultsFromList(wordsSearchResult, negatedSearchResults);
 
     //sorting results by score
-    List<Map.Entry> sortedRes = new ArrayList<Map.Entry>(results.entrySet());
-    Collections.sort(sortedRes,
-            new Comparator() {
-              @Override
-              public int compare(Object o1, Object o2) {
-                Map.Entry e1 = (Map.Entry) o1;
-                Map.Entry e2 = (Map.Entry) o2;
-                return ((Comparable) e2.getValue()).compareTo(e1.getValue());
-              }
-            });
-
-    BasicDBList res = new BasicDBList();
-    int till = 0;
-    for (Map.Entry e : sortedRes) {
-      res.add(new BasicDBObject("score", e.getValue()).append("obj", e.getKey()));
-      till++;
-      if (till >= this.limit) {
-        break;
-      }
-    }
+    BasicDBList res = sortByScoreAndLimit(results, this.limit);
 
     return BuildResponce(res);
   }

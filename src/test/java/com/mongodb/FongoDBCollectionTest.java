@@ -306,5 +306,4 @@ public class FongoDBCollectionTest {
     expected.put("ok", 1);
     assertEquals("applied", expected, actual);
   }
-
 }
