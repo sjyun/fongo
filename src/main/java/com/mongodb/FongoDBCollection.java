@@ -30,12 +30,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * fongo override of com.mongodb.DBCollection you shouldn't need to use this class directly
+ * fongo override of com.mongodb.DBCollection
+ * you shouldn't need to use this class directly
  *
  * @author jon
  */
 public class FongoDBCollection extends DBCollection {
-
   private final static Logger LOG = LoggerFactory.getLogger(FongoDBCollection.class);
 
   public static final String ID_KEY = "_id";
@@ -170,14 +170,16 @@ public class FongoDBCollection extends DBCollection {
     return replacementValue;
   }
 
+
   protected void fInsert(DBObject obj, WriteConcern concern) {
     putIdIfNotPresent(obj);
     putSizeCheck(obj, concern);
   }
 
+
   @Override
   public synchronized WriteResult update(DBObject q, DBObject o, boolean upsert, boolean multi, WriteConcern concern,
-          DBEncoder encoder) throws MongoException {
+                                         DBEncoder encoder) throws MongoException {
 
     q = filterLists(q);
     o = filterLists(o);
@@ -201,8 +203,7 @@ public class FongoDBCollection extends DBCollection {
       } else {
         o.put(ID_KEY, Util.clone(o.get(ID_KEY)));
       }
-      @SuppressWarnings("unchecked")
-      Iterator<DBObject> oldObjects = _idIndex.retrieveObjects(q).iterator();
+      @SuppressWarnings("unchecked") Iterator<DBObject> oldObjects = _idIndex.retrieveObjects(q).iterator();
       addToIndexes(Util.clone(o), oldObjects.hasNext() ? oldObjects.next() : null, concern);
       updatedDocuments++;
     } else {
@@ -229,6 +230,7 @@ public class FongoDBCollection extends DBCollection {
     }
     return new WriteResult(updateResult(updatedDocuments, updatedExisting), concern);
   }
+
 
   private List idsIn(DBObject query) {
     Object idValue = query.get(ID_KEY);
@@ -350,8 +352,7 @@ public class FongoDBCollection extends DBCollection {
 
     try {
       IndexAbstract index = IndexFactory.create((String) rec.get("name"), keys, unique);
-      @SuppressWarnings("unchecked")
-      List<List<Object>> notUnique = index.addAll(_idIndex.values());
+      @SuppressWarnings("unchecked") List<List<Object>> notUnique = index.addAll(_idIndex.values());
       if (!notUnique.isEmpty()) {
         // Duplicate key.
         if (enforceDuplicates(getWriteConcern())) {
@@ -380,7 +381,7 @@ public class FongoDBCollection extends DBCollection {
    */
   @Override
   Iterator<DBObject> __find(DBObject ref, DBObject fields, int numToSkip, int batchSize, int limit, int options,
-          ReadPreference readPref, DBDecoder decoder, DBEncoder encoder) {
+                            ReadPreference readPref, DBDecoder decoder, DBEncoder encoder) {
     return __find(ref, fields, numToSkip, batchSize, limit, options, readPref, decoder);
   }
 
@@ -389,8 +390,8 @@ public class FongoDBCollection extends DBCollection {
    */
   @Override
   synchronized Iterator<DBObject> __find(final DBObject pRef, DBObject fields, int numToSkip, int batchSize, int limit,
-          int options,
-          ReadPreference readPref, DBDecoder decoder) throws MongoException {
+                                         int options,
+                                         ReadPreference readPref, DBDecoder decoder) throws MongoException {
     DBObject ref = filterLists(pRef);
     long maxScan = Long.MAX_VALUE;
 //    ref = filterLists(ref);
@@ -435,7 +436,7 @@ public class FongoDBCollection extends DBCollection {
     }
     int seen = 0;
     Iterable<DBObject> objectsToSearch = sortObjects(orderby, objectsFromIndex);
-    for (Iterator<DBObject> iter = objectsToSearch.iterator(); iter.hasNext() && foundCount <= upperLimit && maxScan-- > 0;) {
+    for (Iterator<DBObject> iter = objectsToSearch.iterator(); iter.hasNext() && foundCount <= upperLimit && maxScan-- > 0; ) {
       DBObject dbo = iter.next();
       if (filter.apply(dbo)) {
         if (seen++ >= numToSkip) {
@@ -502,6 +503,7 @@ public class FongoDBCollection extends DBCollection {
     return ret;
   }
 
+
   private static void addValuesAtPath(BasicDBObject ret, DBObject dbo, List<String> path, int startIndex) {
     String subKey = path.get(startIndex);
     Object value = dbo.get(subKey);
@@ -531,9 +533,8 @@ public class FongoDBCollection extends DBCollection {
   }
 
   /**
-   * Applies the requested <a href="http://docs.mongodb.org/manual/core/read-operations/#result-projections">projections</a>
-   * to the given object. TODO: Support for projection operators:
-   * http://docs.mongodb.org/manual/reference/operator/projection/
+   * Applies the requested <a href="http://docs.mongodb.org/manual/core/read-operations/#result-projections">projections</a> to the given object.
+   * TODO: Support for projection operators: http://docs.mongodb.org/manual/reference/operator/projection/
    */
   public static DBObject applyProjections(DBObject result, DBObject projectionObject) {
     if (projectionObject == null) {
@@ -559,8 +560,8 @@ public class FongoDBCollection extends DBCollection {
         projectionFields.add(projectionKey);
       } else if (!projectionValue.toString().equals("text")) {
         final String msg = "Projection `" + projectionKey
-                + "' has a value that Fongo doesn't know how to handle: " + projectionValue
-                + " (" + (projectionValue == null ? " " : projectionValue.getClass() + ")");
+            + "' has a value that Fongo doesn't know how to handle: " + projectionValue
+            + " (" + (projectionValue == null ? " " : projectionValue.getClass() + ")");
 
         throw new IllegalArgumentException(msg);
       }
@@ -582,7 +583,7 @@ public class FongoDBCollection extends DBCollection {
 
     if (inclusionCount > 0 && exclusionCount > 0) {
       throw new IllegalArgumentException(
-              "You cannot combine inclusion and exclusion semantics in a single projection with the exception of the _id field: "
+          "You cannot combine inclusion and exclusion semantics in a single projection with the exception of the _id field: "
               + projectionObject);
     }
 
@@ -613,13 +614,13 @@ public class FongoDBCollection extends DBCollection {
           continue;
         }
         final Object projectionValue = projectionObject.get(projectionKey);
-        final boolean isElemMatch
-                = ((BasicDBObject) projectionObject.get(projectionKey)).containsField(QueryOperators.ELEM_MATCH);
+        final boolean isElemMatch =
+            ((BasicDBObject) projectionObject.get(projectionKey)).containsField(QueryOperators.ELEM_MATCH);
         if (isElemMatch) {
           ret.removeField(projectionKey);
           List searchIn = ((BasicDBList) result.get(projectionKey));
-          DBObject searchFor
-                  = (BasicDBObject) ((BasicDBObject) projectionObject.get(projectionKey)).get(QueryOperators.ELEM_MATCH);
+          DBObject searchFor =
+              (BasicDBObject) ((BasicDBObject) projectionObject.get(projectionKey)).get(QueryOperators.ELEM_MATCH);
           String searchKey = (String) searchFor.keySet().toArray()[0];
           int pos = -1;
           for (int i = 0; i < searchIn.size(); i++) {
@@ -627,12 +628,12 @@ public class FongoDBCollection extends DBCollection {
             DBObject fieldToSearch = (BasicDBObject) searchIn.get(i);
             if (fieldToSearch.containsField(searchKey)) {
               if (searchFor.get(searchKey) instanceof ObjectId
-                      && fieldToSearch.get(searchKey) instanceof String) {
+                  && fieldToSearch.get(searchKey) instanceof String) {
                 ObjectId m1 = new ObjectId(searchFor.get(searchKey).toString());
                 ObjectId m2 = new ObjectId(String.valueOf(fieldToSearch.get(searchKey)));
                 matches = m1.equals(m2);
               } else if (searchFor.get(searchKey) instanceof String
-                      && fieldToSearch.get(searchKey) instanceof ObjectId) {
+                  && fieldToSearch.get(searchKey) instanceof ObjectId) {
                 ObjectId m1 = new ObjectId(String.valueOf(searchFor.get(searchKey)));
                 ObjectId m2 = new ObjectId(fieldToSearch.get(searchKey).toString());
                 matches = m1.equals(m2);
@@ -653,8 +654,8 @@ public class FongoDBCollection extends DBCollection {
           }
         } else {
           final String msg = "Projection `" + projectionKey
-                  + "' has a value that Fongo doesn't know how to handle: " + projectionValue
-                  + " (" + (projectionValue == null ? " " : projectionValue.getClass() + ")");
+              + "' has a value that Fongo doesn't know how to handle: " + projectionValue
+              + " (" + (projectionValue == null ? " " : projectionValue.getClass() + ")");
 
           throw new IllegalArgumentException(msg);
         }
@@ -698,6 +699,7 @@ public class FongoDBCollection extends DBCollection {
     return objectsToSearch;
   }
 
+
   @Override
   public synchronized long getCount(DBObject query, DBObject fields, long limit, long skip) {
     query = filterLists(query);
@@ -708,7 +710,7 @@ public class FongoDBCollection extends DBCollection {
       upperLimit = limit;
     }
     int seen = 0;
-    for (Iterator<DBObject> iter = filterByIndexes(query).iterator(); iter.hasNext() && count <= upperLimit;) {
+    for (Iterator<DBObject> iter = filterByIndexes(query).iterator(); iter.hasNext() && count <= upperLimit; ) {
       DBObject value = iter.next();
       if (filter.apply(value)) {
         if (seen++ >= skip) {
@@ -769,7 +771,7 @@ public class FongoDBCollection extends DBCollection {
     query = filterLists(query);
     Set<Object> results = new LinkedHashSet<Object>();
     Filter filter = expressionParser.buildFilter(query);
-    for (Iterator<DBObject> iter = filterByIndexes(query).iterator(); iter.hasNext();) {
+    for (Iterator<DBObject> iter = filterByIndexes(query).iterator(); iter.hasNext(); ) {
       DBObject value = iter.next();
       if (filter.apply(value)) {
         List<Object> keyValues = expressionParser.getEmbeddedValues(key, value);
@@ -866,9 +868,10 @@ public class FongoDBCollection extends DBCollection {
   }
 
   /**
-   * Add entry to index. If necessary, remove oldObject from index.
+   * Add entry to index.
+   * If necessary, remove oldObject from index.
    *
-   * @param object new object to insert.
+   * @param object    new object to insert.
    * @param oldObject null if insert, old object if update.
    */
   private synchronized void addToIndexes(DBObject object, DBObject oldObject, WriteConcern concern) {
@@ -877,8 +880,7 @@ public class FongoDBCollection extends DBCollection {
     Set<String> queryFields = object.keySet();
     // First, try to see if index can add the new value.
     for (IndexAbstract index : indexes) {
-      @SuppressWarnings("unchecked")
-      List<List<Object>> error = index.checkAddOrUpdate(object, oldObject);
+      @SuppressWarnings("unchecked") List<List<Object>> error = index.checkAddOrUpdate(object, oldObject);
       if (!error.isEmpty()) {
         // TODO formatting : E11000 duplicate key error index: test.zip.$city_1_state_1_pop_1  dup key: { : "BARRE", : "MA", : 4546.0 }
         if (enforceDuplicates(concern)) {
@@ -893,10 +895,9 @@ public class FongoDBCollection extends DBCollection {
     for (IndexAbstract index : indexes) {
       if (index.canHandle(queryFields)) {
         index.addOrUpdate(idFirst, oldObject);
-      } else if (index.canHandle(oldQueryFields)) // In case of update and removing a field, we must remove from the index.
-      {
+      } else if (index.canHandle(oldQueryFields))
+        // In case of update and removing a field, we must remove from the index.
         index.remove(oldObject);
-      }
     }
   }
 
