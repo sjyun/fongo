@@ -1,17 +1,18 @@
 package com.mongodb;
 
-import com.github.fakemongo.Fongo;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import org.bson.BSONObject;
-import org.bson.types.ObjectId;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+
+import org.bson.BSONObject;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
+
+import com.github.fakemongo.Fongo;
+import org.bson.types.ObjectId;
 
 public class FongoDBCollectionTest {
   private FongoDBCollection collection;
@@ -235,7 +236,6 @@ public class FongoDBCollectionTest {
   }
 
   @Test
-  @Ignore
   public void textSearch() {
     BasicDBObject obj1 = new BasicDBObject().append("_id", "_id1")
             .append("textField", "tomorrow, and tomorrow, and tomorrow, creeps in this petty pace");
@@ -256,18 +256,18 @@ public class FongoDBCollectionTest {
     DBObject actual = collection.text("aaa bbb -ccc -ddd -яяя \"abc def\" \"def bca\"", 0, new BasicDBObject());
     
     BasicDBList resultsExpected = new BasicDBList();
-      resultsExpected.add(new BasicDBObject("score", 2.5)
+      resultsExpected.add(new BasicDBObject("score", 1.5)
               .append("obj", new BasicDBObject("_id", "_id2").append("textField", "eee, abc def")));
-      resultsExpected.add(new BasicDBObject("score", 1.25)
+      resultsExpected.add(new BasicDBObject("score", 0.75)
               .append("obj", new BasicDBObject("_id", "_id5").append("textField", "bbb, fff")));
-      resultsExpected.add(new BasicDBObject("score", 1.25)
+      resultsExpected.add(new BasicDBObject("score", 0.75)
               .append("obj", new BasicDBObject("_id", "_id4").append("textField", "aaa, bbb")));
     DBObject expected = new BasicDBObject("language", "english");
     expected.put("results", resultsExpected);            
     expected.put("stats", 
-            new BasicDBObject("nscannedObjects", 1)
-            .append("nscanned", 2)
-            .append("n", 2)
+            new BasicDBObject("nscannedObjects", 6)
+            .append("nscanned", 5)
+            .append("n", 3)
             .append("timeMicros", 1));
     expected.put("ok", 1);
     assertEquals("applied", expected, actual);

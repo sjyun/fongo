@@ -110,7 +110,7 @@ public class FongoDB extends DB {
   public WriteConcern getWriteConcern() {
     return fongo.getWriteConcern();
   }
-  
+
   @Override
   public ReadPreference getReadPreference() {
     return ReadPreference.primaryPreferred();
