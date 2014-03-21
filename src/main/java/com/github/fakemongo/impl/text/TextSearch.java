@@ -217,7 +217,7 @@ public class TextSearch {
   public DBObject findByTextSearch(String searchString, DBObject project, int limit) {
     this.searchString = searchString;
     this.project = project;
-    this.limit = (limit <= 0 || limit > 100) ? 100 : limit;
+    this.limit = (limit <= 0) ? 100 : limit;
 
     //Words Lists
     allWords = getWordsByRegex(searchString, "([[^\\p{Space}\\\\\\\"-]&&\\p{Alnum}&&[^\\p{Space}\\\\\\\"]]+)");
