@@ -318,10 +318,12 @@ public class FongoTest {
     assertEquals(JSON.parse(
             "{ \"serverUsed\" : \"0.0.0.0/0.0.0.0:27017\" , "
                     + "\"ok\" : 1.0 , \"results\" : [ "
-                    + "{ \"score\" : 1.25 , "
+                    + "{ \"score\" : 0.75 , "
                     + "\"obj\" : { \"_id\" : 1 , \"textField\" : \"aaa bbb\"}}] , "
                     + "\"stats\" : \"it's fake, sorry\"}").toString()
             , textSearchResult.toString());
+    assertEquals("aaa bbb",
+            ((DBObject)((DBObject)((List)textSearchResult.get("results")).get(0)).get("obj")).get("textField"));
   }
 
   @Test
