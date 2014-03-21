@@ -85,7 +85,7 @@ public class FongoDB extends DB {
   }
 
   //see http://docs.mongodb.org/manual/tutorial/search-for-text/ for mongodb v 2.4.9
-  private DBObject doTextSearchCollection(String collection, String search, Integer limit, DBObject project) {
+  private DBObject doTextSearchInCollection(String collection, String search, Integer limit, DBObject project) {
     FongoDBCollection coll = doGetCollection(collection);
     return coll.text(search, limit, project);
   }
@@ -253,21 +253,29 @@ public class FongoDB extends DB {
       if(collectionExists(collectionName)){
         DBObject newCmd = (DBObject)cmd.get(collectionName);
         if((newCmd.containsField("text") && ((DBObject)newCmd.get("text")).containsField("search"))){
-           DBObject result = doTextSearchCollection(collectionName,
+           DBObject resp = doTextSearchInCollection(collectionName,
            (String) ((DBObject)newCmd.get("text")).get("search"),
            (Integer) ((DBObject)newCmd.get("text")).get("limit"),
            (DBObject) ((DBObject)newCmd.get("text")).get("project"));
-           if (result == null) {
+           if (resp == null) {
              return notOkErrorResult("can't perform text search");
            }
+           CommandResult okResult = okResult();
+           okResult.put("results",resp.get("results"));
+           okResult.put("stats", resp.get("stats"));
+           return okResult;
         } else if((newCmd.containsField("$text") && ((DBObject)newCmd.get("$text")).containsField("$search"))){
-           DBObject result = doTextSearchCollection(collectionName,
+           DBObject resp = doTextSearchInCollection(collectionName,
            (String) ((DBObject)newCmd.get("$text")).get("$search"),
            (Integer) ((DBObject)newCmd.get("text")).get("limit"),
            (DBObject) ((DBObject)newCmd.get("text")).get("project"));
-           if (result == null) {
+           if (resp == null) {
              return notOkErrorResult("can't perform text search");
            }
+           CommandResult okResult = okResult();
+           okResult.put("results",resp.get("results"));
+           okResult.put("stats", resp.get("stats"));
+           return okResult;
         }
       }
     }

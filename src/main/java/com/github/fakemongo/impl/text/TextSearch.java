@@ -36,9 +36,14 @@ import org.slf4j.LoggerFactory;
  * http://docs.mongodb.org/master/tutorial/text-search-in-aggregation/
  *
  * Requires a text index on a single field http://docs.mongodb.org/manual/core/index-text/
+ * 
+ * Supports search.
+ * Supports limit.
+ * Supports project.
  *
  * Not quite correct: actually works better (finds more results) than mongo's (2.4.9 - 2.6.rc-1) text Search.
  * Does not support languages and stop words.
+ * Does not support filter yet.
  * Does not support weight in indexes (text indexes support is not full) .
  * Scores are calculated not 100% precisely.
  *
