@@ -129,7 +129,7 @@ The results of text search are qute similar to real, but not exactly.
 
 * Languages (including language-specific stop words)
 * Filter (maybe in future)
-* weights in text index (we plan to support them in future)
+* Weights in text index (we plan to support them in future)
 
 ### Limitations, Diferences
 
