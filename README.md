@@ -114,7 +114,7 @@ So, use UUID, random database, BUT NOT your real database.
 
 ## Text Search Simulation
 
-**Fongo** simulates [text search]http://docs.mongodb.org/manual/reference/command/text/ now.
+**Fongo** simulates [text search](http://docs.mongodb.org/manual/reference/command/text/) now.
 The results of text search are qute similar to real, but not exactly.
 
 ### Next features are supported:
@@ -133,7 +133,7 @@ The results of text search are qute similar to real, but not exactly.
 
 ### Limitations, Diferences
 
-* Only [text command]http://docs.mongodb.org/manual/reference/command/text/ search is supported. We will support [find query with $text operator]http://docs.mongodb.org/master/reference/operator/query/text/ probably in future.
+* Only [text command](http://docs.mongodb.org/manual/reference/command/text/) search is supported. We will support [find query with $text operator](http://docs.mongodb.org/master/reference/operator/query/text/) probably in future.
 * Scores in returned results are not always the same as the real Mongo's scores.
 * Only one field can be indexed as text field now. This limitation will be removed soon.
 
@@ -148,6 +148,7 @@ The results of text search are qute similar to real, but not exactly.
 
     DBObject textSearchCommand = new BasicDBObject("search", "my search \"my phrase\" -without -this -words");
 
+    //Search Command
     DBObject textSearchResult = collection.getDB()
             .command(new BasicDBObject("collection", new BasicDBObject("text", textSearchCommand)));
 
