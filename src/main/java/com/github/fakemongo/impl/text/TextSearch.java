@@ -55,8 +55,8 @@ public class TextSearch {
   private final static Logger LOG = LoggerFactory.getLogger(TextSearch.class);
   private final static double SCORE_INC = 0.75;
 
-  private int nscanned = 0;
-  private int nscannedObjects = 0;
+  private long nscanned = 0;
+  private long nscannedObjects = 0;
 
   private final DBCollection collection;
   private final Set<String> textIndexFields;
@@ -198,7 +198,7 @@ public class TextSearch {
     res.put("stats",
             new BasicDBObject("nscannedObjects", nscannedObjects)
             .append("nscanned", nscanned)
-            .append("n", results.size())
+            .append("n", (long) results.size())
             .append("timeMicros", 1)
     );
     res.put("ok", 1);
