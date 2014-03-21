@@ -25,7 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Emulates Text Search by sending multiple finds with regex
+ * Emulates (mongo 2.6.rc-1) Text Search by sending multiple finds with regex
  *
  * Can be used for:
  * db runCommand search:
@@ -41,11 +41,11 @@ import org.slf4j.LoggerFactory;
  * Supports limit.
  * Supports project.
  *
- * Not quite correct: actually works better (finds more results) than mongo's (2.4.9 - 2.6.rc-1) text Search.
+ * Not quite correct: actually works better (finds more results) than mongo's (2.6.rc-1) text Search.
  * Does not support languages and stop words.
  * Does not support filter yet.
  * Does not support weight in indexes (text indexes support is not full) .
- * Scores are calculated not 100% precisely.
+ * Scores are calculated not 100% precisely but almost always are same as in real DB.
  *
  * @author Alexander Arutuniants <alex.art@in2circle.com>
  */
@@ -53,6 +53,7 @@ import org.slf4j.LoggerFactory;
 public class TextSearch {
 
   private final static Logger LOG = LoggerFactory.getLogger(TextSearch.class);
+  private final static double SCORE_INC = 0.75;
 
   private final DBCollection collection;
   private final Set<String> textIndexFields;
@@ -177,9 +178,9 @@ public class TextSearch {
       if (resultsNotToInclude.contains(result)) {
         continue;
       } else if (results.containsKey(result)) {
-        score = (Double) results.get(result) + 1.25;
+        score = (Double) results.get(result) + SCORE_INC;
       } else {
-        score = 1.25;
+        score = SCORE_INC;
       }
       results.put(result, score);
     }
@@ -205,7 +206,7 @@ public class TextSearch {
   public DBObject findByTextSearch(String searchString, DBObject project, int limit) {
     this.searchString = searchString;
     this.project = project;
-    this.limit = (limit > 100 || limit <= 0) ? 100 : limit;
+    this.limit = (limit <=0 || limit > 100) ? 100 : limit;
 
     //Words Lists
     allWords = getWordsByRegex(searchString, "([[^\\p{Space}\\\\\\\"-]&&\\p{Alnum}&&[^\\p{Space}\\\\\\\"]]+)");
