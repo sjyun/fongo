@@ -931,8 +931,8 @@ public class FongoDBCollection extends DBCollection {
   }
 
   //Text search Emulation see http://docs.mongodb.org/manual/tutorial/search-for-text/ for mongo v 2.4.9
-  public synchronized DBObject text(String search, int limit, DBObject project) {
+  public synchronized DBObject text(String search, Number limit, DBObject project) {
     TextSearch ts = new TextSearch(this);
-    return ts.findByTextSearch(search, project, limit);
+    return ts.findByTextSearch(search, project == null ? new BasicDBObject() : project, limit == null ? 100 : limit.intValue());
   }
 }
