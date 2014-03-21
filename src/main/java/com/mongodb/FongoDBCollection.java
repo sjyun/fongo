@@ -931,7 +931,7 @@ public class FongoDBCollection extends DBCollection {
     return ((GeoIndex) matchingIndex).geoNear(query == null ? new BasicDBObject() : query, latLongs, limit == null ? 100 : limit.intValue(), spherical);
   }
 
-  //Text search Emulation see http://docs.mongodb.org/manual/tutorial/search-for-text/ for mongo v 2.4.9
+  //Text search Emulation see http://docs.mongodb.org/manual/tutorial/search-for-text/ for mongo
   public synchronized DBObject text(String search, Number limit, DBObject project) {
     TextSearch ts = new TextSearch(this);
     return ts.findByTextSearch(search, project == null ? new BasicDBObject() : project, limit == null ? 100 : limit.intValue());

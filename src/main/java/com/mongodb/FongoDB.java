@@ -86,7 +86,7 @@ public class FongoDB extends DB {
     return coll.geoNear(near, query, limit, maxDistance, spherical);
   }
 
-  //see http://docs.mongodb.org/manual/tutorial/search-for-text/ for mongodb v 2.4.9
+  //see http://docs.mongodb.org/manual/tutorial/search-for-text/ for mongodb
   private DBObject doTextSearchInCollection(String collection, String search, Integer limit, DBObject project) {
     FongoDBCollection coll = doGetCollection(collection);
     return coll.text(search, limit, project);
