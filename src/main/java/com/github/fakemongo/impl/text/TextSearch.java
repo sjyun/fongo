@@ -36,7 +36,7 @@ import org.slf4j.LoggerFactory;
  * http://docs.mongodb.org/master/tutorial/text-search-in-aggregation/
  *
  * Requires a text index on a single field http://docs.mongodb.org/manual/core/index-text/
- * 
+ *
  * Supports search.
  * Supports limit.
  * Supports project.
@@ -54,6 +54,9 @@ public class TextSearch {
 
   private final static Logger LOG = LoggerFactory.getLogger(TextSearch.class);
   private final static double SCORE_INC = 0.75;
+
+  private int nscanned = 0;
+  private int nscannedObjects = 0;
 
   private final DBCollection collection;
   private final Set<String> textIndexFields;
@@ -143,6 +146,7 @@ public class TextSearch {
 
     while (negationSearchResultCursor.hasNext()) {
       result.add(negationSearchResultCursor.next());
+      nscannedObjects++;
     }
     return result;
   }
@@ -175,6 +179,7 @@ public class TextSearch {
 
     for (DBObject result : resultsToInclude) {
       Double score;
+      nscanned++;
       if (resultsNotToInclude.contains(result)) {
         continue;
       } else if (results.containsKey(result)) {
@@ -189,7 +194,13 @@ public class TextSearch {
   private DBObject BuildResponce(BasicDBList results) {
     BasicDBObject res = new BasicDBObject("language", "english");
     res.put("results", results);
-    res.put("stats", "it's fake, sorry");
+    //It's fake data just for fields match
+    res.put("stats",
+            new BasicDBObject("nscannedObjects", nscannedObjects)
+            .append("nscanned", nscanned)
+            .append("n", results.size())
+            .append("timeMicros", 1)
+    );
     res.put("ok", 1);
 
     return res;
@@ -206,7 +217,7 @@ public class TextSearch {
   public DBObject findByTextSearch(String searchString, DBObject project, int limit) {
     this.searchString = searchString;
     this.project = project;
-    this.limit = (limit <=0 || limit > 100) ? 100 : limit;
+    this.limit = (limit <= 0 || limit > 100) ? 100 : limit;
 
     //Words Lists
     allWords = getWordsByRegex(searchString, "([[^\\p{Space}\\\\\\\"-]&&\\p{Alnum}&&[^\\p{Space}\\\\\\\"]]+)");

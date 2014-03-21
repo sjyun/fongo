@@ -315,13 +315,13 @@ public class FongoTest {
     
     System.out.println(textSearchResult);
     
-    assertEquals(JSON.parse(
+    assertEquals((DBObject)JSON.parse(
             "{ \"serverUsed\" : \"0.0.0.0/0.0.0.0:27017\" , "
-                    + "\"ok\" : 1.0 , \"results\" : [ "
-                    + "{ \"score\" : 0.75 , "
-                    + "\"obj\" : { \"_id\" : 1 , \"textField\" : \"aaa bbb\"}}] , "
-                    + "\"stats\" : \"it's fake, sorry\"}").toString()
-            , textSearchResult.toString());
+                + "\"ok\" : 1.0 , \"results\" : [ "
+                + "{ \"score\" : 0.75 , "
+                + "\"obj\" : { \"_id\" : 1 , \"textField\" : \"aaa bbb\"}}] , "
+                + "\"stats\" : { \"nscannedObjects\" : 4 , \"nscanned\" : 2 , \"n\" : 1 , \"timeMicros\" : 1}}"),
+            (DBObject)textSearchResult);
     assertEquals("aaa bbb",
             ((DBObject)((DBObject)((List)textSearchResult.get("results")).get(0)).get("obj")).get("textField"));
   }

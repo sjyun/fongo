@@ -264,7 +264,11 @@ public class FongoDBCollectionTest {
               .append("obj", new BasicDBObject("_id", "_id4").append("textField", "aaa, bbb")));
     DBObject expected = new BasicDBObject("language", "english");
     expected.put("results", resultsExpected);            
-    expected.put("stats", "it's fake, sorry");
+    expected.put("stats", 
+            new BasicDBObject("nscannedObjects", 1)
+            .append("nscanned", 2)
+            .append("n", 2)
+            .append("timeMicros", 1));
     expected.put("ok", 1);
     assertEquals("applied", expected, actual);
   }
@@ -304,7 +308,11 @@ public class FongoDBCollectionTest {
               .append("obj", new BasicDBObject("_id", "_id6").append("textField", "aaa aaa eee, abc def")));
     DBObject expected = new BasicDBObject("language", "english");
     expected.put("results", resultsExpected);            
-    expected.put("stats", "it's fake, sorry");
+    expected.put("stats", 
+            new BasicDBObject("nscannedObjects", 2)
+            .append("nscanned", 2)
+            .append("n", 2)
+            .append("timeMicros", 1));
     expected.put("ok", 1);
     assertEquals("applied", expected, actual);
   }
