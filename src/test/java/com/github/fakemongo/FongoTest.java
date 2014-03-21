@@ -313,8 +313,6 @@ public class FongoTest {
     DBObject textSearchResult = collection.getDB()
             .command(new BasicDBObject(collection.getName(), new BasicDBObject("text", textSearchCommand)));
     
-    System.out.println(textSearchResult);
-    
     assertEquals((DBObject)JSON.parse(
             "{ \"serverUsed\" : \"0.0.0.0/0.0.0.0:27017\" , "
                 + "\"ok\" : 1.0 , \"results\" : [ "

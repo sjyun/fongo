@@ -68,11 +68,11 @@ public class TextSearch {
   private int limit;
 
   private List<String> allWords;
-  private List<String> fullPhrasesToSearch;
+  private List<String> phrasesToSearch;
   private List<String> negatedWordsToSearch;
   private List<String> wordsToSearch;
 
-  public TextSearch(FongoDBCollection collection) {
+  public TextSearch(DBCollection collection) {
     this.collection = collection;
     this.textIndexFields = searchTextIndexFields(collection, true);
   }
@@ -88,8 +88,8 @@ public class TextSearch {
     return result;
   }
 
-  private Set<String> searchTextIndexFields(FongoDBCollection collection, boolean unique) {
-    Collection<IndexAbstract> indexes = collection.getIndexes();
+  private Set<String> searchTextIndexFields(DBCollection collection, boolean unique) {
+    Collection<IndexAbstract> indexes = ((FongoDBCollection)collection) .getIndexes();
     IndexAbstract result = null;
     Set<String> indexFields = new TreeSet<String>();
     for (IndexAbstract index : indexes) {
@@ -140,12 +140,12 @@ public class TextSearch {
     }
     findQuery = new BasicDBObject("$or", ors);
 
-    DBCursor negationSearchResultCursor = collection.find(findQuery, project);
-
+    DBCursor searchResultCursor = collection.find(findQuery, project);
+    
     List<DBObject> result = new ArrayList<DBObject>();
 
-    while (negationSearchResultCursor.hasNext()) {
-      result.add(negationSearchResultCursor.next());
+    while (searchResultCursor.hasNext()) {
+      result.add(searchResultCursor.next());
       nscannedObjects++;
     }
     return result;
@@ -206,12 +206,12 @@ public class TextSearch {
     return res;
   }
 
-  public DBObject findByTextSearch(String searchString, DBObject project) {
-    return findByTextSearch(searchString, project, 100);
-  }
-
   public DBObject findByTextSearch(String searchString) {
     return findByTextSearch(searchString, null, 100);
+  }
+
+  public DBObject findByTextSearch(String searchString, DBObject project) {
+    return findByTextSearch(searchString, project, 100);
   }
 
   public DBObject findByTextSearch(String searchString, DBObject project, int limit) {
@@ -221,7 +221,8 @@ public class TextSearch {
 
     //Words Lists
     allWords = getWordsByRegex(searchString, "([[^\\p{Space}\\\\\\\"-]&&\\p{Alnum}&&[^\\p{Space}\\\\\\\"]]+)");
-    fullPhrasesToSearch = getWordsByRegex(searchString, "\"\\s*(.*?)\\s*\"");
+    phrasesToSearch = getWordsByRegex(searchString, "\"\\s*(.*?)\\s*\"");
+    phrasesToSearch.addAll(getWordsByRegex(searchString, "\\b((?!-)\\S+\\s(?!-)\\S+)\\b"));
     negatedWordsToSearch = getWordsByRegex(searchString, "-(.\\S*)\\s*");
     wordsToSearch = subtractLists(allWords, negatedWordsToSearch);
 
@@ -229,7 +230,7 @@ public class TextSearch {
     List<DBObject> negatedSearchResults = findMatchesInCollection(collection, negatedWordsToSearch, project);
 
     //Find Phrases    
-    List<DBObject> phrasesSearchResult = findMatchesInCollection(collection, fullPhrasesToSearch, project);
+    List<DBObject> phrasesSearchResult = findMatchesInCollection(collection, phrasesToSearch, project);
 
     //Find Words
     List<DBObject> wordsSearchResult = findMatchesInCollection(collection, wordsToSearch, project);
