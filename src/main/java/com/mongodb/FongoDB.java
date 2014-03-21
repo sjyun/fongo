@@ -257,7 +257,7 @@ public class FongoDB extends DB {
         return result;
       }
     } else {
-      String collectionName = cmd.toMap().keySet().toArray()[0].toString();
+      String collectionName = ((Map.Entry<String, DBObject>)cmd.toMap().entrySet().iterator().next()).getKey();
       if(collectionExists(collectionName)){
         DBObject newCmd = (DBObject)cmd.get(collectionName);
         if((newCmd.containsField("text") && ((DBObject)newCmd.get("text")).containsField("search"))){
