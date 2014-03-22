@@ -259,9 +259,9 @@ public class FongoDBCollectionTest {
       resultsExpected.add(new BasicDBObject("score", 1.5)
               .append("obj", new BasicDBObject("_id", "_id2").append("textField", "eee, abc def")));
       resultsExpected.add(new BasicDBObject("score", 0.75)
-              .append("obj", new BasicDBObject("_id", "_id5").append("textField", "bbb, fff")));
-      resultsExpected.add(new BasicDBObject("score", 0.75)
               .append("obj", new BasicDBObject("_id", "_id4").append("textField", "aaa, bbb")));
+      resultsExpected.add(new BasicDBObject("score", 0.75)
+              .append("obj", new BasicDBObject("_id", "_id5").append("textField", "bbb, fff")));
     DBObject expected = new BasicDBObject("language", "english");
     expected.put("results", resultsExpected);            
     expected.put("stats", 

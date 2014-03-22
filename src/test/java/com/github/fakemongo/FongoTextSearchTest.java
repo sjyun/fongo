@@ -96,15 +96,14 @@ public class FongoTextSearchTest {
 
     assertEquals((DBObject) JSON.parse(
             "{ \"language\" : \"english\" , "
-                    + "\"results\" : [ { "
-                    + "\"score\" : 1.5 , "
-                    + "\"obj\" : { \"_id\" : 2 , \"textField\" : \"ccc ddd\" , \"otherField\" : \"text2 aaa\"}} , { "
-                    + "\"score\" : 1.5 , "
-                    + "\"obj\" : { \"_id\" : 1 , \"textField\" : \"aaa bbb\" , \"otherField\" : \"text1 aaa\"}}] , "
-                    + "\"stats\" : { \"nscannedObjects\" : 6 , \"nscanned\" : 6 , \"n\" : 2 , \"timeMicros\" : 1} , "
-                    + "\"ok\" : 1}"),
+            + "\"results\" : [ "
+            + "{ \"score\" : 1.5 , "
+            + "\"obj\" : { \"_id\" : 1 , \"textField\" : \"aaa bbb\" , \"otherField\" : \"text1 aaa\"}} , "
+            + "{ \"score\" : 1.5 , "
+            + "\"obj\" : { \"_id\" : 2 , \"textField\" : \"ccc ddd\" , \"otherField\" : \"text2 aaa\"}}] , "
+            + "\"stats\" : { \"nscannedObjects\" : 6 , \"nscanned\" : 6 , \"n\" : 2 , \"timeMicros\" : 1} , \"ok\" : 1}"),
             (DBObject) result);
-    assertEquals("aaa bbb",
+    assertEquals("ccc ddd",
             ((DBObject) ((DBObject) ((List) result.get("results")).get(1)).get("obj")).get("textField"));
   }
 }
