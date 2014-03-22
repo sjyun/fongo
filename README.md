@@ -134,7 +134,7 @@ The results of text search are qute similar to real, but not exactly.
 
 #### Usage example of the text search simulation:
 ```java
-    @Rule
+    @Test
     public void findByTextTest() {
     //....
     //Define index:
