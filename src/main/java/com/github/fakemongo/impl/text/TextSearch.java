@@ -12,9 +12,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -61,7 +61,7 @@ public class TextSearch {
   private final DBCollection collection;
   private final Set<String> textIndexFields;
 
-  private final Map results = new HashMap<DBObject, Double>();
+  private final Map<DBObject,Double> results = new LinkedHashMap<DBObject, Double>();
 
   private String searchString;
   private DBObject project;
@@ -183,7 +183,7 @@ public class TextSearch {
       if (resultsNotToInclude.contains(result)) {
         continue;
       } else if (results.containsKey(result)) {
-        score = (Double) results.get(result) + SCORE_INC;
+        score = results.get(result) + SCORE_INC;
       } else {
         score = SCORE_INC;
       }
