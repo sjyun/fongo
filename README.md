@@ -12,7 +12,7 @@ Add dependency to your project:
 <dependency>
   <groupId>com.github.fakemongo</groupId>
   <artifactId>fongo</artifactId>
-  <version>1.3.7</version>
+  <version>1.4.0</version>
   <scope>test</scope>
 </dependency>
 ```
