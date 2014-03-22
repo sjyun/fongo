@@ -235,4 +235,85 @@ public class FongoDBCollectionTest {
     assertTrue(r != object);
   }
 
+  @Test
+  public void textSearch() {
+    BasicDBObject obj1 = new BasicDBObject().append("_id", "_id1")
+            .append("textField", "tomorrow, and tomorrow, and tomorrow, creeps in this petty pace");
+    BasicDBObject obj2 = new BasicDBObject().append("_id", "_id2")
+            .append("textField", "eee, abc def");
+    BasicDBObject obj3 = new BasicDBObject().append("_id", "_id3")
+            .append("textField", "bbb, ccc");
+    BasicDBObject obj4 = new BasicDBObject().append("_id", "_id4")
+            .append("textField", "aaa, bbb");
+    BasicDBObject obj5 = new BasicDBObject().append("_id", "_id5")
+            .append("textField", "bbb, fff");
+    collection.insert(obj1);
+    collection.insert(obj2);
+    collection.insert(obj3);
+    collection.insert(obj4);
+    collection.insert(obj5);
+    collection.createIndex(new BasicDBObject("textField", "text"));
+    DBObject actual = collection.text("aaa bbb -ccc -ddd -яяя \"abc def\" \"def bca\"", 0, new BasicDBObject());
+    
+    BasicDBList resultsExpected = new BasicDBList();
+      resultsExpected.add(new BasicDBObject("score", 1.5)
+              .append("obj", new BasicDBObject("_id", "_id2").append("textField", "eee, abc def")));
+      resultsExpected.add(new BasicDBObject("score", 0.75)
+              .append("obj", new BasicDBObject("_id", "_id5").append("textField", "bbb, fff")));
+      resultsExpected.add(new BasicDBObject("score", 0.75)
+              .append("obj", new BasicDBObject("_id", "_id4").append("textField", "aaa, bbb")));
+    DBObject expected = new BasicDBObject("language", "english");
+    expected.put("results", resultsExpected);            
+    expected.put("stats", 
+            new BasicDBObject("nscannedObjects", 6)
+            .append("nscanned", 5)
+            .append("n", 3)
+            .append("timeMicros", 1));
+    expected.put("ok", 1);
+    assertEquals("applied", expected, actual);
+  }
+
+  @Test
+  public void textSearchExactMatch() {
+    BasicDBObject obj1 = new BasicDBObject().append("_id", "_id1")
+            .append("textField", "tomorrow, and tomorrow, and tomorrow, creeps in this petty pace");
+    BasicDBObject obj2 = new BasicDBObject().append("_id", "_id2")
+            .append("textField", "eee, abc def");
+    BasicDBObject obj3 = new BasicDBObject().append("_id", "_id3")
+            .append("textField", "bbb, ccc");
+    BasicDBObject obj4 = new BasicDBObject().append("_id", "_id4")
+            .append("textField", "aaa, bbb");
+    BasicDBObject obj5 = new BasicDBObject().append("_id", "_id5")
+            .append("textField", "bbb, fff");
+    BasicDBObject obj6 = new BasicDBObject().append("_id", "_id6")
+            .append("textField", "aaa aaa eee, abc def");
+    BasicDBObject obj7 = new BasicDBObject().append("_id", "_id7")
+            .append("textField", "aaaaaaa");
+    BasicDBObject obj8 = new BasicDBObject().append("_id", "_id8")
+            .append("textField", "aaaaaaaa");
+    collection.insert(obj1);
+    collection.insert(obj2);
+    collection.insert(obj3);
+    collection.insert(obj4);
+    collection.insert(obj5);
+    collection.insert(obj6);
+    collection.insert(obj8);
+    collection.createIndex(new BasicDBObject("textField", "text"));
+    DBObject actual = collection.text("aaa", 0, new BasicDBObject("textField", 1));
+    
+    BasicDBList resultsExpected = new BasicDBList();
+      resultsExpected.add(new BasicDBObject("score", 0.75)
+              .append("obj", new BasicDBObject("_id", "_id4").append("textField", "aaa, bbb")));
+      resultsExpected.add(new BasicDBObject("score", 0.75)
+              .append("obj", new BasicDBObject("_id", "_id6").append("textField", "aaa aaa eee, abc def")));
+    DBObject expected = new BasicDBObject("language", "english");
+    expected.put("results", resultsExpected);            
+    expected.put("stats", 
+            new BasicDBObject("nscannedObjects", 2)
+            .append("nscanned", 2)
+            .append("n", 2)
+            .append("timeMicros", 1));
+    expected.put("ok", 1);
+    assertEquals("applied", expected, actual);
+  }
 }

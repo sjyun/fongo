@@ -294,6 +294,35 @@ public class FongoTest {
     assertEquals(Arrays.asList((DBObject) JSON.parse("{ _id:2, array: [ { value1:1, value2:0 }, { value1:1, value2:2 } ] }")
     ), cursor.toArray());
   }
+  
+  // See http://docs.mongodb.org/manual/reference/command/text/
+  @Test
+  public void testCommandTextSearch() {
+    DBCollection collection = newCollection();
+    collection.insert((DBObject) JSON.parse("{ _id:1, textField: \"aaa bbb\" }"));
+    collection.insert((DBObject) JSON.parse("{ _id:2, textField: \"ccc ddd\" }"));
+    collection.insert((DBObject) JSON.parse("{ _id:3, textField: \"eee fff\" }"));
+    collection.insert((DBObject) JSON.parse("{ _id:4, textField: \"aaa eee\" }"));
+    
+    collection.createIndex(new BasicDBObject("textField", "text"));
+    
+    DBObject textSearchCommand = new BasicDBObject();
+//		textSearchCommand.put("text", Interest.COLLECTION);
+		textSearchCommand.put("search", "aaa -eee");
+    
+    DBObject textSearchResult = collection.getDB()
+            .command(new BasicDBObject(collection.getName(), new BasicDBObject("text", textSearchCommand)));
+    
+    assertEquals((DBObject)JSON.parse(
+            "{ \"serverUsed\" : \"0.0.0.0/0.0.0.0:27017\" , "
+                + "\"ok\" : 1.0 , \"results\" : [ "
+                + "{ \"score\" : 0.75 , "
+                + "\"obj\" : { \"_id\" : 1 , \"textField\" : \"aaa bbb\"}}] , "
+                + "\"stats\" : { \"nscannedObjects\" : 4 , \"nscanned\" : 2 , \"n\" : 1 , \"timeMicros\" : 1}}"),
+            (DBObject)textSearchResult);
+    assertEquals("aaa bbb",
+            ((DBObject)((DBObject)((List)textSearchResult.get("results")).get(0)).get("obj")).get("textField"));
+  }
 
   @Test
   public void testFindWithLimit() {

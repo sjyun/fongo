@@ -111,6 +111,45 @@ public FongoRule fongoRule = new FongoRule(true);
 WARNING : in this case, the database WILL BE DROPPED when test is finish.
 So, use UUID, random database, BUT NOT your real database.
 
+### Text Search Simulation
+**Fongo** simulates [text search](http://docs.mongodb.org/manual/reference/command/text/) now.
+The results of text search are qute similar to real, but not exactly.
+
+#### Next features are supported:
+* Plain words search
+* Search strings
+* Negated words
+* Projections in search query
+* Limits
+
+#### Fongo text search simulation does not support:
+* Languages (including language-specific stop words)
+* Filter (maybe in future)
+* Weights in text index (we plan to support them in future)
+
+#### Limitations, Differences:
+* Only [text command](http://docs.mongodb.org/manual/reference/command/text/) search is supported. We will support [find query with $text operator](http://docs.mongodb.org/master/reference/operator/query/text/) probably in future.
+* Scores in returned results are not always the same as the real Mongo's scores.
+* Only one field can be indexed as text field now. This limitation will be removed soon.
+
+#### Usage example of the text search simulation:
+```java
+    @Rule
+    public void findByTextTest() {
+    //....
+    //Define index:
+    collection.createIndex(new BasicDBObject("myTextFieldToIndex", "text"));
+
+    DBObject textSearchCommand = new BasicDBObject("search", "my search \"my phrase\" -without -this -words");
+
+    //Search Command
+    DBObject textSearchResult = collection.getDB()
+            .command(new BasicDBObject("collection", new BasicDBObject("text", textSearchCommand)));
+
+    //Make your assertions
+    //....
+	}
+```
 
 ## Todo
 

@@ -11,6 +11,7 @@ import com.github.fakemongo.impl.geo.LatLong;
 import com.github.fakemongo.impl.index.GeoIndex;
 import com.github.fakemongo.impl.index.IndexAbstract;
 import com.github.fakemongo.impl.index.IndexFactory;
+import com.github.fakemongo.impl.text.TextSearch;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -557,7 +558,7 @@ public class FongoDBCollection extends DBCollection {
       } else if (projectionValue instanceof DBObject) {
         project = true;
         projectionFields.add(projectionKey);
-      } else {
+      } else if (!projectionValue.toString().equals("text")) {
         final String msg = "Projection `" + projectionKey
             + "' has a value that Fongo doesn't know how to handle: " + projectionValue
             + " (" + (projectionValue == null ? " " : projectionValue.getClass() + ")");
@@ -928,5 +929,11 @@ public class FongoDBCollection extends DBCollection {
 
     List<LatLong> latLongs = GeoUtil.latLon(Collections.<String>emptyList(), near);
     return ((GeoIndex) matchingIndex).geoNear(query == null ? new BasicDBObject() : query, latLongs, limit == null ? 100 : limit.intValue(), spherical);
+  }
+
+  //Text search Emulation see http://docs.mongodb.org/manual/tutorial/search-for-text/ for mongo
+  public synchronized DBObject text(String search, Number limit, DBObject project) {
+    TextSearch ts = new TextSearch(this);
+    return ts.findByTextSearch(search, project == null ? new BasicDBObject() : project, limit == null ? 100 : limit.intValue());
   }
 }
