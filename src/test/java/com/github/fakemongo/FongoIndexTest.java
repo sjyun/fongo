@@ -43,7 +43,8 @@ public class FongoIndexTest {
             new BasicDBObject("v", 1).append("key", new BasicDBObject("_id", 1)).append("ns", "db.coll").append("name", "_id_"),
             new BasicDBObject("v", 1).append("key", new BasicDBObject("n", 1)).append("ns", "db.coll").append("name", "n_1"),
             new BasicDBObject("v", 1).append("key", new BasicDBObject("b", 1)).append("ns", "db.coll").append("name", "b_1")
-        ), indexes);
+        ), indexes
+    );
   }
 
   /**
@@ -59,7 +60,8 @@ public class FongoIndexTest {
         Arrays.asList(
             new BasicDBObject("v", 1).append("key", new BasicDBObject("_id", 1)).append("ns", "db.coll").append("name", "_id_"),
             new BasicDBObject("v", 1).append("key", new BasicDBObject("n", 1)).append("ns", "db.coll").append("name", "n_1")
-        ), indexes);
+        ), indexes
+    );
   }
 
   /**
@@ -75,7 +77,8 @@ public class FongoIndexTest {
         Arrays.asList(
             new BasicDBObject("v", 1).append("key", new BasicDBObject("_id", 1)).append("ns", "db.coll").append("name", "_id_"),
             new BasicDBObject("v", 1).append("key", new BasicDBObject("n", 1)).append("ns", "db.coll").append("name", "n_1")
-        ), indexes);
+        ), indexes
+    );
   }
 
   @Test
@@ -89,7 +92,8 @@ public class FongoIndexTest {
             new BasicDBObject("v", 1).append("key", new BasicDBObject("_id", 1)).append("ns", "db.coll").append("name", "_id_"),
             new BasicDBObject("v", 1).append("key", new BasicDBObject("n", 1)).append("ns", "db.coll").append("name", "n_1"),
             new BasicDBObject("v", 1).append("key", new BasicDBObject("n", -1)).append("ns", "db.coll").append("name", "n_-1")
-        ), indexes);
+        ), indexes
+    );
   }
 
   @Test
@@ -103,7 +107,8 @@ public class FongoIndexTest {
             new BasicDBObject("v", 1).append("key", new BasicDBObject("_id", 1)).append("ns", "db.coll").append("name", "_id_"),
             new BasicDBObject("v", 1).append("key", new BasicDBObject("n", 1)).append("ns", "db.coll").append("name", "n_1"),
             new BasicDBObject("v", 1).append("key", new BasicDBObject("n", -1)).append("ns", "db.coll").append("name", "n_-1")
-        ), indexes);
+        ), indexes
+    );
     IndexAbstract index = getIndex(collection, "n_1");
     index = getIndex(collection, "n_-1");
   }
@@ -120,7 +125,8 @@ public class FongoIndexTest {
             new BasicDBObject("v", 1).append("key", new BasicDBObject("_id", 1)).append("ns", "db.coll").append("name", "_id_"),
             new BasicDBObject("v", 1).append("key", new BasicDBObject("n", 1)).append("ns", "db.coll").append("name", "n_1"),
             new BasicDBObject("v", 1).append("key", new BasicDBObject("b", 1)).append("ns", "db.coll").append("name", "b_1")
-        ), indexes);
+        ), indexes
+    );
 
     collection.dropIndex("n_1");
     indexes = collection.getIndexInfo();
@@ -128,7 +134,8 @@ public class FongoIndexTest {
         Arrays.asList(
             new BasicDBObject("v", 1).append("key", new BasicDBObject("_id", 1)).append("ns", "db.coll").append("name", "_id_"),
             new BasicDBObject("v", 1).append("key", new BasicDBObject("b", 1)).append("ns", "db.coll").append("name", "b_1")
-        ), indexes);
+        ), indexes
+    );
   }
 
   @Test
@@ -143,7 +150,8 @@ public class FongoIndexTest {
             new BasicDBObject("v", 1).append("key", new BasicDBObject("_id", 1)).append("ns", "db.coll").append("name", "_id_"),
             new BasicDBObject("v", 1).append("key", new BasicDBObject("n", 1)).append("ns", "db.coll").append("name", "n_1"),
             new BasicDBObject("v", 1).append("key", new BasicDBObject("b", 1)).append("ns", "db.coll").append("name", "b_1")
-        ), indexes);
+        ), indexes
+    );
 
     collection.dropIndexes();
     indexes = collection.getIndexInfo();
@@ -516,6 +524,16 @@ public class FongoIndexTest {
     collection.insert(new BasicDBObject("date", 1));
     DBObject result = collection.findOne(new BasicDBObject("$or", Util.list(new BasicDBObject("date", 1), new BasicDBObject("date", 2))));
     assertEquals(1, result.get("date"));
+  }
+
+  @Test
+  public void testCompboudIndexFindOne() {
+    DBCollection collection = fongoRule.newCollection();
+    collection.ensureIndex(new BasicDBObject("date", -1).append("time", 1));
+    collection.insert(new BasicDBObject("date", 1).append("time", 2));
+    DBObject result = collection.findOne(new BasicDBObject("date", 1));
+    assertEquals(1, result.get("date"));
+    assertEquals(2, result.get("time"));
   }
 
   @Test

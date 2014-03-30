@@ -57,6 +57,9 @@ public abstract class IndexAbstract<T extends DBObject> {
       if (entry.getValue().equals("2d")) {
         nKeys.put(entry.getKey(), 1);
       }
+      if (entry.getValue() instanceof Number && ((Number) entry.getValue()).longValue() < 0) {
+        nKeys.put(entry.getKey(), 1); // Cannot mix -1 / +1 in projection.
+      }
     }
     return nKeys;
   }
