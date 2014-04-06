@@ -54,7 +54,7 @@ public abstract class IndexAbstract<T extends DBObject> {
     }
     // Transform 2d indexes into "1" (for now, can change later).
     for (Map.Entry<String, Object> entry : Util.entrySet(keys)) { // Work on keys to avoid ConcurrentModificationException
-      if (entry.getValue().equals("2d")) {
+      if (entry.getValue().equals("2d") || entry.getValue().equals("2dsphere")) {
         nKeys.put(entry.getKey(), 1);
       }
       if (entry.getValue() instanceof Number && ((Number) entry.getValue()).longValue() < 0) {

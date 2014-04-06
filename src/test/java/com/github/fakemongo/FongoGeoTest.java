@@ -1,7 +1,7 @@
 package com.github.fakemongo;
 
-import com.github.fakemongo.impl.geo.GeoUtil;
 import com.github.fakemongo.impl.Util;
+import com.github.fakemongo.impl.geo.GeoUtil;
 import com.github.fakemongo.junit.FongoRule;
 import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
@@ -10,6 +10,7 @@ import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
 import java.util.Arrays;
 import java.util.List;
+import org.assertj.core.api.Assertions;
 import static org.junit.Assert.assertEquals;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -279,7 +280,31 @@ public class FongoGeoTest {
         new BasicDBObject("_id", 1).append("loc", new BasicDBObject("latitude", 0).append("longitude", 0)),
         new BasicDBObject("_id", 2).append("loc", new BasicDBObject("latitude", 0).append("longitude", 0))
     ), objects);
+  }
 
+  @Test
+  public void should_geowithin_with_box_return_results() {
+    DBCollection collection = fongoRule.newCollection();
+    collection.insert(new BasicDBObject("_id", 1).append("loc", new BasicDBObject("latitude", 0).append("longitude", 0)));
+    collection.insert(new BasicDBObject("_id", 2).append("loc", new BasicDBObject("latitude", 0).append("longitude", 0)));
+    collection.ensureIndex(new BasicDBObject("loc", "2d"));
+
+    List<DBObject> objects = collection.find(new BasicDBObject("loc", new BasicDBObject("$geoWithin", new BasicDBObject("$box", Util.list(Util.list(0, 0), Util.list(10, 10)))))).toArray();
+    Assertions.assertThat(objects).contains(
+        new BasicDBObject("_id", 1).append("loc", new BasicDBObject("latitude", 0).append("longitude", 0)),
+        new BasicDBObject("_id", 2).append("loc", new BasicDBObject("latitude", 0).append("longitude", 0))
+    );
+  }
+
+  @Test
+  public void should_geowithin_with_box_return_noresult() {
+    DBCollection collection = fongoRule.newCollection();
+    collection.insert(new BasicDBObject("_id", 1).append("loc", new BasicDBObject("latitude", -1).append("longitude", -1)));
+    collection.insert(new BasicDBObject("_id", 2).append("loc", new BasicDBObject("latitude", -2).append("longitude", -2)));
+    collection.ensureIndex(new BasicDBObject("loc", "2d"));
+
+    List<DBObject> objects = collection.find(new BasicDBObject("loc", new BasicDBObject("$geoWithin", new BasicDBObject("$box", Util.list(Util.list(0, 0), Util.list(10, 10)))))).toArray();
+    Assertions.assertThat(objects).isEmpty();
   }
 
   private static DBObject roundDis(DBObject objectList) {

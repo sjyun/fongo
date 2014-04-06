@@ -1,11 +1,16 @@
 package com.github.fakemongo.impl.geo;
 
+import com.github.davidmoten.geo.GeoHash;
 import com.github.fakemongo.impl.ExpressionParser;
 import com.github.fakemongo.impl.Util;
-import com.github.davidmoten.geo.GeoHash;
 import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
+import com.vividsolutions.jts.geom.Coordinate;
+import com.vividsolutions.jts.geom.Envelope;
+import com.vividsolutions.jts.geom.Geometry;
+import com.vividsolutions.jts.geom.GeometryFactory;
+import com.vividsolutions.jts.operation.distance.DistanceOp;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -26,6 +31,8 @@ public final class GeoUtil {
   //      9,     3.71
   //      10,    0.6
   public static final int SIZE_GEOHASH = 5; // Size of the geohash. 12 = more accurate.
+
+  private static final GeometryFactory GEOMETRY_FACTORY = new GeometryFactory();
 
   private GeoUtil() {
   }
@@ -75,6 +82,11 @@ public final class GeoUtil {
           ", latLong=" + getLatLong() +
           '}';
     }
+  }
+
+  public static boolean geowithin(LatLong p1, Geometry geometry) {
+    Coordinate coordinate = new Coordinate(p1.getLon(), p1.getLat());
+    return DistanceOp.isWithinDistance(GEOMETRY_FACTORY.createPoint(coordinate), geometry, 0D);
   }
 
   public static double distanceInRadians(LatLong p1, LatLong p2, boolean spherical) {
@@ -162,7 +174,7 @@ public final class GeoUtil {
       } else if (dbObject.containsField("x") && dbObject.containsField("y")) {
         latLong = new LatLong(((Number) dbObject.get("x")).doubleValue(), ((Number) dbObject.get("y")).doubleValue());
       } else if (dbObject.containsField("latitude") && dbObject.containsField("longitude")) {
-          latLong = new LatLong(((Number) dbObject.get("latitude")).doubleValue(), ((Number) dbObject.get("longitude")).doubleValue());
+        latLong = new LatLong(((Number) dbObject.get("latitude")).doubleValue(), ((Number) dbObject.get("longitude")).doubleValue());
       }
     } else if (value instanceof double[]) {
       double[] array = (double[]) value;
@@ -171,6 +183,44 @@ public final class GeoUtil {
       }
     }
     return latLong;
+  }
+
+  public static Geometry getGeometry(DBObject dbObject) {
+    if (dbObject.containsField("$box")) {
+      BasicDBList coordinates = (BasicDBList) dbObject.get("$box");
+      return createBox(coordinates);
+    } else if (dbObject.containsField("$center")) {
+      throw new IllegalArgumentException("$center not implemented in fongo");
+      // TODO
+    } else if (dbObject.containsField("$centerSphere")) {
+      throw new IllegalArgumentException("$centerSphere not implemented in fongo");
+      // TODO
+    } else if (dbObject.containsField("$polygon")) {
+      throw new IllegalArgumentException("$polygon not implemented in fongo");
+      // TODO
+    } else if (dbObject.containsField("$geometry")) {
+      String type = (String) dbObject.get("type");
+      BasicDBList coordinates = (BasicDBList) dbObject.get("$coordinates");
+      throw new IllegalArgumentException("$geometry not implemented in fongo");
+      // TODO
+    }
+    return null;
+  }
+
+  private static Geometry createBox(BasicDBList coordinates) {
+    Coordinate[] t = parseCoordinates(coordinates);
+
+    return GEOMETRY_FACTORY.toGeometry(new Envelope(t[0], t[1]));
+  }
+
+  private static Coordinate[] parseCoordinates(BasicDBList coordinates) {
+    Coordinate[] ret = new Coordinate[coordinates.size()];
+    for (int i = 0, length = coordinates.size(); i < length; i++) {
+      LatLong latLong = getLatLong(coordinates.get(0));
+      ret[i] = new Coordinate(latLong.getLon(), latLong.getLat());
+    }
+
+    return ret;
   }
 
   public static String encodeGeoHash(LatLong latLong) {

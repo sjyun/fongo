@@ -10,6 +10,7 @@ import com.mongodb.DBRefBase;
 import com.mongodb.LazyDBObject;
 import com.mongodb.QueryOperators;
 import com.mongodb.util.JSON;
+import com.vividsolutions.jts.geom.Geometry;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -53,11 +54,12 @@ public class ExpressionParser {
   public final static String REGEX = "$regex";
   public final static String REGEX_OPTIONS = "$options";
   public final static String TYPE = "$type";
-  public final static String NEAR = "$near";
-  public final static String NEAR_SPHERE = "$nearSphere";
+  public final static String NEAR = QueryOperators.NEAR;
+  public final static String NEAR_SPHERE = QueryOperators.NEAR_SPHERE;
   public final static String MAX_DISTANCE = "$maxDistance";
   public final static String ELEM_MATCH = QueryOperators.ELEM_MATCH;
   public final static String WHERE = QueryOperators.WHERE;
+  public final static String GEO_WITHIN = "$geoWithin";
 
   // TODO : http://docs.mongodb.org/manual/reference/operator/query-geospatial/
   // TODO : http://docs.mongodb.org/manual/reference/operator/geoWithin/#op._S_geoWithin
@@ -141,7 +143,6 @@ public class ExpressionParser {
    *
    * @param ref  query for filter.
    * @param keys must match to build the filter.
-   * @return
    */
   public Filter buildFilter(DBObject ref, Collection<String> keys) {
     AndFilter andFilter = new AndFilter();
@@ -298,6 +299,21 @@ public class ExpressionParser {
         coordinates = GeoUtil.latLon(Arrays.asList("$geometry", "coordinates"), dbObject);
       }
       return createNearFilter(path, coordinates, maxDistance, spherical);
+    }
+  }
+
+  private final class GeoWithinCommandFilterFactory extends BasicCommandFilterFactory {
+
+    public GeoWithinCommandFilterFactory(final String command) {
+      super(command);
+    }
+
+    // http://docs.mongodb.org/manual/reference/operator/query/geoWithin/
+    @Override
+    public Filter createFilter(final List<String> path, DBObject refExpression) {
+      LOG.info("geoWithin path:{}, refExp:{}", path, refExpression);
+      Geometry geometry = GeoUtil.getGeometry(typecast("$geoWithin", refExpression.get("$geoWithin"), DBObject.class));
+      return createGeowithinFilter(path, geometry);
     }
   }
 
@@ -474,6 +490,7 @@ public class ExpressionParser {
       },
       new NearCommandFilterFactory(NEAR_SPHERE, true),
       new NearCommandFilterFactory(NEAR, false),
+      new GeoWithinCommandFilterFactory(GEO_WITHIN),
       new BasicCommandFilterFactory(TYPE) {
         @Override
         public Filter createFilter(final List<String> path, DBObject refExpression) {
@@ -701,10 +718,6 @@ public class ExpressionParser {
   /**
    * Compare objects between {@code queryValue} and {@code storedValue}.
    * Can return null if {@code comparableFilter} is true and {@code queryValue} and {@code storedValue} can't be compared.
-   *
-   * @param queryValue
-   * @param storedValue
-   * @return
    */
   public int compareObjects(Object queryValue, Object storedValue) {
     return compareObjects(queryValue, storedValue, false).intValue();
@@ -911,7 +924,7 @@ public class ExpressionParser {
   // Take care of : https://groups.google.com/forum/?fromgroups=#!topic/mongomapper/MfRDh2vtCFg
   public Filter createNearFilter(final List<String> path, final List<LatLong> coordinates, final Number maxDistance, final boolean sphere) {
     return new Filter() {
-      final LatLong coordinate = coordinates.get(0); // TODO(twillouer) try to get all coordinate.
+      final LatLong coordinate = coordinates.get(0); // TODO(twillouer) try to get all coordinates.
       int limit = 100;
 
       public boolean apply(DBObject o) {
@@ -943,6 +956,28 @@ public class ExpressionParser {
       }
     };
   }
+
+  private Filter createGeowithinFilter(final List<String> path, final Geometry geometry) {
+    return new Filter() {
+
+      public boolean apply(DBObject o) {
+        boolean result = false;
+
+        List<LatLong> storedOption = GeoUtil.latLon(path, o);
+        if (!storedOption.isEmpty()) {
+          for (LatLong point : storedOption) {
+            result = GeoUtil.geowithin(point, geometry);
+            LOG.debug("geowithin : {}", result);
+            if (result) {
+              break;
+            }
+          }
+        }
+        return result;
+      }
+    };
+  }
+
 
   static class NotFilter implements Filter {
     private final Filter filter;

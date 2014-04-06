@@ -42,6 +42,9 @@ fongo doesn't implement all mongo functionality. most query and update syntax is
 Gridfs and capped collections are not supported.
 MapReduce is in minimal way but will be enhanced soon.
 
+   $near can be used
+   $geoWithin can be used with $box for now.
+
 ## Implementation Details
 
 Fongo depends on [Objenesis](http://objenesis.org/) to hijack the `com.mongodb.MongoClient` class.  It has a "provided" dependency on the mongo-java-driver and was tested with 2.11.3.
