@@ -291,8 +291,8 @@ public class FongoGeoTest {
   @Test
   public void should_geowithin_with_box_return_noresult() {
     DBCollection collection = fongoRule.newCollection();
-    collection.insert(new BasicDBObject("_id", 1).append("loc", new BasicDBObject("longitude", 0).append("latitude", 0)));
-    collection.insert(new BasicDBObject("_id", 2).append("loc", new BasicDBObject("longitude", 1).append("latitude", 1)));
+    collection.insert(new BasicDBObject("_id", 1).append("loc", new BasicDBObject("longitude", 0).append("latitude", -1)));
+    collection.insert(new BasicDBObject("_id", 2).append("loc", new BasicDBObject("longitude", 11).append("latitude", 1)));
 
     collection.ensureIndex(new BasicDBObject("loc", "2d"));
 
