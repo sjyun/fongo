@@ -196,7 +196,8 @@ public final class GeoUtil {
       throw new IllegalArgumentException("$centerSphere not implemented in fongo");
       // TODO
     } else if (dbObject.containsField("$polygon")) {
-      throw new IllegalArgumentException("$polygon not implemented in fongo");
+      BasicDBList coordinates = (BasicDBList) dbObject.get("$polygon");
+      return createPolygon(coordinates);
       // TODO
     } else if (dbObject.containsField("$geometry")) {
       String type = (String) dbObject.get("type");
@@ -211,6 +212,18 @@ public final class GeoUtil {
     Coordinate[] t = parseCoordinates(coordinates);
 
     return GEOMETRY_FACTORY.toGeometry(new Envelope(t[0], t[1]));
+  }
+
+  private static Geometry createPolygon(BasicDBList coordinates) {
+    Coordinate[] t = parseCoordinates(coordinates);
+    if (!t[0].equals(t[t.length - 1])) {
+      Coordinate[] another = new Coordinate[t.length + 1];
+      System.arraycopy(t, 0, another, 0, t.length);
+      another[t.length] = t[0];
+      t = another;
+    }
+
+    return GEOMETRY_FACTORY.createPolygon(t);
   }
 
   private static Coordinate[] parseCoordinates(BasicDBList coordinates) {
