@@ -552,7 +552,7 @@ public class FongoDBCollection extends DBCollection {
       boolean included = false;
       boolean project = false;
       if (projectionValue instanceof Number) {
-        included = ((Number) projectionValue).intValue() > 0;
+        included = ((Number) projectionValue).intValue() != 0;
       } else if (projectionValue instanceof Boolean) {
         included = (Boolean) projectionValue;
       } else if (projectionValue instanceof DBObject) {

@@ -216,7 +216,7 @@ public final class GeoUtil {
   private static Coordinate[] parseCoordinates(BasicDBList coordinates) {
     Coordinate[] ret = new Coordinate[coordinates.size()];
     for (int i = 0, length = coordinates.size(); i < length; i++) {
-      LatLong latLong = getLatLong(coordinates.get(0));
+      LatLong latLong = getLatLong(coordinates.get(i));
       ret[i] = new Coordinate(latLong.getLon(), latLong.getLat());
     }
 

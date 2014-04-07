@@ -285,22 +285,22 @@ public class FongoGeoTest {
   @Test
   public void should_geowithin_with_box_return_results() {
     DBCollection collection = fongoRule.newCollection();
-    collection.insert(new BasicDBObject("_id", 1).append("loc", new BasicDBObject("latitude", 0).append("longitude", 0)));
-    collection.insert(new BasicDBObject("_id", 2).append("loc", new BasicDBObject("latitude", 0).append("longitude", 0)));
+    collection.insert(new BasicDBObject("_id", 1).append("loc", new BasicDBObject("longitude", 0).append("latitude", 0)));
+    collection.insert(new BasicDBObject("_id", 2).append("loc", new BasicDBObject("longitude", 1).append("latitude", 1)));
     collection.ensureIndex(new BasicDBObject("loc", "2d"));
 
     List<DBObject> objects = collection.find(new BasicDBObject("loc", new BasicDBObject("$geoWithin", new BasicDBObject("$box", Util.list(Util.list(0, 0), Util.list(10, 10)))))).toArray();
-    Assertions.assertThat(objects).contains(
-        new BasicDBObject("_id", 1).append("loc", new BasicDBObject("latitude", 0).append("longitude", 0)),
-        new BasicDBObject("_id", 2).append("loc", new BasicDBObject("latitude", 0).append("longitude", 0))
+    Assertions.assertThat(objects).containsOnly(
+        new BasicDBObject("_id", 1).append("loc", new BasicDBObject("longitude", 0).append("latitude", 0)),
+        new BasicDBObject("_id", 2).append("loc", new BasicDBObject("longitude", 1).append("latitude", 1))
     );
   }
 
   @Test
   public void should_geowithin_with_box_return_noresult() {
     DBCollection collection = fongoRule.newCollection();
-    collection.insert(new BasicDBObject("_id", 1).append("loc", new BasicDBObject("latitude", -1).append("longitude", -1)));
-    collection.insert(new BasicDBObject("_id", 2).append("loc", new BasicDBObject("latitude", -2).append("longitude", -2)));
+    collection.insert(new BasicDBObject("_id", 1).append("loc", new BasicDBObject("longitude", -1).append("latitude", -1)));
+    collection.insert(new BasicDBObject("_id", 2).append("loc", new BasicDBObject("longitude", -2).append("latitude", -2)));
     collection.ensureIndex(new BasicDBObject("loc", "2d"));
 
     List<DBObject> objects = collection.find(new BasicDBObject("loc", new BasicDBObject("$geoWithin", new BasicDBObject("$box", Util.list(Util.list(0, 0), Util.list(10, 10)))))).toArray();
