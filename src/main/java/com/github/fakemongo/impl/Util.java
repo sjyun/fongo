@@ -199,7 +199,20 @@ public final class Util {
       return (T) clone;
     }
 
-    throw new IllegalArgumentException("Don't know how to embedded: " + source);
+    @SuppressWarnings("unchecked")
+    BasicDBObject clone = new BasicDBObject();
+    for (Map.Entry<String, Object> entry : entrySet(source)) {
+      if (entry.getValue() instanceof DBObject) {
+        clone.put(entry.getKey(), Util.clone((DBObject) entry.getValue()));
+      } else {
+        if (entry.getValue() instanceof Binary) {
+          clone.put(entry.getKey(), ((Binary) entry.getValue()).getData().clone());
+        } else {
+          clone.put(entry.getKey(), entry.getValue());
+        }
+      }
+    }
+    return (T) clone;
   }
 
   @SuppressWarnings("unchecked")
