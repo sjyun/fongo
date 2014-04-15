@@ -1,20 +1,17 @@
 package com.mongodb;
 
+import com.github.fakemongo.Fongo;
 import com.github.fakemongo.impl.Aggregator;
 import com.github.fakemongo.impl.MapReduce;
-import java.util.HashSet;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.github.fakemongo.Fongo;
 
 /**
  * fongo override of com.mongodb.DB
@@ -27,7 +24,7 @@ public class FongoDB extends DB {
 
   private final Map<String, FongoDBCollection> collMap = Collections.synchronizedMap(new HashMap<String, FongoDBCollection>());
   private final Fongo fongo;
-  
+
   private MongoCredential mongoCredential;
 
   public FongoDB(Fongo fongo, String name) {
@@ -61,7 +58,6 @@ public class FongoDB extends DB {
     }
   }
 
-
   private DBObject findAndModify(String collection, DBObject query, DBObject sort, boolean remove, DBObject update, boolean returnNew, DBObject fields, boolean upsert) {
     FongoDBCollection coll = doGetCollection(collection);
 
@@ -77,7 +73,7 @@ public class FongoDB extends DB {
 
   private DBObject doMapReduce(String collection, String map, String reduce, String finalize, DBObject out, DBObject query, DBObject sort, Number limit) {
     FongoDBCollection coll = doGetCollection(collection);
-    MapReduce mapReduce = new MapReduce(this, coll, map, reduce, finalize, out, query, sort, limit);
+    MapReduce mapReduce = new MapReduce(this.fongo, coll, map, reduce, finalize, out, query, sort, limit);
     return mapReduce.computeResult();
   }
 
@@ -110,7 +106,7 @@ public class FongoDB extends DB {
   public WriteConcern getWriteConcern() {
     return fongo.getWriteConcern();
   }
-  
+
   @Override
   public ReadPreference getReadPreference() {
     return ReadPreference.primaryPreferred();
@@ -135,7 +131,7 @@ public class FongoDB extends DB {
     return this.mongoCredential;
   }
 
-/**
+  /**
    * Executes a database command.
    *
    * @param cmd       dbobject representing the command to execute
@@ -209,7 +205,7 @@ public class FongoDB extends DB {
       okResult.put("version", "2.4.5");
       okResult.put("maxBsonObjectSize", 16777216);
       return okResult;
-    } else if(cmd.containsField("forceerror")) {
+    } else if (cmd.containsField("forceerror")) {
       // http://docs.mongodb.org/manual/reference/command/forceerror/
       CommandResult result = notOkErrorResult(10038, null, "exception: forced error");
       return result;
@@ -227,7 +223,7 @@ public class FongoDB extends DB {
         return notOkErrorResult("can't mapReduce");
       }
       CommandResult okResult = okResult();
-      if(result instanceof List) {
+      if (result instanceof List) {
         // INLINE case.
         okResult.put("results", result);
       } else {
@@ -257,33 +253,33 @@ public class FongoDB extends DB {
         return result;
       }
     } else {
-      String collectionName = ((Map.Entry<String, DBObject>)cmd.toMap().entrySet().iterator().next()).getKey();
-      if(collectionExists(collectionName)){
-        DBObject newCmd = (DBObject)cmd.get(collectionName);
-        if((newCmd.containsField("text") && ((DBObject)newCmd.get("text")).containsField("search"))){
-           DBObject resp = doTextSearchInCollection(collectionName,
-           (String) ((DBObject)newCmd.get("text")).get("search"),
-           (Integer) ((DBObject)newCmd.get("text")).get("limit"),
-           (DBObject) ((DBObject)newCmd.get("text")).get("project"));
-           if (resp == null) {
-             return notOkErrorResult("can't perform text search");
-           }
-           CommandResult okResult = okResult();
-           okResult.put("results",resp.get("results"));
-           okResult.put("stats", resp.get("stats"));
-           return okResult;
-        } else if((newCmd.containsField("$text") && ((DBObject)newCmd.get("$text")).containsField("$search"))){
-           DBObject resp = doTextSearchInCollection(collectionName,
-           (String) ((DBObject)newCmd.get("$text")).get("$search"),
-           (Integer) ((DBObject)newCmd.get("text")).get("limit"),
-           (DBObject) ((DBObject)newCmd.get("text")).get("project"));
-           if (resp == null) {
-             return notOkErrorResult("can't perform text search");
-           }
-           CommandResult okResult = okResult();
-           okResult.put("results",resp.get("results"));
-           okResult.put("stats", resp.get("stats"));
-           return okResult;
+      String collectionName = ((Map.Entry<String, DBObject>) cmd.toMap().entrySet().iterator().next()).getKey();
+      if (collectionExists(collectionName)) {
+        DBObject newCmd = (DBObject) cmd.get(collectionName);
+        if ((newCmd.containsField("text") && ((DBObject) newCmd.get("text")).containsField("search"))) {
+          DBObject resp = doTextSearchInCollection(collectionName,
+              (String) ((DBObject) newCmd.get("text")).get("search"),
+              (Integer) ((DBObject) newCmd.get("text")).get("limit"),
+              (DBObject) ((DBObject) newCmd.get("text")).get("project"));
+          if (resp == null) {
+            return notOkErrorResult("can't perform text search");
+          }
+          CommandResult okResult = okResult();
+          okResult.put("results", resp.get("results"));
+          okResult.put("stats", resp.get("stats"));
+          return okResult;
+        } else if ((newCmd.containsField("$text") && ((DBObject) newCmd.get("$text")).containsField("$search"))) {
+          DBObject resp = doTextSearchInCollection(collectionName,
+              (String) ((DBObject) newCmd.get("$text")).get("$search"),
+              (Integer) ((DBObject) newCmd.get("text")).get("limit"),
+              (DBObject) ((DBObject) newCmd.get("text")).get("project"));
+          if (resp == null) {
+            return notOkErrorResult("can't perform text search");
+          }
+          CommandResult okResult = okResult();
+          okResult.put("results", resp.get("results"));
+          okResult.put("stats", resp.get("stats"));
+          return okResult;
         }
       }
     }

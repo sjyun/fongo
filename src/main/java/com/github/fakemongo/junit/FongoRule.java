@@ -135,6 +135,10 @@ public class FongoRule extends ExternalResource {
     return this.db;
   }
 
+  public DB getDb(String name) {
+    return this.mongo.getDB(name);
+  }
+
   public Mongo getMongo() {
     return this.mongo;
   }
