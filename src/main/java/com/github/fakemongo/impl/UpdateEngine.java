@@ -5,6 +5,7 @@ import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -194,13 +195,62 @@ public class UpdateEngine {
       new BasicUpdate("$push", true) {
         @Override
         void mergeAction(String subKey, DBObject subObject, Object object, DBObject objOriginal) {
-          if (!subObject.containsField(subKey)) {
-            subObject.put(subKey, asDbList(object));
+          BasicDBList currentValue;
+          if (subObject.containsField(subKey)) {
+            currentValue = expressionParser.typecast(subKey, subObject.get(subKey), BasicDBList.class);
           } else {
-            BasicDBList currentValue = expressionParser.typecast(subKey, subObject.get(subKey), BasicDBList.class);
-            currentValue.add(object);
-            subObject.put(subKey, currentValue);
+            currentValue = new BasicDBList();
           }
+
+          if (object instanceof DBObject && (((DBObject) object).get("$each") != null)) {
+            DBObject dbObject = (DBObject) object;
+            Object eachObject = dbObject.get("$each");
+            BasicDBList eachList = expressionParser.typecast(command + ".$each value", eachObject, BasicDBList.class);
+
+            // position
+            int pos = currentValue.size();
+            Object positionObject = dbObject.get("$position");
+            if (positionObject != null) {
+              pos = expressionParser.typecast(command + ".$position value", positionObject, Number.class).intValue();
+              if (pos >= currentValue.size()) {
+                pos = currentValue.size();
+              }
+            }
+            currentValue.addAll(pos, eachList);
+
+            // sort
+            Object sortObj = dbObject.get("$sort");
+            if (sortObj != null) {
+              if (sortObj instanceof Number) {
+                int sortDirection = ((Number) sortObj).intValue();
+                Collections.sort(currentValue, expressionParser.objectComparator(sortDirection));
+              } else if (sortObj instanceof DBObject) {
+                Collections.sort(currentValue, expressionParser.sortSpecificationComparator((DBObject) sortObj));
+              }
+            }
+
+            // slice
+            Object sliceObject = dbObject.get("$slice");
+            if (sliceObject != null) {
+              int slice = expressionParser.typecast(command + ".slice value", sliceObject, Number.class).intValue();
+              if (slice == 0) {
+                currentValue.clear();
+                currentValue.trimToSize();
+              } else if (slice > 0) {
+                BasicDBList subList = new BasicDBList();
+                subList.addAll(currentValue.subList(0, Math.min(slice, currentValue.size())));
+                currentValue = subList;
+              } else if (slice < 0 && currentValue.size() + slice >= 0) {
+                BasicDBList subList = new BasicDBList();
+                subList.addAll(currentValue.subList(Math.max(currentValue.size() + slice, 0), currentValue.size()));
+                currentValue = subList;
+              }
+            }
+          } else {
+            currentValue.add(object);
+          }
+
+          subObject.put(subKey, currentValue);
         }
       },
       new BasicUpdate("$pushAll", true) {

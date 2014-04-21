@@ -98,20 +98,25 @@ public class ExpressionParser {
     map.put(Short.class, 1);
     map.put(String.class, 2);
     map.put(Object.class, 3);
-    map.put(BasicDBList.class, 4);
-    map.put(LazyBSONList.class, 4);
     map.put(BasicDBObject.class, 4);
     map.put(LazyDBObject.class, 4);
-    map.put(byte[].class, 5);
-    map.put(Binary.class, 5);
-    map.put(ObjectId.class, 6);
-    map.put(Boolean.class, 7);
-    map.put(Date.class, 8);
-    map.put(Pattern.class, 9);
+    map.put(BasicDBList.class, 5);
+    map.put(LazyBSONList.class, 5);
+    map.put(byte[].class, 6);
+    map.put(Binary.class, 6);
+    map.put(ObjectId.class, 7);
+    map.put(Boolean.class, 8);
+    map.put(Date.class, 9);
+    map.put(Pattern.class, 10);
 //    map.put(Timestamp.class, 17);
     map.put(MaxKey.class, Integer.MAX_VALUE);
 
     CLASS_TO_WEIGHT = Collections.unmodifiableMap(map);
+  }
+
+  public ObjectComparator objectComparator(int sortDirection) {
+    if (!(sortDirection == -1 || sortDirection == 1)) throw new FongoException("$sort direction " + sortDirection + "must be -1 or 1.");
+    return new ObjectComparator(sortDirection == 1);
   }
 
   public class ObjectComparator implements Comparator {
@@ -125,6 +130,65 @@ public class ExpressionParser {
     public int compare(Object o1, Object o2) {
       return asc * compareObjects(o1, o2);
     }
+  }
+
+  public SortSpecificationComparator sortSpecificationComparator(DBObject orderBy) {
+    return new SortSpecificationComparator(orderBy);
+  }
+
+  public class SortSpecificationComparator implements Comparator<Object> {
+
+    private final DBObject orderBy;
+    private final Set<String> orderByKeySet;
+
+    public SortSpecificationComparator(DBObject orderBy) {
+      this.orderBy = orderBy;
+      this.orderByKeySet = orderBy.keySet();
+
+      if (this.orderByKeySet.isEmpty()) {
+        throw new FongoException("The $sort pattern is empty when it should be a set of fields.");
+      }
+    }
+
+    @Override
+    public int compare(Object o1, Object o2) {
+      if (isDBObjectButNotDBList(o1) && isDBObjectButNotDBList(o2)) {
+        DBObject dbo1 = (DBObject) o1;
+        DBObject dbo2 = (DBObject) o2;
+        for (String sortKey : orderByKeySet) {
+          final List<String> path = Util.split(sortKey);
+          int sortDirection = (Integer) orderBy.get(sortKey);
+
+          List<Object> o1list = getEmbeddedValues(path, dbo1);
+          List<Object> o2list = getEmbeddedValues(path, dbo2);
+
+          int compareValue = compareLists(o1list, o2list) * sortDirection;
+          if (compareValue != 0) {
+            return compareValue;
+          }
+        }
+        return 0;
+      } else if (isDBObjectButNotDBList(o1) || isDBObjectButNotDBList(o2)) {
+        DBObject dbo = (DBObject) (o1 instanceof DBObject ? o1 : o2);
+        for (String sortKey : orderByKeySet) {
+          final List<String> path = Util.split(sortKey);
+          int sortDirection = (Integer) orderBy.get(sortKey);
+
+          List<Object> foundValues = getEmbeddedValues(path, dbo);
+
+          if (!foundValues.isEmpty()) {
+            return o1 instanceof DBObject ? sortDirection : -sortDirection;
+          }
+        }
+        return compareTo(o1, o2);
+      } else {
+        return compareTo(o1, o2);
+      }
+    }
+  }
+
+  private boolean isDBObjectButNotDBList(Object o) {
+    return o instanceof DBObject && o instanceof Map;
   }
 
   public Filter buildFilter(DBObject ref) {
@@ -736,7 +800,7 @@ public class ExpressionParser {
   private Integer compareObjects(Object queryValue, Object storedValue, boolean comparableFilter) {
     LOG.debug("comparing {} and {}", queryValue, storedValue);
 
-    if (queryValue instanceof DBObject && storedValue instanceof DBObject) {
+    if (isDBObjectButNotDBList(queryValue) && isDBObjectButNotDBList(storedValue)) {
       return compareDBObjects((DBObject) queryValue, (DBObject) storedValue);
     } else if (queryValue instanceof List && storedValue instanceof List) {
       List queryList = (List) queryValue;

@@ -6,10 +6,9 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.BasicDBObjectBuilder;
 import com.mongodb.DBObject;
 import com.mongodb.DBRef;
-import com.mongodb.FongoDB;
-import com.mongodb.FongoDBCollection;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -19,6 +18,7 @@ import org.bson.types.Binary;
 import org.bson.types.MaxKey;
 import org.bson.types.MinKey;
 import org.bson.types.ObjectId;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
@@ -620,6 +620,7 @@ public class ExpressionParserTest {
     assertEquals(0, expressionParser.compareObjects(new BasicDBObject(), new BasicDBObject()));
     assertTrue(0 < expressionParser.compareObjects(new BasicDBObject("a", 3), new BasicDBObject("a", 1)));
     assertTrue(0 < expressionParser.compareObjects(new BasicDBObject("a", asList(2, 3)), new BasicDBObject("a", asList(1, 2))));
+    assertTrue(0 < expressionParser.compareObjects(new BasicDBList(), new BasicDBObject()));
   }
 
   @Test
@@ -695,6 +696,8 @@ public class ExpressionParserTest {
     assertTrue(0 > expressionParser.compareTo(ObjectId.get(), Pattern.compile("a*")));
     assertTrue(0 > expressionParser.compareTo(new Date(), Pattern.compile("a*")));
 
+    assertTrue(0 < expressionParser.compareTo(new BasicDBList(), new BasicDBObject("a", 3)));
+
     // For NOT converting Double to Long
     assertEquals(1, expressionParser.compareTo(-9223372036854775808L, (double) -9223372036854775807L));
     assertEquals(-1, expressionParser.compareTo((double) -9223372036854775807L, -9223372036854775808L));
@@ -718,6 +721,40 @@ public class ExpressionParserTest {
     assertTrue(0 == expressionParser.compareTo("jon".getBytes(), "jon".getBytes()));
     assertTrue(0 > expressionParser.compareTo("JON".getBytes(), "jon".getBytes()));
     assertTrue(0 < expressionParser.compareTo("jon".getBytes(), "JON".getBytes()));
+  }
+
+  @Test
+  public void testSortComparatorOnMixedArray() {
+    ExpressionParser expressionParser = new ExpressionParser();
+
+    Date date = new Date();
+    DBObject obja0 = new BasicDBObjectBuilder().append("a", 0).get();
+    DBObject obja2 = new BasicDBObjectBuilder().append("a", 2).get();
+    DBObject obja1b2 = new BasicDBObjectBuilder().append("a", 1).append("b", 2).get();
+    DBObject objb0 = new BasicDBObjectBuilder().append("b", 0).get();
+    List list = new BasicDBList();
+    double d = 0.5D;
+    int i = 0;
+    MinKey minKey = new MinKey();
+    MaxKey maxKey = new MaxKey();
+    long l = 1L;
+    ObjectId objId = new ObjectId();
+    Pattern regex = Pattern.compile("\\s*");
+
+    // arbitrary order
+    List<Object> objects = Util.list(obja0, obja2, objb0, obja1b2, d, i, null, minKey, maxKey, l, false, true, date, regex, objId, list, "");
+
+    Collections.sort(objects, expressionParser.sortSpecificationComparator(new BasicDBObjectBuilder().append("a", 1).get()));
+    assertArrayEquals(
+        new Object[]{minKey, null, i, d, l, "", objb0, list, objId, false, true, date, regex, maxKey, obja0, obja1b2, obja2},
+        objects.toArray()
+    );
+
+    Collections.sort(objects, expressionParser.sortSpecificationComparator(new BasicDBObjectBuilder().append("a", -1).get()));
+    assertArrayEquals(
+        new Object[]{obja2, obja1b2, obja0, minKey, null, i, d, l, "", objb0, list, objId, false, true, date, regex, maxKey},
+        objects.toArray()
+    );
   }
 
   @Test
