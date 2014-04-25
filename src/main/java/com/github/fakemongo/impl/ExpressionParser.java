@@ -178,7 +178,7 @@ public class ExpressionParser {
   }
 
   private boolean isDBObjectButNotDBList(Object o) {
-    return o instanceof DBObject && o instanceof Map;
+    return o instanceof DBObject && !(o instanceof List);
   }
 
   public Filter buildFilter(DBObject ref) {
