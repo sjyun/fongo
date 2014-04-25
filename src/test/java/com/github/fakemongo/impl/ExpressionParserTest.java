@@ -660,6 +660,27 @@ public class ExpressionParserTest {
   }
 
   @Test
+  public void testCompareDBObjects() {
+    ExpressionParser expressionParser = new ExpressionParser();
+
+    DBObject obja0 = new BasicDBObjectBuilder().append("a", 0).get();
+    DBObject obja1b2 = new BasicDBObjectBuilder().append("a", 1).append("b", 2).get();
+    DBObject obja2 = new BasicDBObjectBuilder().append("a", 2).get();
+    DBObject objb0 = new BasicDBObjectBuilder().append("b", 0).get();
+    DBObject objb2a1 = new BasicDBObjectBuilder().append("b", 2).append("a", 1).get();
+
+    assertTrue(0 > expressionParser.compareObjects(obja0, obja1b2));
+    assertTrue(0 > expressionParser.compareObjects(obja1b2, obja2));
+    assertTrue(0 > expressionParser.compareObjects(obja2, objb0));
+    assertTrue(0 > expressionParser.compareObjects(objb0, objb2a1));
+
+    assertTrue(0 < expressionParser.compareObjects(obja1b2, obja0));
+    assertTrue(0 < expressionParser.compareObjects(obja2, obja1b2));
+    assertTrue(0 < expressionParser.compareObjects(objb0, obja2));
+    assertTrue(0 < expressionParser.compareObjects(objb2a1, objb0));
+  }
+
+  @Test
   public void testCompareTo() {
     ExpressionParser expressionParser = new ExpressionParser();
     assertTrue(0 < expressionParser.compareTo(Boolean.TRUE, 1));

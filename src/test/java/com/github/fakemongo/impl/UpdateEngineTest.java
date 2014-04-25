@@ -244,7 +244,7 @@ public class UpdateEngineTest {
 
     Object[] actual = ((List) updateEngine.doUpdate(new BasicDBObject("a", objects), updateAsc).get("a")).toArray();
     assertArrayEquals(
-        new Object[]{minKey, null, i, d, l, "", obja0, obja2, objb0, obja1b2, list, objId, false, true, date, regex, maxKey},
+        new Object[]{minKey, null, i, d, l, "", obja0, obja1b2, obja2, objb0, list, objId, false, true, date, regex, maxKey},
         actual
     );
   }

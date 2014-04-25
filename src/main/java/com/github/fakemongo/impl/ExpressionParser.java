@@ -12,17 +12,7 @@ import com.mongodb.QueryOperators;
 import com.mongodb.util.JSON;
 import com.vividsolutions.jts.geom.Geometry;
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Pattern;
 import org.bson.LazyBSONList;
 import org.bson.types.Binary;
@@ -920,21 +910,45 @@ public class ExpressionParser {
     return 0;
   }
 
-  private int compareDBObjects(DBObject db0, DBObject db1) {
-    Set<String> db0KeySet = db0.keySet();
-    Set<String> db1KeySet = db1.keySet();
-    int db0Size = db0KeySet.size();
-    int db1Size = db1KeySet.size();
-    if (db0Size != db1Size) {
-      return (db0Size < db1Size ? -1 : (db0Size > db1Size ? 1 : 0));
-    }
-    for (String key : db0KeySet) {
-      int compareValue = compareObjects(db0.get(key), db1.get(key));
-      if (compareValue != 0) {
-        return compareValue;
+  private  int compareDBObjects(DBObject db0, DBObject db1) {
+    Iterator<String> i0 = db0.keySet().iterator();
+    Iterator<String> i1 = db1.keySet().iterator();
+    
+    while (i0.hasNext() || i1.hasNext()) {
+      String key0 = i0.hasNext() ? i0.next() : null;
+      String key1 = i1.hasNext() ? i1.next() : null;
+
+      int keyComparison = compareNullable(key0, key1);
+      if (keyComparison != 0) {
+        return keyComparison;
+      }
+      
+      Object value0 = key0 == null ? null : db0.get(key0);
+      Object value1 = key1 == null ? null : db1.get(key1);
+      
+      int valueComparison = compareObjects(value0, value1);
+      if (valueComparison != 0) {
+        return valueComparison;
       }
     }
+    
     return 0;
+  }
+  
+  private int compareNullable(String k1, String k2) {
+    if (k1 == null) {
+      if (k2 == null) {
+        return 0;
+      } else {
+        return -1;
+      }
+    } else {
+      if (k2 == null) {
+        return 1;
+      } else {
+        return k1.compareTo(k2);
+      }
+    }
   }
 
   public Filter createPatternFilter(final List<String> path, final Pattern pattern) {
