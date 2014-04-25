@@ -12,7 +12,18 @@ import com.mongodb.QueryOperators;
 import com.mongodb.util.JSON;
 import com.vividsolutions.jts.geom.Geometry;
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 import org.bson.LazyBSONList;
 import org.bson.types.Binary;
@@ -910,7 +921,7 @@ public class ExpressionParser {
     return 0;
   }
 
-  private  int compareDBObjects(DBObject db0, DBObject db1) {
+  private int compareDBObjects(DBObject db0, DBObject db1) {
     Iterator<String> i0 = db0.keySet().iterator();
     Iterator<String> i1 = db1.keySet().iterator();
     
