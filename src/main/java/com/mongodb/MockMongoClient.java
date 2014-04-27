@@ -17,7 +17,7 @@ public class MockMongoClient extends MongoClient {
 
   public static MockMongoClient create(Fongo fongo) {
     // using objenesis here to prevent default constructor from spinning up background threads.
-    MockMongoClient client = (MockMongoClient) new ObjenesisStd().getInstantiatorOf(MockMongoClient.class).newInstance();
+    MockMongoClient client = new ObjenesisStd().getInstantiatorOf(MockMongoClient.class).newInstance();
     client.options = new MongoOptions(clientOptions);
     client.fongo = fongo;
     client.setWriteConcern(clientOptions.getWriteConcern());
