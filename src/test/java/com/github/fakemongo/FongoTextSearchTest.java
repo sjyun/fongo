@@ -17,18 +17,19 @@ package com.github.fakemongo;
 
 import com.github.fakemongo.impl.text.TextSearch;
 import com.github.fakemongo.junit.FongoRule;
+import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
 import com.mongodb.util.JSON;
 import java.util.List;
+import org.assertj.core.api.Assertions;
 import static org.junit.Assert.assertEquals;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
 /**
- *
  * @author Alexander Arutuniants <alex.art@in2circle.com>
  */
 public class FongoTextSearchTest {
@@ -58,13 +59,18 @@ public class FongoTextSearchTest {
 
     DBObject result = ts.findByTextSearch(searchString);
 
-    assertEquals((DBObject) JSON.parse(
-            "{ \"language\" : \"english\" , "
-            + "\"results\" : [ ] , "
-            + "\"stats\" : { \"nscannedObjects\" : 5 , \"nscanned\" : 2 , \"n\" : 0 , \"timeMicros\" : 1} , "
-            + "\"ok\" : 1}"),
-            (DBObject) result);
-    assertEquals(0, ((List) result.get("results")).size());
+    Assertions.assertThat(((List) result.get("results"))).hasSize(0);
+
+    DBObject expected = new BasicDBObject("language", "english");
+    expected.put("results", new BasicDBList());
+    expected.put("stats",
+        new BasicDBObject("nscannedObjects", 5L)
+            .append("nscanned", 2L)
+            .append("n", 0L)
+            .append("timeMicros", 1)
+    );
+    expected.put("ok", 1);
+    Assertions.assertThat(result).isEqualTo(expected);
   }
 
   @Test
@@ -74,16 +80,20 @@ public class FongoTextSearchTest {
 
     DBObject result = ts.findByTextSearch(searchString, project);
 
-    assertEquals((DBObject) JSON.parse(
-            "{ \"language\" : \"english\" , "
-            + "\"results\" : [ { "
-            + "\"score\" : 0.75 , "
-            + "\"obj\" : { \"_id\" : 1 , \"textField\" : \"aaa bbb\"}}] , "
-            + "\"stats\" : { \"nscannedObjects\" : 4 , \"nscanned\" : 2 , \"n\" : 1 , \"timeMicros\" : 1} , "
-            + "\"ok\" : 1}"),
-            (DBObject) result);
+    DBObject expected = new BasicDBObject("language", "english");
+    expected.put("results", JSON.parse("[ { "
+        + "\"score\" : 0.75 , "
+        + "\"obj\" : { \"_id\" : 1 , \"textField\" : \"aaa bbb\"}}]"));
+    expected.put("stats",
+        new BasicDBObject("nscannedObjects", 4L)
+            .append("nscanned", 2L)
+            .append("n", 1L)
+            .append("timeMicros", 1)
+    );
+    expected.put("ok", 1);
+    Assertions.assertThat(result).isEqualTo(expected);
     assertEquals("aaa bbb",
-            ((DBObject) ((DBObject) ((List) result.get("results")).get(0)).get("obj")).get("textField"));
+        ((DBObject) ((DBObject) ((List) result.get("results")).get(0)).get("obj")).get("textField"));
 
   }
 
@@ -94,16 +104,21 @@ public class FongoTextSearchTest {
 
     DBObject result = ts.findByTextSearch(searchString, project, 2);
 
-    assertEquals((DBObject) JSON.parse(
-            "{ \"language\" : \"english\" , "
-            + "\"results\" : [ "
-            + "{ \"score\" : 1.5 , "
-            + "\"obj\" : { \"_id\" : 1 , \"textField\" : \"aaa bbb\" , \"otherField\" : \"text1 aaa\"}} , "
-            + "{ \"score\" : 1.5 , "
-            + "\"obj\" : { \"_id\" : 2 , \"textField\" : \"ccc ddd\" , \"otherField\" : \"text2 aaa\"}}] , "
-            + "\"stats\" : { \"nscannedObjects\" : 6 , \"nscanned\" : 6 , \"n\" : 2 , \"timeMicros\" : 1} , \"ok\" : 1}"),
-            (DBObject) result);
+    DBObject expected = new BasicDBObject("language", "english");
+    expected.put("results", JSON.parse("[ "
+        + "{ \"score\" : 1.5 , "
+        + "\"obj\" : { \"_id\" : 1 , \"textField\" : \"aaa bbb\" , \"otherField\" : \"text1 aaa\"}} , "
+        + "{ \"score\" : 1.5 , "
+        + "\"obj\" : { \"_id\" : 2 , \"textField\" : \"ccc ddd\" , \"otherField\" : \"text2 aaa\"}}]"));
+    expected.put("stats",
+        new BasicDBObject("nscannedObjects", 6L)
+            .append("nscanned", 6L)
+            .append("n", 2L)
+            .append("timeMicros", 1)
+    );
+    expected.put("ok", 1);
+    Assertions.assertThat(result).isEqualTo(expected);
     assertEquals("ccc ddd",
-            ((DBObject) ((DBObject) ((List) result.get("results")).get(1)).get("obj")).get("textField"));
+        ((DBObject) ((DBObject) ((List) result.get("results")).get(1)).get("obj")).get("textField"));
   }
 }

@@ -13,6 +13,7 @@ import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
 import com.mongodb.DBRef;
+import com.mongodb.DuplicateKeyException;
 import com.mongodb.FongoDBCollection;
 import com.mongodb.MongoException;
 import com.mongodb.QueryBuilder;
@@ -28,6 +29,7 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
+import org.assertj.core.api.Assertions;
 import static org.assertj.core.api.Assertions.assertThat;
 import org.assertj.core.data.MapEntry;
 import org.bson.BSON;
@@ -294,7 +296,7 @@ public class FongoTest {
     assertEquals(Arrays.asList((DBObject) JSON.parse("{ _id:2, array: [ { value1:1, value2:0 }, { value1:1, value2:2 } ] }")
     ), cursor.toArray());
   }
-  
+
   // See http://docs.mongodb.org/manual/reference/command/text/
   @Test
   public void testCommandTextSearch() {
@@ -303,25 +305,29 @@ public class FongoTest {
     collection.insert((DBObject) JSON.parse("{ _id:2, textField: \"ccc ddd\" }"));
     collection.insert((DBObject) JSON.parse("{ _id:3, textField: \"eee fff\" }"));
     collection.insert((DBObject) JSON.parse("{ _id:4, textField: \"aaa eee\" }"));
-    
+
     collection.createIndex(new BasicDBObject("textField", "text"));
-    
+
     DBObject textSearchCommand = new BasicDBObject();
 //		textSearchCommand.put("text", Interest.COLLECTION);
-		textSearchCommand.put("search", "aaa -eee");
-    
+    textSearchCommand.put("search", "aaa -eee");
+
     DBObject textSearchResult = collection.getDB()
-            .command(new BasicDBObject(collection.getName(), new BasicDBObject("text", textSearchCommand)));
-    
-    assertEquals((DBObject)JSON.parse(
-            "{ \"serverUsed\" : \"0.0.0.0/0.0.0.0:27017\" , "
-                + "\"ok\" : 1.0 , \"results\" : [ "
-                + "{ \"score\" : 0.75 , "
-                + "\"obj\" : { \"_id\" : 1 , \"textField\" : \"aaa bbb\"}}] , "
-                + "\"stats\" : { \"nscannedObjects\" : 4 , \"nscanned\" : 2 , \"n\" : 1 , \"timeMicros\" : 1}}"),
-            (DBObject)textSearchResult);
+        .command(new BasicDBObject(collection.getName(), new BasicDBObject("text", textSearchCommand)));
+    DBObject expected = new BasicDBObject("serverUsed", "0.0.0.0:27017").append("ok", 1.0);
+    expected.put("results", JSON.parse("[ "
+            + "{ \"score\" : 0.75 , "
+            + "\"obj\" : { \"_id\" : 1 , \"textField\" : \"aaa bbb\"}}]"
+    ));
+    expected.put("stats",
+        new BasicDBObject("nscannedObjects", 4L)
+            .append("nscanned", 2L)
+            .append("n", 1L)
+            .append("timeMicros", 1)
+    );
+    Assertions.assertThat(textSearchResult).isEqualTo(expected);
     assertEquals("aaa bbb",
-            ((DBObject)((DBObject)((List)textSearchResult.get("results")).get(0)).get("obj")).get("textField"));
+        ((DBObject) ((DBObject) ((List) textSearchResult.get("results")).get(0)).get("obj")).get("textField"));
   }
 
   @Test
@@ -393,16 +399,16 @@ public class FongoTest {
   public void testFindWithWhere() {
     DBCollection collection = newCollection();
     collection.insert(new BasicDBObject("_id", 1).append("say", "hi").append("n", 3),
-                      new BasicDBObject("_id", 2).append("say", "hello").append("n", 5));
+        new BasicDBObject("_id", 2).append("say", "hello").append("n", 5));
 
     DBCursor cursor = collection.find(new BasicDBObject("$where", "this.say == 'hello'"));
     assertEquals(Arrays.asList(
-       new BasicDBObject("_id", 2).append("say", "hello").append("n", 5)
+        new BasicDBObject("_id", 2).append("say", "hello").append("n", 5)
     ), cursor.toArray());
 
     cursor = collection.find(new BasicDBObject("$where", "this.n < 4"));
     assertEquals(Arrays.asList(
-       new BasicDBObject("_id", 1).append("say", "hi").append("n", 3)
+        new BasicDBObject("_id", 1).append("say", "hi").append("n", 3)
     ), cursor.toArray());
   }
 
@@ -414,7 +420,7 @@ public class FongoTest {
 
     DBCursor cursor = collection.find(new BasicDBObject("a", new BasicDBObject()));
     assertEquals(Arrays.asList(
-       new BasicDBObject("_id", 2).append("a", new BasicDBObject())
+        new BasicDBObject("_id", 2).append("a", new BasicDBObject())
     ), cursor.toArray());
   }
 
@@ -706,7 +712,7 @@ public class FongoTest {
     collection.update(new BasicDBObject("_id", 1), new BasicDBObject("$rename", new BasicDBObject("a.b", "a.c")));
     List<DBObject> results = collection.find().toArray();
     assertEquals(Arrays.asList(
-      new BasicDBObject("_id", 1).append("a", new BasicDBObject("c", 1))
+        new BasicDBObject("_id", 1).append("a", new BasicDBObject("c", 1))
     ), results);
   }
 
@@ -714,17 +720,17 @@ public class FongoTest {
   public void testUpdateWithMultipleRenames() {
     DBCollection collection = newCollection();
     collection.insert(new BasicDBObject("_id", 1).append("a", new BasicDBObject("b", 1))
-                                                 .append("x", 3)
-                                                 .append("h", new BasicDBObject("i", 8)));
+        .append("x", 3)
+        .append("h", new BasicDBObject("i", 8)));
     collection.update(new BasicDBObject("_id", 1), new BasicDBObject("$rename", new BasicDBObject("a.b", "a.c")
-                                                                                          .append("x", "y")
-                                                                                          .append("h.i", "u.r")));
+        .append("x", "y")
+        .append("h.i", "u.r")));
     List<DBObject> results = collection.find().toArray();
     assertEquals(Arrays.asList(
-      new BasicDBObject("_id", 1).append("a", new BasicDBObject("c", 1))
-                                 .append("y", 3)
-                                 .append("u", new BasicDBObject("r", 8))
-                                 .append("h", new BasicDBObject())
+        new BasicDBObject("_id", 1).append("a", new BasicDBObject("c", 1))
+            .append("y", 3)
+            .append("u", new BasicDBObject("r", 8))
+            .append("h", new BasicDBObject())
     ), results);
   }
 
@@ -775,7 +781,7 @@ public class FongoTest {
     assertTrue(fongoDB.authenticate("login", "password".toCharArray()));
     assertTrue(fongoDB.isAuthenticated());
   }
-  
+
   @Test
   public void testUpsertOnIdWithPush() {
     DBCollection collection = newCollection();
@@ -977,14 +983,14 @@ public class FongoTest {
     collection.save(inserted);
   }
 
-  @Test(expected = MongoException.DuplicateKey.class)
+  @Test(expected = DuplicateKeyException.class)
   public void testInsertDuplicateWithConcernThrows() {
     DBCollection collection = newCollection();
     collection.insert(new BasicDBObject("_id", 1));
     collection.insert(new BasicDBObject("_id", 1), WriteConcern.SAFE);
   }
 
-  @Test(expected = MongoException.DuplicateKey.class)
+  @Test(expected = DuplicateKeyException.class)
   public void testInsertDuplicateWithDefaultConcernOnMongo() {
     DBCollection collection = newCollection();
     collection.insert(new BasicDBObject("_id", 1));
@@ -1012,7 +1018,8 @@ public class FongoTest {
             new BasicDBObject("_id", 3).append("a", new BasicDBObject("b", 3)),
             new BasicDBObject("_id", 2).append("a", new BasicDBObject("b", 2)),
             new BasicDBObject("_id", 1).append("a", new BasicDBObject("b", 1))
-        ), results);
+        ), results
+    );
   }
 
   @Test
@@ -1934,10 +1941,10 @@ public class FongoTest {
     // Then
     assertEquals(fongoRule.parseList("[{ \"_id\" : 1}, "
         + "{ \"_id\" : 3, \"students\" : [ { name: \"achilles\"} ] }, { \"_id\" : 4}]"), result);
-	}
+  }
 
-	@Test
-	public void projection_elemMatchWithBigSubdocument() {
+  @Test
+  public void projection_elemMatchWithBigSubdocument() {
     // Given
     DBCollection collection = newCollection();
     this.fongoRule.insertJSON(collection, "[{\n" +
@@ -1983,11 +1990,11 @@ public class FongoTest {
         "{ \"_id\" : 3 },\n" +
         "{ \"_id\" : 4, \"students\" : [ { \"name\" : \"barney\", \"school\" : 102, \"age\" : 7 } ] }]"), result);
   }
-  
-    // See http://docs.mongodb.org/manual/reference/operator/query/elemMatch/
+
+  // See http://docs.mongodb.org/manual/reference/operator/query/elemMatch/
   @Test
   @Ignore
-	public void query_elemMatch() {
+  public void query_elemMatch() {
     // Given
     DBCollection collection = newCollection();
     this.fongoRule.insertJSON(collection, "[{\n" +
@@ -2026,7 +2033,7 @@ public class FongoTest {
 
     // When
     List<DBObject> result = collection.find(fongoRule.parseDBObject("{ zipcode: 63109 },\n"
-            + "{ students: { $elemMatch: { school: 102 } } }")).toArray();
+        + "{ students: { $elemMatch: { school: 102 } } }")).toArray();
 
     // Then
     assertEquals(fongoRule.parseList("[{ \"_id\" : 1, \"students\" : [ { \"name\" : \"john\", \"school\" : 102, \"age\" : 10 } ] },\n" +

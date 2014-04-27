@@ -1,5 +1,6 @@
 package com.mongodb;
 
+import org.assertj.core.api.Assertions;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -265,12 +266,12 @@ public class FongoDBCollectionTest {
     DBObject expected = new BasicDBObject("language", "english");
     expected.put("results", resultsExpected);            
     expected.put("stats", 
-            new BasicDBObject("nscannedObjects", 6)
-            .append("nscanned", 5)
-            .append("n", 3)
+            new BasicDBObject("nscannedObjects", 6L)
+            .append("nscanned", 5L)
+            .append("n", 3L)
             .append("timeMicros", 1));
     expected.put("ok", 1);
-    assertEquals("applied", expected, actual);
+    Assertions.assertThat(actual).isEqualTo(expected);
   }
 
   @Test
@@ -309,11 +310,11 @@ public class FongoDBCollectionTest {
     DBObject expected = new BasicDBObject("language", "english");
     expected.put("results", resultsExpected);            
     expected.put("stats", 
-            new BasicDBObject("nscannedObjects", 2)
-            .append("nscanned", 2)
-            .append("n", 2)
+            new BasicDBObject("nscannedObjects", 2L)
+            .append("nscanned", 2L)
+            .append("n", 2L)
             .append("timeMicros", 1));
     expected.put("ok", 1);
-    assertEquals("applied", expected, actual);
+    Assertions.assertThat(actual).isEqualTo(expected);
   }
 }

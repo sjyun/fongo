@@ -12,6 +12,7 @@ import com.github.fakemongo.impl.index.GeoIndex;
 import com.github.fakemongo.impl.index.IndexAbstract;
 import com.github.fakemongo.impl.index.IndexFactory;
 import com.github.fakemongo.impl.text.TextSearch;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -26,6 +27,7 @@ import java.util.Set;
 import org.bson.BSON;
 import org.bson.types.Binary;
 import org.bson.types.ObjectId;
+import org.objenesis.ObjenesisStd;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -318,6 +320,25 @@ public class FongoDBCollection extends DBCollection {
   }
 
   @Override
+  QueryResultIterator find(DBObject ref, DBObject fields, int numToSkip, int batchSize, int limit, int options, ReadPreference readPref, DBDecoder decoder) {
+    return find(ref, fields, numToSkip, batchSize, limit, options, readPref, decoder, null);
+  }
+
+  @Override
+  QueryResultIterator find(DBObject ref, DBObject fields, int numToSkip, int batchSize, int limit, int options, ReadPreference readPref, DBDecoder decoder, DBEncoder encoder) {
+    try {
+      QueryResultIterator iterator = new ObjenesisStd().getInstantiatorOf(QueryResultIterator.class).newInstance();
+      Field field = QueryResultIterator.class.getDeclaredField("_cur");
+      field.setAccessible(true);
+      field.set(iterator, __find(ref, fields, numToSkip, batchSize, limit, options, readPref, decoder, encoder));
+      return iterator;
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+
+  }
+
+  @Override
   public synchronized void createIndex(DBObject keys, DBObject options, DBEncoder encoder) throws MongoException {
     DBCollection indexColl = fongoDb.getCollection("system.indexes");
     BasicDBObject rec = new BasicDBObject();
@@ -377,24 +398,25 @@ public class FongoDBCollection extends DBCollection {
   }
 
   /**
+   * Used for older compatibility.
+   * <p/>
    * note: encoder, decoder, readPref, options are ignored
    */
-  @Override
   Iterator<DBObject> __find(DBObject ref, DBObject fields, int numToSkip, int batchSize, int limit, int options,
                             ReadPreference readPref, DBDecoder decoder, DBEncoder encoder) {
     return __find(ref, fields, numToSkip, batchSize, limit, options, readPref, decoder);
   }
 
   /**
+   * Used for older compatibility.
+   * <p/>
    * note: decoder, readPref, options are ignored
    */
-  @Override
   synchronized Iterator<DBObject> __find(final DBObject pRef, DBObject fields, int numToSkip, int batchSize, int limit,
                                          int options,
                                          ReadPreference readPref, DBDecoder decoder) throws MongoException {
     DBObject ref = filterLists(pRef);
     long maxScan = Long.MAX_VALUE;
-//    ref = filterLists(ref);
     if (LOG.isDebugEnabled()) {
       LOG.debug("find({}, {}).skip({}).limit({})", ref, fields, numToSkip, limit);
       LOG.debug("the db {} looks like {}", this.getDB().getName(), _idIndex.size());
@@ -584,7 +606,8 @@ public class FongoDBCollection extends DBCollection {
     if (inclusionCount > 0 && exclusionCount > 0) {
       throw new IllegalArgumentException(
           "You cannot combine inclusion and exclusion semantics in a single projection with the exception of the _id field: "
-              + projectionObject);
+              + projectionObject
+      );
     }
 
     BasicDBObject ret;
@@ -786,6 +809,24 @@ public class FongoDBCollection extends DBCollection {
     }
     //noinspection unchecked
     return new ArrayList(results);
+  }
+
+  @Override
+  public Cursor aggregate(List<DBObject> pipeline, AggregationOptions options, ReadPreference readPreference) {
+    // TODO
+    return null;
+  }
+
+  @Override
+  public List<Cursor> parallelScan(ParallelScanOptions options) {
+    // TODO
+    return null;
+  }
+
+  @Override
+  BulkWriteResult executeBulkWriteOperation(boolean ordered, List<WriteRequest> requests, WriteConcern writeConcern, DBEncoder encoder) {
+    // TODO
+    return null;
   }
 
   protected synchronized void _dropIndexes(String name) throws MongoException {

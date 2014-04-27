@@ -7,7 +7,6 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
 import com.mongodb.MongoException;
-import com.mongodb.util.MyAsserts;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -428,7 +427,7 @@ public class FongoAggregateTest {
     assertTrue(output.getCommandResult().containsField("result"));
 
     List<DBObject> resultAggregate = (List<DBObject>) output.getCommandResult().get("result");
-    MyAsserts.assertEquals(fongoRule.parseList("[ " +
+    assertEquals(fongoRule.parseList("[ " +
         "{ \"_id\" : 1 , \"name\" : [ \"n1\" , \"n3\" , \"n4\"]} , " +
         "{ \"_id\" : 2 , \"name\" : [ \"n2\" , \"n5\"]}]"), resultAggregate);
   }
@@ -452,7 +451,7 @@ public class FongoAggregateTest {
     assertTrue(output.getCommandResult().containsField("result"));
 
     List<DBObject> resultAggregate = (List<DBObject>) output.getCommandResult().get("result");
-    MyAsserts.assertEquals(fongoRule.parseList("[ " +
+    assertEquals(fongoRule.parseList("[ " +
         "{ \"_id\" : 1 , \"name\" : [ \"n1\" , \"n1\" , \"n2\"]} , " +
         "{ \"_id\" : 2 , \"name\" : [ \"n5\" , \"n5\"]}]"), resultAggregate);
   }
@@ -476,7 +475,7 @@ public class FongoAggregateTest {
     assertTrue(output.getCommandResult().containsField("result"));
 
     List<DBObject> resultAggregate = (List<DBObject>) output.getCommandResult().get("result");
-    MyAsserts.assertEquals(fongoRule.parseList("[ " +
+    assertEquals(fongoRule.parseList("[ " +
         "{ \"_id\" : 1 , \"name\" : [ \"n1\" , \"n3\" , \"n4\"]} , " +
         "{ \"_id\" : 2 , \"name\" : [ \"n2\" , \"n5\"]}]"), resultAggregate);
   }
