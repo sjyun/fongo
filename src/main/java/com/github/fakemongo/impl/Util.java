@@ -138,6 +138,22 @@ public final class Util {
     return true;
   }
 
+  public static int compareToNullable(String s1, String s2) {
+    if (s1 == null) {
+      if (s2 == null) {
+        return 0;
+      } else {
+        return -1;
+      }
+    } else {
+      if (s2 == null) {
+        return 1;
+      } else {
+        return s1.compareTo(s2);
+      }
+    }
+  }
+
   public static Object clone(Object source) {
     if (source instanceof DBObject) {
       return clone((DBObject) source);
@@ -264,12 +280,4 @@ public final class Util {
     }
     return newobj;
   }
-
-  public static <T> T firstNotNull(T first, T second) {
-    if (first == null) {
-      return second;
-    }
-    return first;
-  }
-
 }

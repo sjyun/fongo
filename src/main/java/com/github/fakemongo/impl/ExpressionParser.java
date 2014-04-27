@@ -116,7 +116,9 @@ public class ExpressionParser {
   }
 
   public ObjectComparator objectComparator(int sortDirection) {
-    if (!(sortDirection == -1 || sortDirection == 1)) throw new FongoException("$sort direction " + sortDirection + "must be -1 or 1.");
+    if (!(sortDirection == -1 || sortDirection == 1)) {
+      throw new FongoException("The $sort element value must be either 1 or -1. Actual: " + sortDirection);
+    }
     return new ObjectComparator(sortDirection == 1);
   }
 
@@ -929,7 +931,7 @@ public class ExpressionParser {
       String key0 = i0.hasNext() ? i0.next() : null;
       String key1 = i1.hasNext() ? i1.next() : null;
 
-      int keyComparison = compareNullable(key0, key1);
+      int keyComparison = Util.compareToNullable(key0, key1);
       if (keyComparison != 0) {
         return keyComparison;
       }
@@ -944,22 +946,6 @@ public class ExpressionParser {
     }
     
     return 0;
-  }
-  
-  private int compareNullable(String k1, String k2) {
-    if (k1 == null) {
-      if (k2 == null) {
-        return 0;
-      } else {
-        return -1;
-      }
-    } else {
-      if (k2 == null) {
-        return 1;
-      } else {
-        return k1.compareTo(k2);
-      }
-    }
   }
 
   public Filter createPatternFilter(final List<String> path, final Pattern pattern) {
