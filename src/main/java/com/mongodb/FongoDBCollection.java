@@ -27,6 +27,7 @@ import java.util.Set;
 import org.bson.BSON;
 import org.bson.types.Binary;
 import org.bson.types.ObjectId;
+import static org.bson.util.Assertions.isTrue;
 import org.objenesis.ObjenesisStd;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -325,17 +326,9 @@ public class FongoDBCollection extends DBCollection {
   }
 
   @Override
-  QueryResultIterator find(DBObject ref, DBObject fields, int numToSkip, int batchSize, int limit, int options, ReadPreference readPref, DBDecoder decoder, DBEncoder encoder) {
-    try {
-      QueryResultIterator iterator = new ObjenesisStd().getInstantiatorOf(QueryResultIterator.class).newInstance();
-      Field field = QueryResultIterator.class.getDeclaredField("_cur");
-      field.setAccessible(true);
-      field.set(iterator, __find(ref, fields, numToSkip, batchSize, limit, options, readPref, decoder, encoder));
-      return iterator;
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
-
+  synchronized QueryResultIterator find(DBObject ref, DBObject fields, int numToSkip, int batchSize, int limit, int options, ReadPreference readPref, DBDecoder decoder, DBEncoder encoder) {
+    final Iterator<DBObject> values = __find(ref, fields, numToSkip, batchSize, limit, options, readPref, decoder, encoder);
+    return createQueryResultIterator(values);
   }
 
   @Override
@@ -813,18 +806,17 @@ public class FongoDBCollection extends DBCollection {
 
   @Override
   public Cursor aggregate(List<DBObject> pipeline, AggregationOptions options, ReadPreference readPreference) {
-    // TODO
-    return null;
+    return this.createQueryResultIterator(this.aggregate(pipeline, readPreference).results().iterator());
   }
 
   @Override
   public List<Cursor> parallelScan(ParallelScanOptions options) {
-    // TODO
-    return null;
+    return Arrays.asList((Cursor) this.createQueryResultIterator(this._idIndex.values().iterator()));
   }
 
   @Override
   BulkWriteResult executeBulkWriteOperation(boolean ordered, List<WriteRequest> requests, WriteConcern writeConcern, DBEncoder encoder) {
+    isTrue("no operations", !requests.isEmpty());
     // TODO
     return null;
   }
@@ -976,5 +968,17 @@ public class FongoDBCollection extends DBCollection {
   public synchronized DBObject text(String search, Number limit, DBObject project) {
     TextSearch ts = new TextSearch(this);
     return ts.findByTextSearch(search, project == null ? new BasicDBObject() : project, limit == null ? 100 : limit.intValue());
+  }
+
+  private QueryResultIterator createQueryResultIterator(Iterator<DBObject> values) {
+    try {
+      QueryResultIterator iterator = new ObjenesisStd().getInstantiatorOf(QueryResultIterator.class).newInstance();
+      Field field = QueryResultIterator.class.getDeclaredField("_cur");
+      field.setAccessible(true);
+      field.set(iterator, values);
+      return iterator;
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 }
