@@ -556,6 +556,10 @@ public class FongoDBCollection extends DBCollection {
       return Util.cloneIdFirst(result);
     }
 
+    if (result == null) {
+      return null; // #35
+    }
+
     int inclusionCount = 0;
     int exclusionCount = 0;
     List<String> projectionFields = new ArrayList<String>();
