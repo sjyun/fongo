@@ -72,24 +72,8 @@ public class ExpressionParser {
   private static final Map<Class, Integer> CLASS_TO_WEIGHT;
 
   static {
-    // http://docs.mongodb.org/manual/reference/operator/type
+    // Sort order per http://docs.mongodb.org/manual/reference/operator/aggregation/sort/
     Map<Class, Integer> map = new HashMap<Class, Integer>();
-//    map.put(Double.class, 1);
-//    map.put(Float.class, 1);
-//    map.put(String.class, 2);
-//    map.put(Object.class, 3);
-//    map.put(BasicDBList.class, 4);
-//    map.put(LazyBSONList.class, 4);
-//    map.put(ObjectId.class, 6);
-//    map.put(Boolean.class, 7);
-//    map.put(Date.class, 9);
-//    map.put(Null.class, 10);
-//    map.put(Pattern.class, 11);
-//    map.put(Integer.class, 16);
-////    map.put(Timestamp.class, 17);
-//    map.put(Long.class, 18);
-//    map.put(MinKey.class, -1); // 255
-//    map.put(MaxKey.class, 127);
     map.put(MinKey.class, Integer.MIN_VALUE);
     map.put(Null.class, 0);
     map.put(Double.class, 1);
@@ -109,7 +93,6 @@ public class ExpressionParser {
     map.put(Boolean.class, 8);
     map.put(Date.class, 9);
     map.put(Pattern.class, 10);
-//    map.put(Timestamp.class, 17);
     map.put(MaxKey.class, Integer.MAX_VALUE);
 
     CLASS_TO_WEIGHT = Collections.unmodifiableMap(map);
