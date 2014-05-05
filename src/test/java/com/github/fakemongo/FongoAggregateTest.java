@@ -40,7 +40,7 @@ public class FongoAggregateTest {
     ExpectedMongoException.expectCode(exception, 16436);
     DBObject badsort = new BasicDBObject("_id", 1);
 
-    fongoRule.newCollection().aggregate(badsort);
+    fongoRule.newCollection().aggregate(Arrays.asList(badsort));
     // Not found : com.mongodb.CommandFailureException: { "serverUsed" : "localhost/127.0.0.1:27017" , "errmsg" : "exception: Unrecognized pipeline stage name: '_id'" , "code" : 16436 , "ok" : 0.0}
   }
 
@@ -53,7 +53,7 @@ public class FongoAggregateTest {
     DBObject matching = new BasicDBObject("$match", new BasicDBObject("author", "william"));
     DBObject unwind = new BasicDBObject("$unwind", "$tags");
 
-    collection.aggregate(matching, unwind);
+    collection.aggregate(Arrays.asList(matching, unwind));
     //    assert(output.getMessage === "exception: $unwind:  value at end of field path must be an array")
   }
 
@@ -66,7 +66,7 @@ public class FongoAggregateTest {
     DBObject group = new BasicDBObject("$group", new BasicDBObject("_id", "0").append("date", new BasicDBObject("$last", "$date")));
 
     // Aggregate
-    AggregationOutput output = collection.aggregate(match, sort, group);
+    AggregationOutput output = collection.aggregate(Arrays.asList(match, sort, group));
     int result = -1;
     if (output.getCommandResult().ok() && output.getCommandResult().containsField("result")) {
       DBObject resultAggregate = (DBObject) ((DBObject) output.getCommandResult().get("result")).get("0");
@@ -85,7 +85,7 @@ public class FongoAggregateTest {
     DBObject group = new BasicDBObject("$group", new BasicDBObject("_id", "0").append("date", new BasicDBObject("$last", "$date")));
 
     // Aggregate
-    AggregationOutput output = collection.aggregate(match, group);
+    AggregationOutput output = collection.aggregate(Arrays.asList(match, group));
     boolean result = false;
 
     if (output.getCommandResult().ok() && output.getCommandResult().containsField("result")) {
@@ -104,7 +104,7 @@ public class FongoAggregateTest {
     DBObject match = new BasicDBObject("$match", new BasicDBObject("myId", new BasicDBObject("$in", Util.list("p1", "p0"))));
 //    DBObject sort = new BasicDBObject("$sort", new BasicDBObject("date", 1));
     DBObject group = new BasicDBObject("$group", new BasicDBObject("_id", "0").append("date", new BasicDBObject("$first", "$date")));
-    AggregationOutput output = collection.aggregate(match, group);
+    AggregationOutput output = collection.aggregate(Arrays.asList(match, group));
     int result = -1;
     if (output.getCommandResult().ok() && output.getCommandResult().containsField("result")) {
       DBObject resultAggregate = (DBObject) ((DBObject) output.getCommandResult().get("result")).get("0");
@@ -121,7 +121,7 @@ public class FongoAggregateTest {
     DBCollection collection = createTestCollection();
     DBObject match = new BasicDBObject("$match", new BasicDBObject("myId", new BasicDBObject("$in", Util.list("p4"))));
     DBObject group = new BasicDBObject("$group", new BasicDBObject("_id", "0").append("date", new BasicDBObject("$first", "$date")));
-    AggregationOutput output = collection.aggregate(match, group);
+    AggregationOutput output = collection.aggregate(Arrays.asList(match, group));
     boolean result = false;
 
     if (output.getCommandResult().ok() && output.getCommandResult().containsField("result")) {
@@ -140,7 +140,7 @@ public class FongoAggregateTest {
     DBCollection collection = createTestCollection();
     DBObject match = new BasicDBObject("$match", new BasicDBObject("myId", new BasicDBObject("$in", Util.list("p0", "p1"))));
     DBObject group = new BasicDBObject("$group", new BasicDBObject("_id", "0").append("date", new BasicDBObject("$min", "$date")));
-    AggregationOutput output = collection.aggregate(match, group);
+    AggregationOutput output = collection.aggregate(Arrays.asList(match, group));
     int result = 0;
     if (output.getCommandResult().ok() && output.getCommandResult().containsField("result")) {
       DBObject resultAggregate = (DBObject) ((DBObject) output.getCommandResult().get("result")).get("0");
@@ -157,7 +157,7 @@ public class FongoAggregateTest {
     DBCollection collection = createTestCollection();
     DBObject match = new BasicDBObject("$match", new BasicDBObject("myId", new BasicDBObject("$in", Util.list("p0", "p1"))));
     DBObject group = new BasicDBObject("$group", new BasicDBObject("_id", "0").append("date", new BasicDBObject("$max", "$date")));
-    AggregationOutput output = collection.aggregate(match, group);
+    AggregationOutput output = collection.aggregate(Arrays.asList(match, group));
     int result = 0;
     if (output.getCommandResult().ok() && output.getCommandResult().containsField("result")) {
       DBObject resultAggregate = (DBObject) ((DBObject) output.getCommandResult().get("result")).get("0");
@@ -175,7 +175,7 @@ public class FongoAggregateTest {
     DBObject match = new BasicDBObject("$match", new BasicDBObject("myId", new BasicDBObject("$in", Util.list("p0", "p1"))));
     DBObject limit = new BasicDBObject("$limit", 3);
     DBObject group = new BasicDBObject("$group", new BasicDBObject("_id", "0").append("date", new BasicDBObject("$max", "$date")));
-    AggregationOutput output = collection.aggregate(match, limit, group);
+    AggregationOutput output = collection.aggregate(Arrays.asList(match, limit, group));
     int result = 0;
     if (output.getCommandResult().ok() && output.getCommandResult().containsField("result")) {
       DBObject resultAggregate = (DBObject) ((DBObject) output.getCommandResult().get("result")).get("0");
@@ -193,7 +193,7 @@ public class FongoAggregateTest {
     DBObject match = new BasicDBObject("$match", new BasicDBObject("myId", new BasicDBObject("$in", Util.list("p0", "p1"))));
     DBObject skip = new BasicDBObject("$skip", 3);
     DBObject group = new BasicDBObject("$group", new BasicDBObject("_id", "0").append("date", new BasicDBObject("$min", "$date")));
-    AggregationOutput output = collection.aggregate(match, skip, group);
+    AggregationOutput output = collection.aggregate(Arrays.asList(match, skip, group));
     int result = 0;
     if (output.getCommandResult().ok() && output.getCommandResult().containsField("result")) {
       DBObject resultAggregate = (DBObject) ((DBObject) output.getCommandResult().get("result")).get("0");
@@ -210,7 +210,7 @@ public class FongoAggregateTest {
     DBCollection collection = createTestCollection();
     DBObject match = new BasicDBObject("$match", new BasicDBObject("myId", new BasicDBObject("$in", Util.list("p1", "p2", "p3"))));
     DBObject sort = new BasicDBObject("$sort", new BasicDBObject("date", 1));
-    AggregationOutput output = collection.aggregate(match, sort);
+    AggregationOutput output = collection.aggregate(Arrays.asList(match, sort));
     int lastDate = -1;
     if (output.getCommandResult().ok() && output.getCommandResult().containsField("result")) {
       Iterator<DBObject> it = ((java.util.List<DBObject>) (output.getCommandResult().get("result"))).iterator();
@@ -231,7 +231,7 @@ public class FongoAggregateTest {
     DBObject matching = new BasicDBObject("$match", new BasicDBObject("author", "william"));
     DBObject unwind = new BasicDBObject("$unwind", "$tags");
 
-    AggregationOutput output = collection.aggregate(matching, unwind);
+    AggregationOutput output = collection.aggregate(Arrays.asList(matching, unwind));
 
     // Assert
     assertTrue(output.getCommandResult().ok());
@@ -261,7 +261,7 @@ public class FongoAggregateTest {
     DBObject unwind = new BasicDBObject("$unwind", "$tags");
 
     // Aggregate
-    AggregationOutput output = collection.aggregate(matching, project, unwind);
+    AggregationOutput output = collection.aggregate(Arrays.asList(matching, project, unwind));
 
     // Assert
     assertTrue(output.getCommandResult().ok());
@@ -278,7 +278,7 @@ public class FongoAggregateTest {
     DBObject group = new BasicDBObject("$group", new BasicDBObject("_id", null).append("date", new BasicDBObject("$avg", "$date")));
 
     // Aggregate
-    AggregationOutput output = collection.aggregate(match, group);
+    AggregationOutput output = collection.aggregate(Arrays.asList(match, group));
     Number result = -1;
     if (output.getCommandResult().ok() && output.getCommandResult().containsField("result")) {
       DBObject resultAggregate = (DBObject) ((DBObject) output.getCommandResult().get("result")).get("0");
@@ -307,7 +307,7 @@ public class FongoAggregateTest {
     DBObject group = new BasicDBObject("$group", new BasicDBObject("_id", null).append("date", new BasicDBObject("$avg", "$date")));
 
     // Aggregate
-    AggregationOutput output = collection.aggregate(match, group);
+    AggregationOutput output = collection.aggregate(Arrays.asList(match, group));
     Number result = -1;
     if (output.getCommandResult().ok() && output.getCommandResult().containsField("result")) {
       DBObject resultAggregate = (DBObject) ((DBObject) output.getCommandResult().get("result")).get("0");
@@ -330,7 +330,7 @@ public class FongoAggregateTest {
     DBObject group = new BasicDBObject("$group", groupFields);
 
     // Aggregate
-    AggregationOutput output = collection.aggregate(match, group);
+    AggregationOutput output = collection.aggregate(Arrays.asList(match, group));
     Number result = -1;
     if (output.getCommandResult().ok() && output.getCommandResult().containsField("result")) {
       DBObject resultAggregate = (DBObject) ((DBObject) output.getCommandResult().get("result")).get("0");
@@ -350,7 +350,7 @@ public class FongoAggregateTest {
     DBObject group = new BasicDBObject("$group", new BasicDBObject("_id", null).append("sum", new BasicDBObject("$sum", 2)));
 
     // Aggregate
-    AggregationOutput output = collection.aggregate(match, group);
+    AggregationOutput output = collection.aggregate(Arrays.asList(match, group));
 
     // Assert
     assertTrue(output.getCommandResult().ok());
@@ -374,7 +374,7 @@ public class FongoAggregateTest {
     DBObject group = new BasicDBObject("$group", new BasicDBObject("_id", "$myId").append("count", new BasicDBObject("$sum", "$date")));
 
     // Aggregate
-    AggregationOutput output = collection.aggregate(match, group, sort);
+    AggregationOutput output = collection.aggregate(Arrays.asList(match, group, sort));
 
     // Assert
     assertTrue(output.getCommandResult().ok());
@@ -395,7 +395,7 @@ public class FongoAggregateTest {
     DBObject group = new BasicDBObject("$group", new BasicDBObject("_id", "$myId").append("count", new BasicDBObject("$sum", 2)));
 
     // Aggregate
-    AggregationOutput output = collection.aggregate(match, group, sort);
+    AggregationOutput output = collection.aggregate(Arrays.asList(match, group, sort));
 
     // Assert
     assertTrue(output.getCommandResult().ok());
@@ -420,7 +420,7 @@ public class FongoAggregateTest {
     DBObject group = fongoRule.parseDBObject("{$group: { '_id': '$a_id', 'name': { $push: '$name'}}}");
 
     // Aggregate
-    AggregationOutput output = collection.aggregate(group, new BasicDBObject("$sort", new BasicDBObject("_id", 1)));
+    AggregationOutput output = collection.aggregate(Arrays.asList(group, new BasicDBObject("$sort", new BasicDBObject("_id", 1))));
 
     // Assert
     assertTrue(output.getCommandResult().ok());
@@ -444,7 +444,7 @@ public class FongoAggregateTest {
     DBObject group = fongoRule.parseDBObject("{$group: { '_id': '$a_id', 'name': { $push: '$name'}}}");
 
     // Aggregate
-    AggregationOutput output = collection.aggregate(group, new BasicDBObject("$sort", new BasicDBObject("_id", 1)));
+    AggregationOutput output = collection.aggregate(Arrays.asList(group, new BasicDBObject("$sort", new BasicDBObject("_id", 1))));
 
     // Assert
     assertTrue(output.getCommandResult().ok());
@@ -468,7 +468,7 @@ public class FongoAggregateTest {
     DBObject group = fongoRule.parseDBObject("{$group: { '_id': '$a_id', 'name': { $push: '$name'}}}");
 
     // Aggregate
-    AggregationOutput output = collection.aggregate(group, new BasicDBObject("$sort", new BasicDBObject("_id", 1)));
+    AggregationOutput output = collection.aggregate(Arrays.asList(group, new BasicDBObject("$sort", new BasicDBObject("_id", 1))));
 
     // Assert
     assertTrue(output.getCommandResult().ok());
@@ -492,7 +492,7 @@ public class FongoAggregateTest {
     DBObject group = fongoRule.parseDBObject("{$group: { '_id': '$a_id', 'name': { $addToSet: '$name'}}}");
 
     // Aggregate
-    AggregationOutput output = collection.aggregate(group, new BasicDBObject("$sort", new BasicDBObject("_id", 1)));
+    AggregationOutput output = collection.aggregate(Arrays.asList(group, new BasicDBObject("$sort", new BasicDBObject("_id", 1))));
     System.out.println(output);
     // Assert
     assertTrue(output.getCommandResult().ok());
@@ -516,7 +516,7 @@ public class FongoAggregateTest {
     DBObject group = fongoRule.parseDBObject("{$group: { '_id': '$uuid', 'event': { $addToSet: '$_class'}}}");
 
     // Aggregate
-    AggregationOutput output = collection.aggregate(group, new BasicDBObject("$sort", new BasicDBObject("_id", 1)));
+    AggregationOutput output = collection.aggregate(Arrays.asList(group, new BasicDBObject("$sort", new BasicDBObject("_id", 1))));
     System.out.println("resultat : " + output);
 
     // Assert
@@ -539,7 +539,7 @@ public class FongoAggregateTest {
     DBObject group = fongoRule.parseDBObject("{$group: { '_id': '$uuidAlert', 'events': { $addToSet: '$_class'}}}");
 
     // Aggregate
-    AggregationOutput output = collection.aggregate(group);
+    AggregationOutput output = collection.aggregate(Arrays.asList(group));
 
     System.out.println("resultat : " + output);
     // Assert

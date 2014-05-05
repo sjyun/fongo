@@ -38,6 +38,8 @@ public class FongoRule extends ExternalResource {
 
   private final String dbName;
 
+  private final Fongo fongo;
+
   private Mongo mongo;
 
   private DB db;
@@ -51,6 +53,7 @@ public class FongoRule extends ExternalResource {
   public FongoRule(String dbName, boolean realMongo) {
     this.dbName = dbName;
     this.realMongo = realMongo;
+    this.fongo = realMongo ? null : newFongo();
   }
 
   public FongoRule() {
@@ -70,7 +73,7 @@ public class FongoRule extends ExternalResource {
     if (realMongo) {
       mongo = new MongoClient();
     } else {
-      mongo = newFongo().getMongo();
+      mongo = this.fongo.getMongo();
     }
     db = mongo.getDB(dbName);
   }
@@ -126,16 +129,30 @@ public class FongoRule extends ExternalResource {
     return collection;
   }
 
-  public Fongo newFongo() {
+  private Fongo newFongo() {
     Fongo fongo = new Fongo("test");
     return fongo;
   }
 
+  public Fongo getFongo() {
+    return this.fongo;
+  }
+
+  @Deprecated
   public DB getDb() {
     return this.db;
   }
 
+  @Deprecated
   public DB getDb(String name) {
+    return this.mongo.getDB(name);
+  }
+
+  public DB getDB() {
+    return this.db;
+  }
+
+  public DB getDB(String name) {
     return this.mongo.getDB(name);
   }
 

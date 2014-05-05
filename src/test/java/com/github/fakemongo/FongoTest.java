@@ -78,8 +78,7 @@ public class FongoTest {
 
   @Test
   public void testCreateCollection() {
-    Fongo fongo = newFongo();
-    DB db = fongo.getDB("db");
+    DB db = fongoRule.getDB("db");
     db.createCollection("coll", null);
     assertEquals(new HashSet<String>(Arrays.asList("coll", "system.indexes", "system.users")), db.getCollectionNames());
   }
@@ -774,8 +773,7 @@ public class FongoTest {
 
   @Test
   public void testAuthentication() {
-    Fongo fongo = newFongo();
-    DB fongoDB = fongo.getDB("testDB");
+    DB fongoDB = fongoRule.getDB("testDB");
     assertFalse(fongoDB.isAuthenticated());
     // Once authenticated, fongoDB should be available to answer yes, whatever the credentials were. 
     assertTrue(fongoDB.authenticate("login", "password".toCharArray()));
@@ -2130,8 +2128,7 @@ public class FongoTest {
     return fongoRule.newCollection("db");
   }
 
-  public Fongo newFongo() {
-    return fongoRule.newFongo();
+  private Fongo newFongo() {
+    return new Fongo("FongoTest");
   }
-
 }
