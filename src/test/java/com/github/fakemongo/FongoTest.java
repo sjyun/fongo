@@ -4,6 +4,7 @@ import ch.qos.logback.classic.Level;
 import com.github.fakemongo.impl.ExpressionParser;
 import com.github.fakemongo.impl.Util;
 import com.github.fakemongo.junit.FongoRule;
+import com.mongodb.AggregationOutput;
 import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 import com.mongodb.BasicDBObjectBuilder;
@@ -32,6 +33,7 @@ import java.util.regex.Pattern;
 import org.assertj.core.api.Assertions;
 import static org.assertj.core.api.Assertions.assertThat;
 import org.assertj.core.data.MapEntry;
+import org.assertj.core.util.Lists;
 import org.bson.BSON;
 import org.bson.Transformer;
 import org.bson.types.Binary;
@@ -2144,6 +2146,22 @@ public class FongoTest {
     // Then
     assertThat(objects).isEqualTo(fongoRule.parseList("[{ \"_id\" : 1, \"item\" : \"abc123\", \"qty\" : 0 },\n" +
         "{ \"_id\" : 3, \"item\" : \"ijk123\", \"qty\" : 12 }]"));
+  }
+
+  // https://github.com/fakemongo/fongo/issues/36
+  @Test
+  public void should_$divide_in_group_work_well() {
+    // Given
+    DBCollection collection = newCollection();
+    collection.insert(fongoRule.parseDBObject("{_id:1, bar: 'bazz'}"));
+
+    // When
+    AggregationOutput result = collection
+        .aggregate(fongoRule.parseList("[{ $project: { bla: {$divide: [4,2]} } }]"));
+
+    // Then
+    System.out.println(Lists.newArrayList(result.results())); // { "_id" : { "$oid" : "5368e0f3cf5a47d5a22d7b75"}}
+    Assertions.assertThat(result.results()).isEqualTo(fongoRule.parseList("[{ \"_id\" : 1 , \"bla\" : 2.0}]"));
   }
 
   static class Seq {

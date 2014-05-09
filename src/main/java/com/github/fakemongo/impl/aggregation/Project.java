@@ -39,6 +39,7 @@ public class Project extends PipelineKeyword {
       projectedAbstractMap.put(ProjectedConcat.KEYWORD, ProjectedConcat.class);
       projectedAbstractMap.put(ProjectedToLower.KEYWORD, ProjectedToLower.class);
       projectedAbstractMap.put(ProjectedToUpper.KEYWORD, ProjectedToUpper.class);
+      projectedAbstractMap.put(ProjectedToDivide.KEYWORD, ProjectedToDivide.class);
     }
 
     final String keyword;
@@ -330,7 +331,7 @@ public class Project extends PipelineKeyword {
       super(keyword, destName, object);
       Object value = object.get(keyword);
       if (!(value instanceof List) || ((List) value).size() != 2) {
-        errorResult(coll, 16020, "the " + keyword + "operator requires an array of 2 operands");
+        errorResult(coll, 16020, "the " + keyword + " operator requires an array of 2 operands");
       }
       List<String> values = (List<String>) value;
       field1 = values.get(0);
@@ -426,6 +427,38 @@ public class Project extends PipelineKeyword {
     }
   }
 
+  static class ProjectedToDivide extends ProjectedAbstract<ProjectedToDivide> {
+    public static final String KEYWORD = "$divide";
+
+    private final double result;
+
+    public ProjectedToDivide(String destName, DBCollection coll, DBObject object) {
+      this(KEYWORD, destName, coll, object);
+    }
+
+    ProjectedToDivide(String keyword, String destName, DBCollection coll, DBObject object) {
+      super(KEYWORD, destName, object);
+      Object value = object.get(keyword);
+      if (!(value instanceof List) || ((List) value).size() != 2) {
+        errorResult(coll, 16020, "the " + keyword + " operator requires an array of 2 operands");
+      }
+      List values = (List) value;
+      double modulus = ((Number) values.get(0)).doubleValue();
+      double expectedValue = ((Number) values.get(1)).doubleValue();
+      result = expectedValue % modulus;
+    }
+
+    @Override
+    void doWork(DBCollection coll, DBObject projectResult, Map<String, ProjectedAbstract> projectedFields, String key, Object value, String namespace) {
+      createMapping(coll, projectResult, projectedFields, destName, destName, namespace, this);
+    }
+
+    @Override
+    public void unapply(DBObject result, DBObject object, String key) {
+      result.put(destName, this.result);
+    }
+  }
+
   /**
    * Simple {@see http://docs.mongodb.org/manual/reference/aggregation/project/#pipe._S_project}
    *
@@ -442,7 +475,7 @@ public class Project extends PipelineKeyword {
 
     // Extract fields who will be renamed.
     Map<String, ProjectedAbstract> projectedFields = new HashMap<String, ProjectedAbstract>();
-    for (Map.Entry<String, Object> entry : Util.entrySet (project)) {
+    for (Map.Entry<String, Object> entry : Util.entrySet(project)) {
       if (entry.getValue() != null) {
         ProjectedAbstract.createMapping(coll, projectResult, projectedFields, entry.getKey(), entry.getValue(), "", ProjectedRename.newInstance(entry.getKey(), coll, null));
       }
