@@ -514,9 +514,9 @@ public class ExpressionParser {
         boolean compare(Object queryValue, Object storedValue) {
           List<Integer> queryList = typecast(command + " clause", queryValue, List.class);
           enforce(queryList.size() == 2, command + " clause must be a List of size 2");
-          int modulus = queryList.get(0);
-          int expectedValue = queryList.get(1);
-          return (storedValue != null) && (typecast("value", storedValue, Number.class).longValue()) % modulus == expectedValue;
+          Number modulus = (Number) queryList.get(0);
+          Number expectedValue = queryList.get(1);
+          return (storedValue != null) && (typecast("value", storedValue, Number.class).longValue()) % modulus.longValue() == expectedValue.longValue();
         }
       },
       new InFilterFactory(IN, true),

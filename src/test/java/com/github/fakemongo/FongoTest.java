@@ -2112,6 +2112,40 @@ public class FongoTest {
     assertThat(objects).hasSize(1);
   }
 
+  // http://docs.mongodb.org/manual/reference/operator/query/mod/
+  @Test
+  public void mod_must_be_handled() {
+    // Given
+    DBCollection collection = newCollection();
+    collection.insert(fongoRule.parseList("[{ \"_id\" : 1, \"item\" : \"abc123\", \"qty\" : 0 },\n" +
+        "{ \"_id\" : 2, \"item\" : \"xyz123\", \"qty\" : 5 },\n" +
+        "{ \"_id\" : 3, \"item\" : \"ijk123\", \"qty\" : 12 }]"));
+
+    // When
+    List<DBObject> objects = collection.find(fongoRule.parseDBObject("{ qty: { $mod: [ 4, 0 ] } } ")).toArray();
+
+    // Then
+    assertThat(objects).isEqualTo(fongoRule.parseList("[{ \"_id\" : 1, \"item\" : \"abc123\", \"qty\" : 0 },\n" +
+        "{ \"_id\" : 3, \"item\" : \"ijk123\", \"qty\" : 12 }]"));
+  }
+
+  // https://github.com/fakemongo/fongo/issues/37
+  @Test
+  public void mod_with_number_must_be_handled() {
+    // Given
+    DBCollection collection = newCollection();
+    collection.insert(fongoRule.parseList("[{ \"_id\" : 1, \"item\" : \"abc123\", \"qty\" : 0 },\n" +
+        "{ \"_id\" : 2, \"item\" : \"xyz123\", \"qty\" : 5 },\n" +
+        "{ \"_id\" : 3, \"item\" : \"ijk123\", \"qty\" : 12 }]"));
+
+    // When
+    List<DBObject> objects = collection.find(fongoRule.parseDBObject("{ qty: { $mod: [ 4., 0 ] } } ")).toArray();
+
+    // Then
+    assertThat(objects).isEqualTo(fongoRule.parseList("[{ \"_id\" : 1, \"item\" : \"abc123\", \"qty\" : 0 },\n" +
+        "{ \"_id\" : 3, \"item\" : \"ijk123\", \"qty\" : 12 }]"));
+  }
+
   static class Seq {
     Object[] data;
 
