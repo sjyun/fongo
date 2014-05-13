@@ -99,8 +99,8 @@ public class FongoIndexTest {
   @Test
   public void testDropIndexOnSameFieldInversedOrder() {
     DBCollection collection = fongoRule.newCollection("coll");
-    collection.ensureIndex(new BasicDBObject("n", 1));
-    collection.ensureIndex(new BasicDBObject("n", -1));
+    collection.createIndex(new BasicDBObject("n", 1));
+    collection.createIndex(new BasicDBObject("n", -1));
     List<DBObject> indexes = collection.getIndexInfo();
     assertEquals(
         Arrays.asList(
@@ -275,7 +275,7 @@ public class FongoIndexTest {
   public void indexesShouldBeRemoved() {
     DBCollection collection = fongoRule.newCollection();
 
-    collection.ensureIndex(new BasicDBObject("date", 1));
+    collection.createIndex(new BasicDBObject("date", 1));
     collection.ensureIndex(new BasicDBObject("field", 1), "fieldIndex");
     collection.ensureIndex(new BasicDBObject("string", 1), "stringIndex", true);
 
@@ -298,8 +298,8 @@ public class FongoIndexTest {
   public void indexesMustBeUsedForFind() {
     DBCollection collection = fongoRule.newCollection();
 
-    collection.ensureIndex(new BasicDBObject("firstname", 1).append("lastname", 1));
-    collection.ensureIndex(new BasicDBObject("date", 1));
+    collection.createIndex(new BasicDBObject("firstname", 1).append("lastname", 1));
+    collection.createIndex(new BasicDBObject("date", 1));
     collection.ensureIndex(new BasicDBObject("permalink", 1), "permalink_1", true);
 
     for (int i = 0; i < 20; i++) {
@@ -344,7 +344,7 @@ public class FongoIndexTest {
   public void afterRemoveObjectMustNotBeRetrieved() {
     DBCollection collection = fongoRule.newCollection();
 
-    collection.ensureIndex(new BasicDBObject("date", 1));
+    collection.createIndex(new BasicDBObject("date", 1));
 
     collection.insert(new BasicDBObject("date", 1));
 
@@ -468,7 +468,7 @@ public class FongoIndexTest {
   public void updateAndAddFieldMustAddIntoIndex() {
     DBCollection collection = fongoRule.newCollection();
 
-    collection.ensureIndex(new BasicDBObject("date", 1));
+    collection.createIndex(new BasicDBObject("date", 1));
 
     // Insert
     collection.insert(new BasicDBObject("_id", 2));
@@ -485,7 +485,7 @@ public class FongoIndexTest {
   public void updateAndRemoveFieldMustAddIntoIndex() {
     DBCollection collection = fongoRule.newCollection();
 
-    collection.ensureIndex(new BasicDBObject("date", 1));
+    collection.createIndex(new BasicDBObject("date", 1));
 
     // Insert
     collection.insert(new BasicDBObject("_id", 1).append("date", 1));
@@ -501,7 +501,7 @@ public class FongoIndexTest {
   public void indexesMustBeUsedForFindWithInFilter() {
     DBCollection collection = fongoRule.newCollection();
 
-    collection.ensureIndex(new BasicDBObject("date", 1));
+    collection.createIndex(new BasicDBObject("date", 1));
 
     for (int i = 0; i < 20; i++) {
       collection.insert(new BasicDBObject("date", i % 10).append("_id", i));
@@ -520,7 +520,7 @@ public class FongoIndexTest {
   @Test
   public void testFindOneOrData() {
     DBCollection collection = fongoRule.newCollection();
-    collection.ensureIndex(new BasicDBObject("date", 1));
+    collection.createIndex(new BasicDBObject("date", 1));
     collection.insert(new BasicDBObject("date", 1));
     DBObject result = collection.findOne(new BasicDBObject("$or", Util.list(new BasicDBObject("date", 1), new BasicDBObject("date", 2))));
     assertEquals(1, result.get("date"));
@@ -529,7 +529,7 @@ public class FongoIndexTest {
   @Test
   public void testCompboudIndexFindOne() {
     DBCollection collection = fongoRule.newCollection();
-    collection.ensureIndex(new BasicDBObject("date", -1).append("time", 1));
+    collection.createIndex(new BasicDBObject("date", -1).append("time", 1));
     collection.insert(new BasicDBObject("date", 1).append("time", 2));
     DBObject result = collection.findOne(new BasicDBObject("date", 1));
     assertEquals(1, result.get("date"));
@@ -543,7 +543,7 @@ public class FongoIndexTest {
     collection.insert(new BasicDBObject("date", 3));
     collection.insert(new BasicDBObject("date", 1));
     collection.insert(new BasicDBObject("date", 2));
-    collection.ensureIndex(new BasicDBObject("date", 1));
+    collection.createIndex(new BasicDBObject("date", 1));
 
     DBCursor cursor = collection.find(new BasicDBObject("date",
         new BasicDBObject("$in", Arrays.asList(3, 2, 1))), new BasicDBObject("date", 1).append("_id", 0));
@@ -559,7 +559,7 @@ public class FongoIndexTest {
     DBCollection collection = fongoRule.newCollection();
     collection.insert(new BasicDBObject("_id", 1).append("loc", Util.list(-73.97D, 40.72D)));
     collection.insert(new BasicDBObject("_id", 2).append("loc", Util.list(2.265D, 48.791D)));
-    collection.ensureIndex(new BasicDBObject("loc", "2d"));
+    collection.createIndex(new BasicDBObject("loc", "2d"));
 
     IndexAbstract index = getIndex(collection, "loc_2d");
     assertTrue(index.isGeoIndex());
@@ -572,15 +572,15 @@ public class FongoIndexTest {
 
     collection.insert(new BasicDBObject("_id", 1).append("loc", Util.list(-73.97D, 40.72D)));
     collection.insert(new BasicDBObject("_id", 2).append("loc", Util.list(2.265D, 48.791D)));
-    collection.ensureIndex(new BasicDBObject("name", 1).append("loc", "2d"));
+    collection.createIndex(new BasicDBObject("name", 1).append("loc", "2d"));
   }
 
   @Test
   public void testUpdateMustModifyAllIndexes() throws Exception {
     DBCollection collection = fongoRule.newCollection();
     collection.insert(new BasicDBObject("date", 1).append("name", "jon").append("_id", 1));
-    collection.ensureIndex(new BasicDBObject("date", 1));
-    collection.ensureIndex(new BasicDBObject("name", 1));
+    collection.createIndex(new BasicDBObject("date", 1));
+    collection.createIndex(new BasicDBObject("name", 1));
 
     IndexAbstract indexDate = getIndex(collection, "date_1");
     IndexAbstract indexName = getIndex(collection, "name_1");
@@ -613,7 +613,7 @@ public class FongoIndexTest {
         collection.findOne(new BasicDBObject("a.n", 1))
     );
 
-    collection.ensureIndex(new BasicDBObject("a.n", 1));
+    collection.createIndex(new BasicDBObject("a.n", 1));
     IndexAbstract index = getIndex(collection, "a.n_1");
     assertEquals(
         new BasicDBObject("_id", 1).append("a", new BasicDBObject("n", 1)),
@@ -626,7 +626,7 @@ public class FongoIndexTest {
   public void testStrangeIndexThrowException() throws Exception {
     ExpectedMongoException.expectCode(exception, 10098, MongoException.class);
     DBCollection collection = fongoRule.newCollection();
-    collection.ensureIndex(new BasicDBObject("a", new BasicDBObject("n", 1)));
+    collection.createIndex(new BasicDBObject("a", new BasicDBObject("n", 1)));
   }
 
   // Creating an index after inserting into a collection must add records only if necessary
@@ -635,7 +635,7 @@ public class FongoIndexTest {
     DBCollection collection = fongoRule.newCollection();
     collection.insert(new BasicDBObject("_id", 1).append("a", 1));
     collection.insert(new BasicDBObject("_id", 2));
-    collection.ensureIndex(new BasicDBObject("a", 1));
+    collection.createIndex(new BasicDBObject("a", 1));
 
     IndexAbstract index = getIndex(collection, "a_1");
     assertEquals(1, index.size());
@@ -645,7 +645,7 @@ public class FongoIndexTest {
   @Test
   public void testCreateIndexBefore() throws Exception {
     DBCollection collection = fongoRule.newCollection();
-    collection.ensureIndex(new BasicDBObject("a", 1));
+    collection.createIndex(new BasicDBObject("a", 1));
     collection.insert(new BasicDBObject("_id", 1).append("a", 1));
     collection.insert(new BasicDBObject("_id", 2));
 
@@ -656,7 +656,7 @@ public class FongoIndexTest {
   @Test
   public void testRemoveMulti() throws Exception {
     DBCollection collection = fongoRule.newCollection();
-    collection.ensureIndex(new BasicDBObject("a", 1));
+    collection.createIndex(new BasicDBObject("a", 1));
     collection.insert(new BasicDBObject("_id", 1).append("a", 1));
     collection.insert(new BasicDBObject("_id", 2));
     collection.insert(new BasicDBObject("_id", 3).append("a", 1));
