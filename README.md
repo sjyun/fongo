@@ -196,3 +196,4 @@ your name to the patch contributers below. Please maintain the same code formatt
 * [mathieubodin](https://github.com/mathieubodin)
 * [Alex Art](https://github.com/elennaro)
 * [htmldoug](https://github.com/htmldoug)
+* [antonbobukh](https://github.com/antonbobukh)
