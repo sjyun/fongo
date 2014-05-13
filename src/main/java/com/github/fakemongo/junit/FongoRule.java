@@ -50,28 +50,39 @@ public class FongoRule extends ExternalResource {
    * @param dbName    the dbName to use.
    * @param realMongo set to true if you want to use a real mongoDB.
    */
-  public FongoRule(String dbName, boolean realMongo) {
+  public FongoRule(String dbName, boolean realMongo, MongoClient mongoClientIfReal) {
     this.dbName = dbName;
     this.realMongo = realMongo;
     this.fongo = realMongo ? null : newFongo();
+    this.mongo = mongoClientIfReal;
   }
 
   public FongoRule() {
-    this(UUID.randomUUID().toString(), false);
+    this(UUID.randomUUID().toString(), false, null);
   }
 
   public FongoRule(boolean realMongo) {
-    this(UUID.randomUUID().toString(), realMongo);
+    this(UUID.randomUUID().toString(), realMongo, null);
+  }
+
+  public FongoRule(boolean realMongo, MongoClient mongoClientIfReal) {
+    this(UUID.randomUUID().toString(), realMongo, mongoClientIfReal);
+  }
+
+  public FongoRule(String dbName, boolean realMongo) {
+    this(dbName, realMongo, null);
   }
 
   public FongoRule(String dbName) {
-    this(dbName, false);
+    this(dbName, false, null);
   }
 
   @Override
   protected void before() throws UnknownHostException {
     if (realMongo) {
-      mongo = new MongoClient();
+      if (mongo == null) {
+        mongo = new MongoClient();
+      }
     } else {
       mongo = this.fongo.getMongo();
     }
