@@ -147,7 +147,7 @@ public class FongoDB extends DB {
     if (LOG.isDebugEnabled()) {
       LOG.debug("Fongo got command " + cmd);
     }
-    if (cmd.containsField("getlasterror")) {
+    if (cmd.containsField("getlasterror") || cmd.containsField("getLastError")) {
       return okResult();
     } else if (cmd.containsField("drop")) {
       this.collMap.remove(cmd.get("drop").toString());
@@ -189,18 +189,16 @@ public class FongoDB extends DB {
       okResult.put("result", list);
       return okResult;
     } else if (cmd.containsField("findAndModify")) {
-      DBObject result = findAndModify((String) cmd.get("findAndModify"), (DBObject) cmd.get("query"), (DBObject) cmd.get("sort"), Boolean.TRUE.equals(cmd.get("remove")),
-          (DBObject) cmd.get("update"), Boolean.TRUE.equals(cmd.get("new")), (DBObject) cmd.get("fields"), Boolean.TRUE.equals(cmd.get("upsert")));
-      CommandResult okResult = okResult();
-      okResult.put("value", result);
-      return okResult;
+      return runFindAndModify(cmd, "findAndModify");
+    } else if (cmd.containsField("findandmodify")) {
+      return runFindAndModify(cmd, "findandmodify");
     } else if (cmd.containsField("ping")) {
       CommandResult okResult = okResult();
       return okResult;
     } else if (cmd.containsField("validate")) {
       CommandResult okResult = okResult();
       return okResult;
-    } else if (cmd.containsField("buildInfo")) {
+    } else if (cmd.containsField("buildInfo") || cmd.containsField("buildinfo")) {
       CommandResult okResult = okResult();
       okResult.put("version", "2.4.5");
       okResult.put("maxBsonObjectSize", 16777216);
@@ -210,26 +208,9 @@ public class FongoDB extends DB {
       CommandResult result = notOkErrorResult(10038, null, "exception: forced error");
       return result;
     } else if (cmd.containsField("mapreduce")) {
-      DBObject result = doMapReduce(
-          (String) cmd.get("mapreduce"),
-          (String) cmd.get("map"),
-          (String) cmd.get("reduce"),
-          (String) cmd.get("finalize"),
-          (DBObject) cmd.get("out"),
-          (DBObject) cmd.get("query"),
-          (DBObject) cmd.get("sort"),
-          (Number) cmd.get("limit"));
-      if (result == null) {
-        return notOkErrorResult("can't mapReduce");
-      }
-      CommandResult okResult = okResult();
-      if (result instanceof List) {
-        // INLINE case.
-        okResult.put("results", result);
-      } else {
-        okResult.put("result", result);
-      }
-      return okResult;
+      return runMapReduce(cmd, "mapreduce");
+    } else if (cmd.containsField("mapReduce")) {
+      return runMapReduce(cmd, "mapReduce");
     } else if (cmd.containsField("geoNear")) {
       // http://docs.mongodb.org/manual/reference/command/geoNear/
       // TODO : handle "num" (override limit)
@@ -342,5 +323,43 @@ public class FongoDB extends DB {
 
   public void addCollection(FongoDBCollection collection) {
     collMap.put(collection.getName(), collection);
+  }
+
+  private CommandResult runFindAndModify(DBObject cmd, String key) {
+    DBObject result = findAndModify(
+        (String) cmd.get(key),
+        (DBObject) cmd.get("query"),
+        (DBObject) cmd.get("sort"),
+        Boolean.TRUE.equals(cmd.get("remove")),
+        (DBObject) cmd.get("update"),
+        Boolean.TRUE.equals(cmd.get("new")),
+        (DBObject) cmd.get("fields"),
+        Boolean.TRUE.equals(cmd.get("upsert")));
+    CommandResult okResult = okResult();
+    okResult.put("value", result);
+    return okResult;
+  }
+
+  private CommandResult runMapReduce(DBObject cmd, String key) {
+    DBObject result = doMapReduce(
+        (String) cmd.get(key),
+        (String) cmd.get("map"),
+        (String) cmd.get("reduce"),
+        (String) cmd.get("finalize"),
+        (DBObject) cmd.get("out"),
+        (DBObject) cmd.get("query"),
+        (DBObject) cmd.get("sort"),
+        (Number) cmd.get("limit"));
+    if (result == null) {
+      return notOkErrorResult("can't mapReduce");
+    }
+    CommandResult okResult = okResult();
+    if (result instanceof List) {
+      // INLINE case.
+      okResult.put("results", result);
+    } else {
+      okResult.put("result", result);
+    }
+    return okResult;
   }
 }
