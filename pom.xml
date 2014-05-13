@@ -222,8 +222,7 @@
                     </dependency>
                 </dependencies>
                 <configuration>
-                    <!--<argLine>${jacoco.argLine.unit}-->
-                    <argLine>
+                    <argLine>${jacoco.argLine.unit}>
                         -Dfile.encoding=${project.build.sourceEncoding} -Xmx512m
                     </argLine>
                 </configuration>
