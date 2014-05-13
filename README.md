@@ -14,7 +14,7 @@ Add dependency to your project:
 <dependency>
   <groupId>com.github.fakemongo</groupId>
   <artifactId>fongo</artifactId>
-  <version>1.5.0</version>
+  <version>1.5.1</version>
   <scope>test</scope>
 </dependency>
 ```
