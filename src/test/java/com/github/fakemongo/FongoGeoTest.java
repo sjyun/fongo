@@ -32,7 +32,7 @@ public class FongoGeoTest {
     DBCollection collection = fongoRule.newCollection();
     collection.insert(new BasicDBObject("_id", 1).append("loc", Util.list(-73.97D, 40.72D)));
     collection.insert(new BasicDBObject("_id", 2).append("loc", Util.list(2.265D, 48.791D)));
-    collection.ensureIndex(new BasicDBObject("loc", "2d"));
+    collection.createIndex(new BasicDBObject("loc", "2d"));
     CommandResult commandResult = collection.getDB().command(new BasicDBObject("geoNear", collection.getName()).append("near", Util.list(2.265D, 48.791D)).append("spherical", true));
     commandResult.throwOnError();
 
@@ -47,7 +47,7 @@ public class FongoGeoTest {
     DBCollection collection = fongoRule.newCollection();
     collection.insert(new BasicDBObject("_id", 1).append("loc", Util.list(2.2D, 48.72D)));
     collection.insert(new BasicDBObject("_id", 2).append("loc", Util.list(2.265D, 48.791D)));
-    collection.ensureIndex(new BasicDBObject("loc", "2d"));
+    collection.createIndex(new BasicDBObject("loc", "2d"));
 
     // Test geoNear with real distance
     CommandResult commandResult = collection.getDB().command(new BasicDBObject("geoNear", collection.getName()).append("near", Util.list(2.265D, 48.791D)).append("spherical", true));
@@ -64,7 +64,7 @@ public class FongoGeoTest {
     DBCollection collection = fongoRule.newCollection();
     collection.insert(new BasicDBObject("_id", 1).append("loc", Util.list(73.97D, 40.72D)));
     collection.insert(new BasicDBObject("_id", 2).append("loc", Util.list(2.265D, 48.791D)));
-    collection.ensureIndex(new BasicDBObject("loc", "2d"));
+    collection.createIndex(new BasicDBObject("loc", "2d"));
 
     // geoNear
     CommandResult commandResult = collection.getDB().command(new BasicDBObject("geoNear", collection.getName()).append("near", Util.list(40.0, 44.791D)));
@@ -82,7 +82,7 @@ public class FongoGeoTest {
     collection.insert(new BasicDBObject("_id", 1).append("loc", Util.list(73D, 40D)));
     collection.insert(new BasicDBObject("_id", 2).append("loc", Util.list(2D, 48D)));
     collection.insert(new BasicDBObject("_id", 3).append("loc", Util.list(0D, 0D)));
-    collection.ensureIndex(new BasicDBObject("loc", "2d"));
+    collection.createIndex(new BasicDBObject("loc", "2d"));
 
     // geoNear
     CommandResult commandResult = collection.getDB().command(new BasicDBObject("geoNear", collection.getName()).append("near", Util.list(40.0, 44D)));
@@ -102,7 +102,7 @@ public class FongoGeoTest {
     collection.insert(new BasicDBObject("_id", 2).append("loc", Util.list(2D, 48D)));
     collection.insert(new BasicDBObject("_id", 3).append("loc", Util.list(0D, 0D)));
     collection.insert(new BasicDBObject("_id", 4).append("loc", Util.list(-73D, -40D)));
-    collection.ensureIndex(new BasicDBObject("loc", "2d"));
+    collection.createIndex(new BasicDBObject("loc", "2d"));
 
     // geoNear
     CommandResult commandResult = collection.getDB().command(new BasicDBObject("geoNear", collection.getName()).append("near", Util.list(40.0, 44D)).append("spherical", true));
@@ -119,7 +119,7 @@ public class FongoGeoTest {
   @Test
   public void testZip() throws Exception {
     DBCollection collection = fongoRule.insertFile(fongoRule.newCollection(), "/zips.json");
-    collection.ensureIndex(new BasicDBObject("loc", "2d"));
+    collection.createIndex(new BasicDBObject("loc", "2d"));
 
     // geoNear
     CommandResult commandResult = collection.getDB().command(new BasicDBObject("geoNear", collection.getName()).append("near", Util.list(-47.00, 44.919D)).append("limit", 10));
@@ -142,7 +142,7 @@ public class FongoGeoTest {
   @Test
   public void testZipSpherical() throws Exception {
     DBCollection collection = fongoRule.insertFile(fongoRule.newCollection(), "/zips.json");
-    collection.ensureIndex(new BasicDBObject("loc", "2d"));
+    collection.createIndex(new BasicDBObject("loc", "2d"));
 
     // geoNear
     CommandResult commandResult = collection.getDB().command(new BasicDBObject("geoNear", collection.getName()).append("near", Util.list(-47.00, 44.919D)).append("limit", 10).append("spherical", true));
@@ -167,7 +167,7 @@ public class FongoGeoTest {
     DBCollection collection = fongoRule.newCollection();
     collection.insert(new BasicDBObject("_id", 1).append("loc", Util.list(-73.97D, 40.72D)));
     collection.insert(new BasicDBObject("_id", 2).append("loc", Util.list(2.265D, 48.791D)));
-    collection.ensureIndex(new BasicDBObject("loc", "2d"));
+    collection.createIndex(new BasicDBObject("loc", "2d"));
 
     List<DBObject> objects = collection.find(new BasicDBObject("loc", new BasicDBObject("$nearSphere", Util.list(2.297, 48.809)).append("$maxDistance", 3100D / GeoUtil.EARTH_RADIUS))).toArray();
     assertEquals(Arrays.asList(
@@ -177,7 +177,7 @@ public class FongoGeoTest {
   @Test
   public void testFindByNearSphereNoMaxDistance() {
     DBCollection collection = fongoRule.newCollection();
-    collection.ensureIndex(new BasicDBObject("loc", "2d"));
+    collection.createIndex(new BasicDBObject("loc", "2d"));
     collection.insert(new BasicDBObject("_id", 1).append("loc", Util.list(84.265D, 40.791D)));
     collection.insert(new BasicDBObject("_id", 2).append("loc", Util.list(85.97D, 40.72D)));
 
@@ -195,7 +195,7 @@ public class FongoGeoTest {
     DBCollection collection = fongoRule.newCollection();
     collection.insert(new BasicDBObject("_id", 1).append("loc", Util.list(84.265D, 48.791D)));
     collection.insert(new BasicDBObject("_id", 2).append("loc", Util.list(-73.97D, 40.72D)));
-    collection.ensureIndex(new BasicDBObject("loc", "2d"));
+    collection.createIndex(new BasicDBObject("loc", "2d"));
 
     List<DBObject> objects = collection.find(new BasicDBObject("loc", new BasicDBObject("$nearSphere",
         new BasicDBObject("$geometry", new BasicDBObject("type", "Point").append("coordinates", Util.list(2.297, 48.809)))))).toArray();
@@ -210,7 +210,7 @@ public class FongoGeoTest {
     DBCollection collection = fongoRule.newCollection();
     collection.insert(new BasicDBObject("_id", 1).append("loc", Util.list(2.265D, 48.791D)));
     collection.insert(new BasicDBObject("_id", 2).append("loc", Util.list(-73.97D, 40.72D)));
-    collection.ensureIndex(new BasicDBObject("loc", "2d"));
+    collection.createIndex(new BasicDBObject("loc", "2d"));
 
     List<DBObject> objects = collection.find(new BasicDBObject("loc", new BasicDBObject("$nearSphere",
         new BasicDBObject("$geometry", new BasicDBObject("type", "Point").append("coordinates", Util.list(2.297, 48.809)))))).toArray();
@@ -224,7 +224,7 @@ public class FongoGeoTest {
     DBCollection collection = fongoRule.newCollection();
     collection.insert(new BasicDBObject("_id", 1).append("loc", Util.list(-73.97D, 40.72D)));
     collection.insert(new BasicDBObject("_id", 2).append("loc", Util.list(2.265D, 48.791D)));
-    collection.ensureIndex(new BasicDBObject("loc", "2d"));
+    collection.createIndex(new BasicDBObject("loc", "2d"));
 
     List<DBObject> objects = collection.find(new BasicDBObject("loc", new BasicDBObject("$near", Util.list(2.297, 48.809)).append("$maxDistance", 50D))).toArray();
     assertEquals(Arrays.asList(
@@ -236,7 +236,7 @@ public class FongoGeoTest {
     DBCollection collection = fongoRule.newCollection();
     collection.insert(new BasicDBObject("_id", 1).append("loc", Util.list(2.265D, 48.791D)));
     collection.insert(new BasicDBObject("_id", 2).append("loc", Util.list(-73.97D, 40.72D)));
-    collection.ensureIndex(new BasicDBObject("loc", "2d"));
+    collection.createIndex(new BasicDBObject("loc", "2d"));
 
     List<DBObject> objects = collection.find(new BasicDBObject("loc", new BasicDBObject("$near",
         new BasicDBObject("$geometry", new BasicDBObject("type", "Point").append("coordinates", Util.list(2.297, 48.809)))))).toArray();
@@ -250,7 +250,7 @@ public class FongoGeoTest {
     DBCollection collection = fongoRule.newCollection();
     collection.insert(new BasicDBObject("_id", 1).append("loc", new BasicDBObject("lat", 0).append("lng", 0)));
     collection.insert(new BasicDBObject("_id", 2).append("loc", new BasicDBObject("lat", 0).append("lng", 0)));
-    collection.ensureIndex(new BasicDBObject("loc", "2d"));
+    collection.createIndex(new BasicDBObject("loc", "2d"));
 
     List<DBObject> objects = collection.find(new BasicDBObject("loc", new BasicDBObject("$near", Util.list(0, 0)).append("$maxDistance", 5))).toArray();
     assertEquals(Arrays.asList(
@@ -265,7 +265,7 @@ public class FongoGeoTest {
     DBCollection collection = fongoRule.newCollection();
     collection.insert(new BasicDBObject("_id", 1).append("loc", new BasicDBObject("latitude", 0).append("longitude", 0)));
     collection.insert(new BasicDBObject("_id", 2).append("loc", new BasicDBObject("latitude", 0).append("longitude", 0)));
-    collection.ensureIndex(new BasicDBObject("loc", "2d"));
+    collection.createIndex(new BasicDBObject("loc", "2d"));
 
     List<DBObject> objects = collection.find(new BasicDBObject("loc", new BasicDBObject("$near", Util.list(0, 0)).append("$maxDistance", 5))).toArray();
     assertEquals(Arrays.asList(
@@ -279,7 +279,7 @@ public class FongoGeoTest {
     DBCollection collection = fongoRule.newCollection();
     collection.insert(new BasicDBObject("_id", 1).append("loc", new BasicDBObject("longitude", 0).append("latitude", 0)));
     collection.insert(new BasicDBObject("_id", 2).append("loc", new BasicDBObject("longitude", 1).append("latitude", 1)));
-    collection.ensureIndex(new BasicDBObject("loc", "2d"));
+    collection.createIndex(new BasicDBObject("loc", "2d"));
 
     List<DBObject> objects = collection.find(new BasicDBObject("loc", new BasicDBObject("$geoWithin", new BasicDBObject("$box", Util.list(Util.list(0, 0), Util.list(10, 10)))))).toArray();
     Assertions.assertThat(objects).containsOnly(
@@ -294,7 +294,7 @@ public class FongoGeoTest {
     collection.insert(new BasicDBObject("_id", 1).append("loc", new BasicDBObject("longitude", 0).append("latitude", -1)));
     collection.insert(new BasicDBObject("_id", 2).append("loc", new BasicDBObject("longitude", 11).append("latitude", 1)));
 
-    collection.ensureIndex(new BasicDBObject("loc", "2d"));
+    collection.createIndex(new BasicDBObject("loc", "2d"));
 
     List<DBObject> objects = collection.find(new BasicDBObject("loc", new BasicDBObject("$geoWithin", new BasicDBObject("$box", Util.list(Util.list(0, 0), Util.list(10, 10)))))).toArray();
     Assertions.assertThat(objects).isEmpty();
@@ -318,7 +318,7 @@ public class FongoGeoTest {
     collection.insert(new BasicDBObject("_id", 11).append("loc", new BasicDBObject("longitude", 1).append("latitude", 39)));
     collection.insert(new BasicDBObject("_id", 12).append("loc", new BasicDBObject("longitude", -1).append("latitude", 41)));
     collection.insert(new BasicDBObject("_id", 13).append("loc", new BasicDBObject("longitude", -1).append("latitude", 39)));
-    collection.ensureIndex(new BasicDBObject("loc", "2d"));
+    collection.createIndex(new BasicDBObject("loc", "2d"));
 
     List<DBObject> objects = collection.find(new BasicDBObject("loc", new BasicDBObject("$geoWithin", new BasicDBObject("$polygon", Util.list(Util.list(0, 41), Util.list(1, 40), Util.list(0, 39), Util.list(-1, 40)))))).toArray();
     Assertions.assertThat(objects).containsOnly(
