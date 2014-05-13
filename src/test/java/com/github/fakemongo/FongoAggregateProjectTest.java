@@ -7,8 +7,11 @@ import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
+import java.util.Arrays;
 import java.util.List;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
@@ -45,7 +48,7 @@ public class FongoAggregateProjectTest {
         "                                }\n" +
         "                   }");
 
-    AggregationOutput output = coll.aggregate(project);
+    AggregationOutput output = coll.aggregate(Arrays.asList(project));
     assertTrue(output.getCommandResult().ok());
 
     List<DBObject> result = (List<DBObject>) output.getCommandResult().get("result");
@@ -77,7 +80,7 @@ public class FongoAggregateProjectTest {
         "                                }\n" +
         "                   }");
 
-    AggregationOutput output = coll.aggregate(project);
+    AggregationOutput output = coll.aggregate(Arrays.asList(project));
     assertTrue(output.getCommandResult().ok());
 
     List<DBObject> result = (List<DBObject>) output.getCommandResult().get("result");
@@ -111,7 +114,7 @@ public class FongoAggregateProjectTest {
         "                                }\n" +
         "                   }");
 
-    AggregationOutput output = coll.aggregate(project);
+    AggregationOutput output = coll.aggregate(Arrays.asList(project));
     assertTrue(output.getCommandResult().ok());
 
     List<DBObject> result = (List<DBObject>) output.getCommandResult().get("result");
@@ -157,7 +160,7 @@ public class FongoAggregateProjectTest {
         "                                }\n" +
         "                   }");
 
-    AggregationOutput output = coll.aggregate(project);
+    AggregationOutput output = coll.aggregate(Arrays.asList(project));
     assertTrue(output.getCommandResult().ok());
 
     List<DBObject> result = (List<DBObject>) output.getCommandResult().get("result");
@@ -187,7 +190,7 @@ public class FongoAggregateProjectTest {
         "                                }\n" +
         "                   }");
 
-    AggregationOutput output = coll.aggregate(project);
+    AggregationOutput output = coll.aggregate(Arrays.asList(project));
     assertTrue(output.getCommandResult().ok());
 
     List<DBObject> result = (List<DBObject>) output.getCommandResult().get("result");
@@ -217,7 +220,7 @@ public class FongoAggregateProjectTest {
         "                                }\n" +
         "                   }");
 
-    coll.aggregate(project);
+    coll.aggregate(Arrays.asList(project));
   }
 
 
@@ -238,7 +241,7 @@ public class FongoAggregateProjectTest {
         "                                }\n" +
         "                   }");
 
-    AggregationOutput output = coll.aggregate(project);
+    AggregationOutput output = coll.aggregate(Arrays.asList(project));
     assertTrue(output.getCommandResult().ok());
 
     List<DBObject> result = (List<DBObject>) output.getCommandResult().get("result");
@@ -266,7 +269,7 @@ public class FongoAggregateProjectTest {
         "                                }\n" +
         "                   }");
 
-    AggregationOutput output = coll.aggregate(project);
+    AggregationOutput output = coll.aggregate(Arrays.asList(project));
     assertTrue(output.getCommandResult().ok());
 
     List<DBObject> result = (List<DBObject>) output.getCommandResult().get("result");
@@ -294,7 +297,7 @@ public class FongoAggregateProjectTest {
         "                                }\n" +
         "                   }");
 
-    AggregationOutput output = coll.aggregate(project);
+    AggregationOutput output = coll.aggregate(Arrays.asList(project));
     assertTrue(output.getCommandResult().ok());
 
     List<DBObject> result = (List<DBObject>) output.getCommandResult().get("result");
@@ -322,7 +325,7 @@ public class FongoAggregateProjectTest {
         "                                }\n" +
         "                   }");
 
-    AggregationOutput output = coll.aggregate(project);
+    AggregationOutput output = coll.aggregate(Arrays.asList(project));
     assertTrue(output.getCommandResult().ok());
 
     List<DBObject> result = (List<DBObject>) output.getCommandResult().get("result");
@@ -350,7 +353,7 @@ public class FongoAggregateProjectTest {
         "                                }\n" +
         "                   }");
 
-    AggregationOutput output = coll.aggregate(project);
+    AggregationOutput output = coll.aggregate(Arrays.asList(project));
     assertTrue(output.getCommandResult().ok());
 
     List<DBObject> result = (List<DBObject>) output.getCommandResult().get("result");
@@ -379,7 +382,7 @@ public class FongoAggregateProjectTest {
         "                                }\n" +
         "                   }");
 
-    coll.aggregate(project);
+    coll.aggregate(Arrays.asList(project));
   }
 
   /**
@@ -401,7 +404,7 @@ public class FongoAggregateProjectTest {
         "                                }\n" +
         "                   }");
 
-    AggregationOutput output = coll.aggregate(project);
+    AggregationOutput output = coll.aggregate(Arrays.asList(project));
     assertTrue(output.getCommandResult().ok());
 
     List<DBObject> result = (List<DBObject>) output.getCommandResult().get("result");
@@ -431,7 +434,7 @@ public class FongoAggregateProjectTest {
         "                                }\n" +
         "                   }");
 
-    AggregationOutput output = coll.aggregate(project);
+    AggregationOutput output = coll.aggregate(Arrays.asList(project));
     assertTrue(output.getCommandResult().ok());
 
     List<DBObject> result = (List<DBObject>) output.getCommandResult().get("result");
@@ -461,7 +464,7 @@ public class FongoAggregateProjectTest {
         "                                }\n" +
         "                   }");
 
-    AggregationOutput output = coll.aggregate(project);
+    AggregationOutput output = coll.aggregate(Arrays.asList(project));
     assertTrue(output.getCommandResult().ok());
 
     List<DBObject> result = (List<DBObject>) output.getCommandResult().get("result");
@@ -492,7 +495,7 @@ public class FongoAggregateProjectTest {
         "                                }\n" +
         "                   }");
 
-    AggregationOutput output = coll.aggregate(project);
+    AggregationOutput output = coll.aggregate(Arrays.asList(project));
     assertTrue(output.getCommandResult().ok());
 
     List<DBObject> result = (List<DBObject>) output.getCommandResult().get("result");
@@ -519,7 +522,7 @@ public class FongoAggregateProjectTest {
         "                                }\n" +
         "                   }");
 
-    AggregationOutput output = coll.aggregate(project);
+    AggregationOutput output = coll.aggregate(Arrays.asList(project));
     assertTrue(output.getCommandResult().ok());
 
     List<DBObject> result = (List<DBObject>) output.getCommandResult().get("result");
@@ -546,7 +549,7 @@ public class FongoAggregateProjectTest {
         "                                }\n" +
         "                   }");
 
-    coll.aggregate(project);
+    coll.aggregate(Arrays.asList(project));
   }
 
 
@@ -564,7 +567,7 @@ public class FongoAggregateProjectTest {
         "                                }\n" +
         "                   }");
 
-    AggregationOutput output = coll.aggregate(project);
+    AggregationOutput output = coll.aggregate(Arrays.asList(project));
     assertTrue(output.getCommandResult().ok());
 
     List<DBObject> result = (List<DBObject>) output.getCommandResult().get("result");
@@ -589,7 +592,7 @@ public class FongoAggregateProjectTest {
         "                                }\n" +
         "                   }");
 
-    AggregationOutput output = coll.aggregate(project);
+    AggregationOutput output = coll.aggregate(Arrays.asList(project));
     assertTrue(output.getCommandResult().ok());
 
     List<DBObject> result = (List<DBObject>) output.getCommandResult().get("result");
@@ -614,7 +617,7 @@ public class FongoAggregateProjectTest {
         "                                }\n" +
         "                   }");
 
-    AggregationOutput output = coll.aggregate(project);
+    AggregationOutput output = coll.aggregate(Arrays.asList(project));
     assertTrue(output.getCommandResult().ok());
 
     List<DBObject> result = (List<DBObject>) output.getCommandResult().get("result");
@@ -638,7 +641,7 @@ public class FongoAggregateProjectTest {
         "                                }\n" +
         "                   }");
 
-    AggregationOutput output = coll.aggregate(project);
+    AggregationOutput output = coll.aggregate(Arrays.asList(project));
     assertTrue(output.getCommandResult().ok());
 
     List<DBObject> result = (List<DBObject>) output.getCommandResult().get("result");
@@ -664,7 +667,7 @@ public class FongoAggregateProjectTest {
         "                                }\n" +
         "                   }");
 
-    AggregationOutput output = coll.aggregate(project);
+    AggregationOutput output = coll.aggregate(Arrays.asList(project));
     assertTrue(output.getCommandResult().ok());
 
     List<DBObject> result = (List<DBObject>) output.getCommandResult().get("result");
@@ -689,7 +692,7 @@ public class FongoAggregateProjectTest {
         "                                }\n" +
         "                   }");
 
-    AggregationOutput output = coll.aggregate(project);
+    AggregationOutput output = coll.aggregate(Arrays.asList(project));
     assertTrue(output.getCommandResult().ok());
 
     List<DBObject> result = (List<DBObject>) output.getCommandResult().get("result");
@@ -714,7 +717,7 @@ public class FongoAggregateProjectTest {
         "                                }\n" +
         "                   }");
 
-    AggregationOutput output = coll.aggregate(project);
+    AggregationOutput output = coll.aggregate(Arrays.asList(project));
     assertTrue(output.getCommandResult().ok());
 
     List<DBObject> result = (List<DBObject>) output.getCommandResult().get("result");
@@ -741,7 +744,7 @@ public class FongoAggregateProjectTest {
         "                                }\n" +
         "                   }");
 
-    coll.aggregate(project);
+    coll.aggregate(Arrays.asList(project));
   }
 
   @Test
@@ -757,7 +760,7 @@ public class FongoAggregateProjectTest {
         "                                }\n" +
         "                   }");
 
-    AggregationOutput output = coll.aggregate(project);
+    AggregationOutput output = coll.aggregate(Arrays.asList(project));
     assertTrue(output.getCommandResult().ok());
 
     List<DBObject> result = (List<DBObject>) output.getCommandResult().get("result");
@@ -774,7 +777,7 @@ public class FongoAggregateProjectTest {
     DBObject project = new BasicDBObject("$project", new BasicDBObject("date", 1));
 
     // Test
-    AggregationOutput output = coll.aggregate(project);
+    AggregationOutput output = coll.aggregate(Arrays.asList(project));
     assertTrue(output.getCommandResult().ok());
     assertTrue(output.getCommandResult().containsField("result"));
 
