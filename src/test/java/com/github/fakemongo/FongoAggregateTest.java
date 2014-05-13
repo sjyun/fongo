@@ -415,7 +415,8 @@ public class FongoAggregateTest {
             "{\n a_id: 2,\n \"name\": \"n2\"\n},\n" +
             "{\n a_id: 1,\n \"name\": \"n3\"\n},\n" +
             "{\n a_id: 1,\n \"name\": \"n4\"\n},\n" +
-            "{\n a_id: 2,\n \"name\": \"n5\"\n}]");
+            "{\n a_id: 2,\n \"name\": \"n5\"\n}]"
+    );
 
     DBObject group = fongoRule.parseDBObject("{$group: { '_id': '$a_id', 'name': { $push: '$name'}}}");
 
@@ -439,7 +440,8 @@ public class FongoAggregateTest {
             "{\n a_id: 2,\n \"name\": \"n5\"\n},\n" +
             "{\n a_id: 1,\n \"name\": \"n1\"\n},\n" +
             "{\n a_id: 1,\n \"name\": \"n2\"\n},\n" +
-            "{\n a_id: 2,\n \"name\": \"n5\"\n}]\n");
+            "{\n a_id: 2,\n \"name\": \"n5\"\n}]\n"
+    );
 
     DBObject group = fongoRule.parseDBObject("{$group: { '_id': '$a_id', 'name': { $push: '$name'}}}");
 
@@ -463,7 +465,8 @@ public class FongoAggregateTest {
             "{\n a_id: 2,\n \"name\": \"n2\"\n},\n" +
             "{\n a_id: 1,\n \"name\": \"n3\"\n},\n" +
             "{\n a_id: 1,\n \"name\": \"n4\"\n},\n" +
-            "{\n a_id: 2,\n \"name\": \"n5\"\n}]");
+            "{\n a_id: 2,\n \"name\": \"n5\"\n}]"
+    );
 
     DBObject group = fongoRule.parseDBObject("{$group: { '_id': '$a_id', 'name': { $push: '$name'}}}");
 
@@ -487,7 +490,8 @@ public class FongoAggregateTest {
             "{\n a_id: 2,\n \"name\": \"n5\"\n},\n" +
             "{\n a_id: 1,\n \"name\": \"n1\"\n},\n" +
             "{\n a_id: 1,\n \"name\": \"n2\"\n},\n" +
-            "{\n a_id: 2,\n \"name\": \"n5\"\n}]");
+            "{\n a_id: 2,\n \"name\": \"n5\"\n}]"
+    );
 
     DBObject group = fongoRule.parseDBObject("{$group: { '_id': '$a_id', 'name': { $addToSet: '$name'}}}");
 
@@ -534,7 +538,7 @@ public class FongoAggregateTest {
     DBCollection collection = fongoRule.insertJSON(fongoRule.newCollection("versioning"),
         "[{ \"_id\" : { \"$oid\" : \"5323764d210663e62bdc69b9\"} , \"_class\" : \"LogAlertCreated\" , \"uuidAlert\" : \"2\" , \"version\" : 1 , \"createdAt\" : 1394832973819 , \"alert\" : { \"uuid\" : { \"$uuid\" : \"951a2f50-586d-4bef-83c5-22f68354f4d0\"} , \"senderMessage\" : \"user\" , \"title\" : \"title\" , \"category\" : 12 , \"severity\" : 6 , \"message\" : \"message\" , \"start\" : 1394832973799 , \"area\" : { \"_class\" : \"zone.CircleZone\" , \"center\" : { \"_class\" : \"com.deveryware.mpa.model.v1.Coordinate\" , \"latitude\" : 42.2 , \"longitude\" : 38.2} , \"radius\" : 12.0}}}, { \"_id\" : { \"$oid\" : \"5323764d210663e62bdc69ba\"} , \"_class\" : \"LogAlertCreated\" , \"uuidAlert\" : \"1\" , \"version\" : 1 , \"createdAt\" : 1394832973907 , \"alert\" : { \"uuid\" : { \"$uuid\" : \"406a76c0-cdc3-4de0-a8aa-aae6211dc01e\"} , \"senderMessage\" : \"user\" , \"title\" : \"title\" , \"category\" : 12 , \"severity\" : 6 , \"message\" : \"message\" , \"start\" : 1394832973907 , \"area\" : { \"_class\" : \"zone.CircleZone\" , \"center\" : { \"_class\" : \"com.deveryware.mpa.model.v1.Coordinate\" , \"latitude\" : 42.2 , \"longitude\" : 38.2} , \"radius\" : 12.0}}}, { \"_id\" : { \"$oid\" : \"5323764d210663e62bdc69bb\"} , \"_class\" : \"LogAlertMessageModified\" , \"uuidAlert\" : \"1\" , \"version\" : 3 , \"createdAt\" : 1394832973917 , \"message\" : \"notification3\"}, { \"_id\" : { \"$oid\" : \"5323764d210663e62bdc69bc\"} , \"_class\" : \"LogAlertMessageModified\" , \"uuidAlert\" : \"1\" , \"version\" : 2 , \"createdAt\" : 1394832973933 , \"message\" : \"notification2\"}, { \"_id\" : { \"$oid\" : \"5323764d210663e62bdc69bd\"} , \"_class\" : \"LogAlertEnded\" , \"uuidAlert\" : \"1\" , \"version\" : 4 , \"createdAt\" : 1394832973946}, { \"_id\" : { \"$oid\" : \"5323764d210663e62bdc69be\"} , \"_class\" : \"LogAlertMessageModified\" , \"uuidAlert\" : \"2\" , \"version\" : 3 , \"createdAt\" : 1394832973959 , \"message\" : \"modif3\"}, { \"_id\" : { \"$oid\" : \"5323764d210663e62bdc69bf\"} , \"_class\" : \"LogAlertMessageModified\" , \"uuidAlert\" : \"2\" , \"version\" : 2 , \"createdAt\" : 1394832973969 , \"message\" : \"modif2\"}]"
     );
-    collection.ensureIndex(new BasicDBObject("uuidAlert", 1).append("version", 1), null, true);
+    collection.ensureIndex(new BasicDBObject("uuidAlert", 1).append("version", 1), new BasicDBObject("unique", Boolean.TRUE));
 
     DBObject group = fongoRule.parseDBObject("{$group: { '_id': '$uuidAlert', 'events': { $addToSet: '$_class'}}}");
 
