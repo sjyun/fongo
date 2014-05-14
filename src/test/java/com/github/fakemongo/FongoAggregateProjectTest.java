@@ -10,6 +10,8 @@ import com.mongodb.DBObject;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Locale;
+import java.util.TimeZone;
 import org.assertj.core.api.Assertions;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -959,37 +961,30 @@ public class FongoAggregateProjectTest {
   public void should_$week_give_the_week_of_the_date() {
     // Given
     DBCollection collection = fongoRule.newCollection();
-    Calendar calendar = Calendar.getInstance();
-    calendar.set(Calendar.YEAR, 2014);
-    calendar.set(Calendar.DAY_OF_YEAR, 110);
+    Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT"), Locale.US);
+    calendar.setTimeInMillis(1400000000000L);
     collection.insert(new BasicDBObject("date_created", calendar.getTime()).append("_id", 1));
 
     // When
-    AggregationOutput output = collection.aggregate(fongoRule.parseList("[{ $project: { day: { $week: \"$date_created\" } } }]"));
+    AggregationOutput output = collection.aggregate(fongoRule.parseList("[{ $project: { week: { $week: \"$date_created\" } } }]"));
 
     // Then
-    Assertions.assertThat(output.results()).isEqualTo(fongoRule.parseList("[{_id:1, \"day\":16}]"));
+    Assertions.assertThat(output.results()).isEqualTo(fongoRule.parseList("[{_id:1, \"week\":19}]"));
   }
 
   @Test
   public void should_$hour_give_the_hour_of_the_date() {
     // Given
     DBCollection collection = fongoRule.newCollection();
-    Calendar calendar = Calendar.getInstance();
-    calendar.set(Calendar.YEAR, 2014);
-    calendar.set(Calendar.DAY_OF_YEAR, 110);
-    calendar.set(Calendar.HOUR_OF_DAY, 5);
-    calendar.set(Calendar.MINUTE, 6);
-    calendar.set(Calendar.SECOND, 7);
-    calendar.set(Calendar.MILLISECOND, 8);
+    Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT"), Locale.US);
+    calendar.setTimeInMillis(1400000000000L);
     collection.insert(new BasicDBObject("date_created", calendar.getTime()).append("_id", 1));
 
     // When
-    AggregationOutput output = collection.aggregate(fongoRule.parseList("[{ $project: { day: { $hour: \"$date_created\" } } }]"));
+    AggregationOutput output = collection.aggregate(fongoRule.parseList("[{ $project: { hour: { $hour: \"$date_created\" } } }]"));
 
     // Then
-    Assertions.assertThat(output.results()).isEqualTo(fongoRule.parseList("[{_id:1, \"day\":5}]"));
-//    Assertions.assertThat(output.results()).isEqualTo(fongoRule.parseList("[{_id:1, \"day\":3}]"));
+    Assertions.assertThat(output.results()).isEqualTo(fongoRule.parseList("[{_id:1, \"hour\":16}]"));
   }
 
   @Test
@@ -1006,10 +1001,10 @@ public class FongoAggregateProjectTest {
     collection.insert(new BasicDBObject("date_created", calendar.getTime()).append("_id", 1));
 
     // When
-    AggregationOutput output = collection.aggregate(fongoRule.parseList("[{ $project: { day: { $minute: \"$date_created\" } } }]"));
+    AggregationOutput output = collection.aggregate(fongoRule.parseList("[{ $project: { minute: { $minute: \"$date_created\" } } }]"));
 
     // Then
-    Assertions.assertThat(output.results()).isEqualTo(fongoRule.parseList("[{_id:1, \"day\":6}]"));
+    Assertions.assertThat(output.results()).isEqualTo(fongoRule.parseList("[{_id:1, \"minute\":6}]"));
   }
 
   @Test

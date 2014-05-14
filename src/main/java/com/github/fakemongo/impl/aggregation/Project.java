@@ -13,7 +13,9 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.TimeZone;
 import org.bson.util.annotations.ThreadSafe;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -496,8 +498,8 @@ public class Project extends PipelineKeyword {
     @Override
     public void unapply(DBObject result, DBObject object, String key) {
       Object value = extractValue(object, field);
-      Calendar calendar = Calendar.getInstance();
-      calendar.setTime((Date) value);
+      Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT"), Locale.ENGLISH);
+      calendar.setTimeInMillis((((Date) value).getTime()));
       int extracted = calendar.get(fromCalendar) + modifier;
       result.put(destName, extracted);
     }
@@ -548,7 +550,7 @@ public class Project extends PipelineKeyword {
     public static final String KEYWORD = "$week";
 
     public ProjectedDateWeek(String destName, DBCollection coll, DBObject object) {
-      super(KEYWORD, Calendar.WEEK_OF_YEAR, 0, destName, coll, object);
+      super(KEYWORD, Calendar.WEEK_OF_YEAR, -1, destName, coll, object);
     }
   }
 
