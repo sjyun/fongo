@@ -47,8 +47,9 @@ public class FongoRule extends ExternalResource {
   /**
    * Setup a rule with a real MongoDB.
    *
-   * @param dbName    the dbName to use.
-   * @param realMongo set to true if you want to use a real mongoDB.
+   * @param dbName            the dbName to use.
+   * @param realMongo         set to true if you want to use a real mongoDB.
+   * @param mongoClientIfReal real client to use if realMongo si true.
    */
   public FongoRule(String dbName, boolean realMongo, MongoClient mongoClientIfReal) {
     this.dbName = dbName;
