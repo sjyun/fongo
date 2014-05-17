@@ -1,17 +1,7 @@
 package com.mongodb;
 
-import com.github.fakemongo.FongoException;
-import com.github.fakemongo.impl.ExpressionParser;
-import com.github.fakemongo.impl.Filter;
-import com.github.fakemongo.impl.Tuple2;
-import com.github.fakemongo.impl.UpdateEngine;
-import com.github.fakemongo.impl.Util;
-import com.github.fakemongo.impl.geo.GeoUtil;
-import com.github.fakemongo.impl.geo.LatLong;
-import com.github.fakemongo.impl.index.GeoIndex;
-import com.github.fakemongo.impl.index.IndexAbstract;
-import com.github.fakemongo.impl.index.IndexFactory;
-import com.github.fakemongo.impl.text.TextSearch;
+import static org.bson.util.Assertions.isTrue;
+
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,10 +14,22 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
+
+import com.github.fakemongo.FongoException;
+import com.github.fakemongo.impl.ExpressionParser;
+import com.github.fakemongo.impl.Filter;
+import com.github.fakemongo.impl.Tuple2;
+import com.github.fakemongo.impl.UpdateEngine;
+import com.github.fakemongo.impl.Util;
+import com.github.fakemongo.impl.geo.GeoUtil;
+import com.github.fakemongo.impl.geo.LatLong;
+import com.github.fakemongo.impl.index.GeoIndex;
+import com.github.fakemongo.impl.index.IndexAbstract;
+import com.github.fakemongo.impl.index.IndexFactory;
+import com.github.fakemongo.impl.text.TextSearch;
 import org.bson.BSON;
 import org.bson.types.Binary;
 import org.bson.types.ObjectId;
-import static org.bson.util.Assertions.isTrue;
 import org.objenesis.ObjenesisStd;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -532,19 +534,38 @@ public class FongoDBCollection extends DBCollection {
         ret.append(subKey, nb);
         addValuesAtPath(nb, (DBObject) value, path, startIndex + 1);
       } else if (value instanceof List) {
-        BasicDBList list = new BasicDBList();
-        ret.append(subKey, list);
+
+        BasicDBList list = getListForKey(ret, subKey);
+
+        int idx = 0;
         for (Object v : (List) value) {
           if (v instanceof DBObject) {
-            BasicDBObject nb = new BasicDBObject();
-            list.add(nb);
+            BasicDBObject nb;
+            if (list.size() > idx) {
+              nb = (BasicDBObject) list.get(idx);
+            } else {
+              nb = new BasicDBObject();
+              list.add(nb);
+            }
             addValuesAtPath(nb, (DBObject) v, path, startIndex + 1);
           }
+          idx++;
         }
       }
     } else if (value != null) {
       ret.append(subKey, value);
     }
+  }
+
+  private static BasicDBList getListForKey(BasicDBObject ret, String subKey) {
+    BasicDBList list;
+    if (ret.containsField(subKey)) {
+      list = (BasicDBList) ret.get(subKey);
+    } else {
+      list = new BasicDBList();
+      ret.append(subKey, list);
+    }
+    return list;
   }
 
   /**
