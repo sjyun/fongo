@@ -442,12 +442,12 @@ public class ExpressionParser {
                 for (Object storedValue : storedList) {
                   if (storedValue instanceof List) {
                     for (Object aValue : (List) storedValue) {
-                      if (queryValue.equals(aValue)) {
+                      if (isEqual(queryValue, aValue)) {
                         return false;
                       }
                     }
                   } else {
-                    if (queryValue.equals(storedValue)) {
+                    if (isEqual(queryValue, storedValue)) {
                       return false;
                     }
                   }
@@ -455,6 +455,18 @@ public class ExpressionParser {
                 return true;
               }
             }
+
+			private boolean isEqual(Object obj1, Object obj2) {
+				if (obj1 == null) {
+					if (obj2 == null) {
+						return true;
+					}
+					
+					return false;
+				}
+				
+				return obj1.equals(obj2);
+			}
           };
         }
       },

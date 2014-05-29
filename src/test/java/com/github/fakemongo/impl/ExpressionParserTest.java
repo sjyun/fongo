@@ -147,6 +147,24 @@ public class ExpressionParserTest {
   }
 
   @Test
+  public void testNeOperatorWithNullValue() {
+	  DBObject query = new BasicDBObjectBuilder().push("a").add("$ne", null).pop().get();
+	    List<DBObject> results = doFilter(
+	        query,
+	        new BasicDBObject("a", asList(null, 3)),
+	        new BasicDBObject("a", null),
+	        new BasicDBObject("a", 1),
+	        new BasicDBObject("b", 3),
+	        new BasicDBObject("a", asList(1, 2))
+	    );
+	    assertEquals(Arrays.<DBObject>asList(
+	        new BasicDBObject("a", 1),
+	        new BasicDBObject("b", 3),
+	        new BasicDBObject("a", asList(1, 2))
+	    ), results);
+  }
+
+  @Test
   public void testNeEmbeddedOperator() {
 
     DBObject query = new BasicDBObject("a.b", new BasicDBObject("$ne", 2));
