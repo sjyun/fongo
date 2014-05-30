@@ -11,6 +11,7 @@ import com.mongodb.LazyDBObject;
 import com.mongodb.QueryOperators;
 import com.mongodb.util.JSON;
 import com.vividsolutions.jts.geom.Geometry;
+
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -25,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
+
 import org.bson.LazyBSONList;
 import org.bson.types.Binary;
 import org.bson.types.MaxKey;
@@ -437,7 +439,7 @@ public class ExpressionParser {
               Object queryValue = refExpression.get(command);
               List<Object> storedList = getEmbeddedValues(path, o);
               if (storedList.isEmpty()) {
-                return true;
+                return queryValue != null;
               } else {
                 for (Object storedValue : storedList) {
                   if (storedValue instanceof List) {
