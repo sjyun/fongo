@@ -159,7 +159,6 @@ public class ExpressionParserTest {
 	    );
 	    assertEquals(Arrays.<DBObject>asList(
 	        new BasicDBObject("a", 1),
-	        new BasicDBObject("b", 3),
 	        new BasicDBObject("a", asList(1, 2))
 	    ), results);
   }
