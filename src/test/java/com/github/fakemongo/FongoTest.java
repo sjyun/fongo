@@ -32,7 +32,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import org.assertj.core.api.Assertions;
 import static org.assertj.core.api.Assertions.assertThat;
-import org.assertj.core.data.MapEntry;
 import org.assertj.core.util.Lists;
 import org.bson.BSON;
 import org.bson.Transformer;
@@ -50,12 +49,19 @@ import static org.junit.Assert.fail;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
+import org.junit.rules.RuleChain;
+import org.junit.rules.TestRule;
 import org.slf4j.LoggerFactory;
 
 public class FongoTest {
 
+  public final FongoRule fongoRule = new FongoRule(false);
+
+  public final ExpectedException exception = ExpectedException.none();
+
   @Rule
-  public FongoRule fongoRule = new FongoRule(false);
+  public TestRule rules = RuleChain.outerRule(exception).around(fongoRule);
 
   @Test
   public void testGetDb() {
@@ -1901,14 +1907,10 @@ public class FongoTest {
     ObjectId objectId = ObjectId.get();
     DBObject query = BasicDBObjectBuilder.start("_id", objectId.toString()).get();
     DBObject object = BasicDBObjectBuilder.start("_id", objectId).add("name", "Robert").get();
+    ExpectedMongoException.expectWriteConcernException(exception, 16836);
 
     // When
     collection.update(query, object, true, false);
-
-    // Then
-    List<DBObject> result = collection.find().toArray();
-    assertThat(result).hasSize(1);
-    assertThat(result.get(0).toMap()).contains(MapEntry.entry("name", "Robert"), MapEntry.entry("_id", objectId));
   }
 
   // See http://docs.mongodb.org/manual/reference/operator/projection/elemMatch/
@@ -2162,6 +2164,22 @@ public class FongoTest {
     // Then
     System.out.println(Lists.newArrayList(result.results())); // { "_id" : { "$oid" : "5368e0f3cf5a47d5a22d7b75"}}
     Assertions.assertThat(result.results()).isEqualTo(fongoRule.parseList("[{ \"_id\" : 1 , \"bla\" : 2.0}]"));
+  }
+
+  // #44 https://github.com/fakemongo/fongo/issues/44
+  @Test
+  public void should_string_id_not_retrieve_objectId() {
+    // Given
+    DBCollection collection = newCollection();
+    collection.insert(new BasicDBObject());
+    DBObject object = collection.findOne();
+    ObjectId objectId = (ObjectId) object.get("_id");
+
+    // When
+    // Then
+    Assertions.assertThat(collection.findOne(new BasicDBObject("_id", objectId))).isEqualTo(object);
+    Assertions.assertThat(collection.findOne(new BasicDBObject("_id", objectId.toString()))).isNull();
+
   }
 
   static class Seq {

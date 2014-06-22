@@ -2,6 +2,7 @@ package com.github.fakemongo;
 
 import com.mongodb.CommandFailureException;
 import com.mongodb.MongoException;
+import com.mongodb.WriteConcernException;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
@@ -13,9 +14,11 @@ public final class ExpectedMongoException {
   }
 
   public static ExpectedException expectCommandFailure(ExpectedException expectedException, int code) {
-    expect(expectedException, CommandFailureException.class);
-    expectedException.expect(equalCode(code));
-    return expectedException;
+    return expectCode(expectedException, code, CommandFailureException.class);
+  }
+
+  public static ExpectedException expectWriteConcernException(ExpectedException expectedException, int code) {
+    return expectCode(expectedException, code, WriteConcernException.class);
   }
 
   public static ExpectedException expect(ExpectedException expectedException, Class<? extends MongoException> exception) {

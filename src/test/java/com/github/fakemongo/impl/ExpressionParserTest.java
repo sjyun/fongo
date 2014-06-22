@@ -660,14 +660,6 @@ public class ExpressionParserTest {
   }
 
   @Test
-  public void compare_objectid_and_string() {
-    ExpressionParser expressionParser = new ExpressionParser();
-    ObjectId objectId = ObjectId.get();
-    assertThat(expressionParser.compareObjects(objectId, objectId.toString())).isEqualTo(0);
-    assertThat(expressionParser.compareObjects(objectId.toString(), objectId)).isEqualTo(0);
-  }
-
-  @Test
   public void compare_dbref() {
     Fongo fongo = new Fongo("test");
     ExpressionParser expressionParser = new ExpressionParser();

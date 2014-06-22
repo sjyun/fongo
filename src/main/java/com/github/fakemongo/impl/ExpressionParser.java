@@ -848,14 +848,14 @@ public class ExpressionParser {
         cc2 = convertFrom((byte[]) cc2);
         checkTypes = false;
       }
-      if (cc1 instanceof ObjectId && cc2 instanceof String && ObjectId.isValid((String) cc2)) {
-        cc2 = ObjectId.massageToObjectId(cc2);
-        checkTypes = false;
-      }
-      if (cc2 instanceof ObjectId && cc1 instanceof String && ObjectId.isValid((String) cc1)) {
-        cc1 = ObjectId.massageToObjectId(cc2);
-        checkTypes = false;
-      }
+//      if (cc1 instanceof ObjectId && cc2 instanceof String && ObjectId.isValid((String) cc2)) {
+//        cc2 = ObjectId.massageToObjectId(cc2);
+//        checkTypes = false;
+//      }
+//      if (cc2 instanceof ObjectId && cc1 instanceof String && ObjectId.isValid((String) cc1)) {
+//        cc1 = ObjectId.massageToObjectId(cc2);
+//        checkTypes = false;
+//      }
       LatLong ll1 = GeoUtil.getLatLong(cc1);
       if (ll1 != null) {
         LatLong ll2 = GeoUtil.getLatLong(cc2);
