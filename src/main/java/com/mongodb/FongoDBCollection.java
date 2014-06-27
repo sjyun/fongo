@@ -18,6 +18,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -25,6 +26,8 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 import org.bson.BSON;
+import org.bson.io.BasicOutputBuffer;
+import org.bson.io.OutputBuffer;
 import org.bson.types.Binary;
 import org.bson.types.ObjectId;
 import static org.bson.util.Assertions.isTrue;
@@ -60,10 +63,10 @@ public class FongoDBCollection extends DBCollection {
     this.expressionParser = new ExpressionParser();
     this.updateEngine = new UpdateEngine();
     this.objectComparator = expressionParser.buildObjectComparator(true);
-    this._idIndex = IndexFactory.create("_id", new BasicDBObject("_id", 1), true);
+    this._idIndex = IndexFactory.create(ID_KEY, new BasicDBObject(ID_KEY, 1), true);
     this.indexes.add(_idIndex);
     if (!this.nonIdCollection) {
-      this.createIndex(new BasicDBObject("_id", 1), new BasicDBObject("name", ID_NAME_INDEX));
+      this.createIndex(new BasicDBObject(ID_KEY, 1), new BasicDBObject("name", ID_NAME_INDEX));
     }
   }
 
@@ -85,10 +88,22 @@ public class FongoDBCollection extends DBCollection {
     return insert(Arrays.asList(arr), concern, encoder);
   }
 
+  private DBObject encodeDecode(DBObject dbObject, DBEncoder encoder) {
+    if (dbObject instanceof LazyDBObject) {
+      if (encoder == null) {
+        encoder = DefaultDBEncoder.FACTORY.create();
+      }
+      OutputBuffer outputBuffer = new BasicOutputBuffer();
+      encoder.writeObject(outputBuffer, dbObject);
+      return DefaultDBDecoder.FACTORY.create().decode(outputBuffer.toByteArray(), this);
+    }
+    return dbObject;
+  }
+
   @Override
   public synchronized WriteResult insert(List<DBObject> toInsert, WriteConcern concern, DBEncoder encoder) {
     for (DBObject obj : toInsert) {
-      DBObject cloned = filterLists(Util.cloneIdFirst(obj));
+      DBObject cloned = filterLists(Util.cloneIdFirst(encodeDecode(obj, encoder)));
       if (LOG.isDebugEnabled()) {
         LOG.debug("insert: " + cloned);
       }
@@ -111,7 +126,7 @@ public class FongoDBCollection extends DBCollection {
   public ObjectId putIdIfNotPresent(DBObject obj) {
     Object object = obj.get(ID_KEY);
     if (object == null) {
-      ObjectId id = new ObjectId();
+      ObjectId id = new ObjectId(new Date()); // No more "notNew"
       id.notNew();
       obj.put(ID_KEY, Util.clone(id));
       return id;
