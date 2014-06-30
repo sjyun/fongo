@@ -2,6 +2,7 @@ package com.github.fakemongo;
 
 import com.mongodb.CommandFailureException;
 import com.mongodb.MongoException;
+import com.mongodb.WriteConcernException;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
@@ -12,26 +13,28 @@ public final class ExpectedMongoException {
   private ExpectedMongoException() {
   }
 
-  public static ExpectedException expectCommandFailure(ExpectedException expectedExcpetion, int code) {
-    expect(expectedExcpetion, CommandFailureException.class);
-    expectedExcpetion.expect(equalCode(code));
-    return expectedExcpetion;
+  public static ExpectedException expectCommandFailure(ExpectedException expectedException, int code) {
+    return expectCode(expectedException, code, CommandFailureException.class);
   }
 
-  public static ExpectedException expect(ExpectedException expectedExcpetion, Class<? extends MongoException> exception) {
-    expectedExcpetion.expect(exception);
-    return expectedExcpetion;
+  public static ExpectedException expectWriteConcernException(ExpectedException expectedException, int code) {
+    return expectCode(expectedException, code, WriteConcernException.class);
   }
 
-  public static ExpectedException expectCode(ExpectedException expectedExcpetion, int code) {
-    expectedExcpetion.expect(equalCode(code));
-    return expectedExcpetion;
+  public static ExpectedException expect(ExpectedException expectedException, Class<? extends MongoException> exception) {
+    expectedException.expect(exception);
+    return expectedException;
   }
 
-  public static ExpectedException expectCode(ExpectedException expectedExcpetion, int code, Class<? extends MongoException> exception) {
-    expectedExcpetion.expect(exception);
-    expectedExcpetion.expect(equalCode(code));
-    return expectedExcpetion;
+  public static ExpectedException expectCode(ExpectedException expectedException, int code) {
+    expectedException.expect(equalCode(code));
+    return expectedException;
+  }
+
+  public static ExpectedException expectCode(ExpectedException expectedException, int code, Class<? extends MongoException> exception) {
+    expectedException.expect(exception);
+    expectedException.expect(equalCode(code));
+    return expectedException;
   }
 
   private static Matcher<Throwable> equalCode(final int code) {

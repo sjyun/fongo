@@ -52,7 +52,8 @@ public class Fongo {
    * equivalent to getDB in driver
    * multiple calls to this method return the same DB instance
    *
-   * @param dbname
+   * @param dbname name of the db.
+   * @return the DB associated to this name.
    */
   public DB getDB(String dbname) {
     synchronized (dbMap) {
@@ -67,6 +68,8 @@ public class Fongo {
 
   /**
    * Get databases that have been used
+   *
+   * @return database names.
    */
   public Collection<DB> getUsedDatabases() {
     return new ArrayList<DB>(dbMap.values());
@@ -74,6 +77,8 @@ public class Fongo {
 
   /**
    * Get database names that have been used
+   *
+   * @return database names.
    */
   public List<String> getDatabaseNames() {
     return new ArrayList<String>(dbMap.keySet());
@@ -82,7 +87,7 @@ public class Fongo {
   /**
    * Drop db and all data from memory
    *
-   * @param dbName
+   * @param dbName name of the database.
    */
   public void dropDatabase(String dbName) {
     FongoDB db = dbMap.remove(dbName);
@@ -93,6 +98,8 @@ public class Fongo {
 
   /**
    * This will always be localhost:27017
+   *
+   * @return the server address.
    */
   public ServerAddress getServerAddress() {
     return serverAddress;
@@ -101,6 +108,8 @@ public class Fongo {
   /**
    * A mocked out instance of com.mongodb.Mongo
    * All methods calls are intercepted and execute associated Fongo method
+   *
+   * @return the mongo client
    */
   public MongoClient getMongo() {
     return this.mongo;

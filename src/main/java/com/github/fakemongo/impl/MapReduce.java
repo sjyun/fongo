@@ -1,5 +1,6 @@
 package com.github.fakemongo.impl;
 
+import com.github.fakemongo.Fongo;
 import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;
@@ -7,18 +8,16 @@ import com.mongodb.DBObject;
 import com.mongodb.FongoDB;
 import com.mongodb.FongoDBCollection;
 import com.mongodb.util.JSON;
-
-import java.util.UUID;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.NativeArray;
 import org.mozilla.javascript.NativeObject;
 import org.mozilla.javascript.RhinoException;
 import org.mozilla.javascript.Scriptable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * http://docs.mongodb.org/manual/reference/method/db.collection.mapReduce/
@@ -27,6 +26,8 @@ import org.mozilla.javascript.Scriptable;
  */
 public class MapReduce {
   private static final Logger LOG = LoggerFactory.getLogger(MapReduce.class);
+
+  private final Fongo fongo;
 
   private final FongoDB fongoDB;
 
@@ -127,8 +128,13 @@ public class MapReduce {
     }
   }
 
-  public MapReduce(FongoDB fongoDB, FongoDBCollection coll, String map, String reduce, String finalize, DBObject out, DBObject query, DBObject sort, Number limit) {
-    this.fongoDB = fongoDB;
+  public MapReduce(Fongo fongo, FongoDBCollection coll, String map, String reduce, String finalize, DBObject out, DBObject query, DBObject sort, Number limit) {
+    this.fongo = fongo;
+    if (out.containsField("db")) {
+      this.fongoDB = (FongoDB) fongo.getDB((String) out.get("db"));
+    } else {
+      this.fongoDB = (FongoDB) coll.getDB();
+    }
     this.fongoDBCollection = coll;
     this.map = map;
     this.reduce = reduce;

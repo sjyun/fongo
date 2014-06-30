@@ -138,6 +138,22 @@ public final class Util {
     return true;
   }
 
+  public static int compareToNullable(String s1, String s2) {
+    if (s1 == null) {
+      if (s2 == null) {
+        return 0;
+      } else {
+        return -1;
+      }
+    } else {
+      if (s2 == null) {
+        return 1;
+      } else {
+        return s1.compareTo(s2);
+      }
+    }
+  }
+
   public static Object clone(Object source) {
     if (source instanceof DBObject) {
       return clone((DBObject) source);
@@ -199,7 +215,20 @@ public final class Util {
       return (T) clone;
     }
 
-    throw new IllegalArgumentException("Don't know how to embedded: " + source);
+    @SuppressWarnings("unchecked")
+    BasicDBObject clone = new BasicDBObject();
+    for (Map.Entry<String, Object> entry : entrySet(source)) {
+      if (entry.getValue() instanceof DBObject) {
+        clone.put(entry.getKey(), Util.clone((DBObject) entry.getValue()));
+      } else {
+        if (entry.getValue() instanceof Binary) {
+          clone.put(entry.getKey(), ((Binary) entry.getValue()).getData().clone());
+        } else {
+          clone.put(entry.getKey(), entry.getValue());
+        }
+      }
+    }
+    return (T) clone;
   }
 
   @SuppressWarnings("unchecked")
@@ -251,12 +280,4 @@ public final class Util {
     }
     return newobj;
   }
-
-  public static <T> T firstNotNull(T first, T second) {
-    if (first == null) {
-      return second;
-    }
-    return first;
-  }
-
 }

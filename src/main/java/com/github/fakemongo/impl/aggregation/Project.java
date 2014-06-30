@@ -9,9 +9,13 @@ import com.mongodb.FongoDBCollection;
 import com.mongodb.MongoException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.TimeZone;
 import org.bson.util.annotations.ThreadSafe;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,6 +43,17 @@ public class Project extends PipelineKeyword {
       projectedAbstractMap.put(ProjectedConcat.KEYWORD, ProjectedConcat.class);
       projectedAbstractMap.put(ProjectedToLower.KEYWORD, ProjectedToLower.class);
       projectedAbstractMap.put(ProjectedToUpper.KEYWORD, ProjectedToUpper.class);
+      projectedAbstractMap.put(ProjectedToDivide.KEYWORD, ProjectedToDivide.class);
+      projectedAbstractMap.put(ProjectedDateDayOfYear.KEYWORD, ProjectedDateDayOfYear.class);
+      projectedAbstractMap.put(ProjectedDateDayOfMonth.KEYWORD, ProjectedDateDayOfMonth.class);
+      projectedAbstractMap.put(ProjectedDateDayOfWeek.KEYWORD, ProjectedDateDayOfWeek.class);
+      projectedAbstractMap.put(ProjectedDateYear.KEYWORD, ProjectedDateYear.class);
+      projectedAbstractMap.put(ProjectedDateMonth.KEYWORD, ProjectedDateMonth.class);
+      projectedAbstractMap.put(ProjectedDateWeek.KEYWORD, ProjectedDateWeek.class);
+      projectedAbstractMap.put(ProjectedDateHour.KEYWORD, ProjectedDateHour.class);
+      projectedAbstractMap.put(ProjectedDateMinute.KEYWORD, ProjectedDateMinute.class);
+      projectedAbstractMap.put(ProjectedDateSecond.KEYWORD, ProjectedDateSecond.class);
+      projectedAbstractMap.put(ProjectedDateMillisecond.KEYWORD, ProjectedDateMillisecond.class);
     }
 
     final String keyword;
@@ -330,7 +345,7 @@ public class Project extends PipelineKeyword {
       super(keyword, destName, object);
       Object value = object.get(keyword);
       if (!(value instanceof List) || ((List) value).size() != 2) {
-        errorResult(coll, 16020, "the " + keyword + "operator requires an array of 2 operands");
+        errorResult(coll, 16020, "the " + keyword + " operator requires an array of 2 operands");
       }
       List<String> values = (List<String>) value;
       field1 = values.get(0);
@@ -426,6 +441,151 @@ public class Project extends PipelineKeyword {
     }
   }
 
+  static class ProjectedToDivide extends ProjectedAbstract<ProjectedToDivide> {
+    public static final String KEYWORD = "$divide";
+
+    private final double result;
+
+    public ProjectedToDivide(String destName, DBCollection coll, DBObject object) {
+      this(KEYWORD, destName, coll, object);
+    }
+
+    ProjectedToDivide(String keyword, String destName, DBCollection coll, DBObject object) {
+      super(KEYWORD, destName, object);
+      Object value = object.get(keyword);
+      if (!(value instanceof List) || ((List) value).size() != 2) {
+        errorResult(coll, 16020, "the " + keyword + " operator requires an array of 2 operands");
+      }
+      List values = (List) value;
+      double modulus = ((Number) values.get(0)).doubleValue();
+      double expectedValue = ((Number) values.get(1)).doubleValue();
+      result = expectedValue % modulus;
+    }
+
+    @Override
+    void doWork(DBCollection coll, DBObject projectResult, Map<String, ProjectedAbstract> projectedFields, String key, Object value, String namespace) {
+      createMapping(coll, projectResult, projectedFields, destName, destName, namespace, this);
+    }
+
+    @Override
+    public void unapply(DBObject result, DBObject object, String key) {
+      result.put(destName, this.result);
+    }
+  }
+
+  static abstract class ProjectedDate<T extends ProjectedDate> extends ProjectedAbstract<T> {
+
+    private final String field;
+    private final int fromCalendar; // See Calendar.*
+    private final int modifier; // See Calendar.*
+
+    public ProjectedDate(String keyword, int fromCalendar, int modifier, String destName, DBCollection coll, DBObject object) {
+      super(keyword, destName, object);
+      Object value = object.get(keyword);
+      this.fromCalendar = fromCalendar;
+      this.modifier = modifier;
+      if (!(value instanceof String)) {
+        errorResult(coll, 16020, "the " + keyword + " operator requires a field name");
+      }
+      this.field = (String) value;
+    }
+
+    @Override
+    void doWork(DBCollection coll, DBObject projectResult, Map<String, ProjectedAbstract> projectedFields, String key, Object value, String namespace) {
+      createMapping(coll, projectResult, projectedFields, field, field, namespace, this);
+    }
+
+    @Override
+    public void unapply(DBObject result, DBObject object, String key) {
+      Object value = extractValue(object, field);
+      Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT"), Locale.ENGLISH);
+      calendar.setTimeInMillis((((Date) value).getTime()));
+      int extracted = calendar.get(fromCalendar) + modifier;
+      result.put(destName, extracted);
+    }
+  }
+
+  // http://docs.mongodb.org/manual/reference/operator/aggregation-date/
+  static class ProjectedDateDayOfYear extends ProjectedDate<ProjectedDateDayOfYear> {
+    public static final String KEYWORD = "$dayOfYear";
+
+    public ProjectedDateDayOfYear(String destName, DBCollection coll, DBObject object) {
+      super(KEYWORD, Calendar.DAY_OF_YEAR, 0, destName, coll, object);
+    }
+  }
+
+  static class ProjectedDateDayOfMonth extends ProjectedDate<ProjectedDateDayOfMonth> {
+    public static final String KEYWORD = "$dayOfMonth";
+
+    public ProjectedDateDayOfMonth(String destName, DBCollection coll, DBObject object) {
+      super(KEYWORD, Calendar.DAY_OF_MONTH, 0, destName, coll, object);
+    }
+  }
+
+  static class ProjectedDateDayOfWeek extends ProjectedDate<ProjectedDateDayOfWeek> {
+    public static final String KEYWORD = "$dayOfWeek";
+
+    public ProjectedDateDayOfWeek(String destName, DBCollection coll, DBObject object) {
+      super(KEYWORD, Calendar.DAY_OF_WEEK, 0, destName, coll, object);
+    }
+  }
+
+  static class ProjectedDateYear extends ProjectedDate<ProjectedDateYear> {
+    public static final String KEYWORD = "$year";
+
+    public ProjectedDateYear(String destName, DBCollection coll, DBObject object) {
+      super(KEYWORD, Calendar.YEAR, 0, destName, coll, object);
+    }
+  }
+
+  static class ProjectedDateMonth extends ProjectedDate<ProjectedDateMonth> {
+    public static final String KEYWORD = "$month";
+
+    public ProjectedDateMonth(String destName, DBCollection coll, DBObject object) {
+      super(KEYWORD, Calendar.MONTH, 1, destName, coll, object);
+    }
+  }
+
+  static class ProjectedDateWeek extends ProjectedDate<ProjectedDateWeek> {
+    public static final String KEYWORD = "$week";
+
+    public ProjectedDateWeek(String destName, DBCollection coll, DBObject object) {
+      super(KEYWORD, Calendar.WEEK_OF_YEAR, -1, destName, coll, object);
+    }
+  }
+
+  static class ProjectedDateHour extends ProjectedDate<ProjectedDateHour> {
+    public static final String KEYWORD = "$hour";
+
+    public ProjectedDateHour(String destName, DBCollection coll, DBObject object) {
+      super(KEYWORD, Calendar.HOUR_OF_DAY, 0, destName, coll, object);
+    }
+  }
+
+  static class ProjectedDateMinute extends ProjectedDate<ProjectedDateMinute> {
+    public static final String KEYWORD = "$minute";
+
+    public ProjectedDateMinute(String destName, DBCollection coll, DBObject object) {
+      super(KEYWORD, Calendar.MINUTE, 0, destName, coll, object);
+    }
+  }
+
+  static class ProjectedDateSecond extends ProjectedDate<ProjectedDateSecond> {
+    public static final String KEYWORD = "$second";
+
+    public ProjectedDateSecond(String destName, DBCollection coll, DBObject object) {
+      super(KEYWORD, Calendar.SECOND, 0, destName, coll, object);
+    }
+  }
+
+  static class ProjectedDateMillisecond extends ProjectedDate<ProjectedDateMillisecond> {
+    public static final String KEYWORD = "$millisecond";
+
+    public ProjectedDateMillisecond(String destName, DBCollection coll, DBObject object) {
+      super(KEYWORD, Calendar.MILLISECOND, 0, destName, coll, object);
+    }
+  }
+
   /**
    * Simple {@see http://docs.mongodb.org/manual/reference/aggregation/project/#pipe._S_project}
    *
@@ -442,7 +602,7 @@ public class Project extends PipelineKeyword {
 
     // Extract fields who will be renamed.
     Map<String, ProjectedAbstract> projectedFields = new HashMap<String, ProjectedAbstract>();
-    for (Map.Entry<String, Object> entry : Util.entrySet (project)) {
+    for (Map.Entry<String, Object> entry : Util.entrySet(project)) {
       if (entry.getValue() != null) {
         ProjectedAbstract.createMapping(coll, projectResult, projectedFields, entry.getKey(), entry.getValue(), "", ProjectedRename.newInstance(entry.getKey(), coll, null));
       }

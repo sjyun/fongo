@@ -1,20 +1,17 @@
 package com.mongodb;
 
+import com.github.fakemongo.Fongo;
 import com.github.fakemongo.impl.Aggregator;
 import com.github.fakemongo.impl.MapReduce;
-import java.util.HashSet;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.github.fakemongo.Fongo;
 
 /**
  * fongo override of com.mongodb.DB
@@ -27,6 +24,8 @@ public class FongoDB extends DB {
 
   private final Map<String, FongoDBCollection> collMap = Collections.synchronizedMap(new HashMap<String, FongoDBCollection>());
   private final Fongo fongo;
+
+  private MongoCredential mongoCredential;
 
   public FongoDB(Fongo fongo, String name) {
     super(fongo.getMongo(), name);
@@ -59,7 +58,6 @@ public class FongoDB extends DB {
     }
   }
 
-
   private DBObject findAndModify(String collection, DBObject query, DBObject sort, boolean remove, DBObject update, boolean returnNew, DBObject fields, boolean upsert) {
     FongoDBCollection coll = doGetCollection(collection);
 
@@ -75,7 +73,7 @@ public class FongoDB extends DB {
 
   private DBObject doMapReduce(String collection, String map, String reduce, String finalize, DBObject out, DBObject query, DBObject sort, Number limit) {
     FongoDBCollection coll = doGetCollection(collection);
-    MapReduce mapReduce = new MapReduce(this, coll, map, reduce, finalize, out, query, sort, limit);
+    MapReduce mapReduce = new MapReduce(this.fongo, coll, map, reduce, finalize, out, query, sort, limit);
     return mapReduce.computeResult();
   }
 
@@ -84,6 +82,11 @@ public class FongoDB extends DB {
     return coll.geoNear(near, query, limit, maxDistance, spherical);
   }
 
+  //see http://docs.mongodb.org/manual/tutorial/search-for-text/ for mongodb
+  private DBObject doTextSearchInCollection(String collection, String search, Integer limit, DBObject project) {
+    FongoDBCollection coll = doGetCollection(collection);
+    return coll.text(search, limit, project);
+  }
 
   @Override
   public Set<String> getCollectionNames() throws MongoException {
@@ -119,7 +122,13 @@ public class FongoDB extends DB {
 
   @Override
   CommandResult doAuthenticate(MongoCredential credentials) {
+    this.mongoCredential = credentials;
     return okResult();
+  }
+
+  @Override
+  MongoCredential getAuthenticationCredentials() {
+    return this.mongoCredential;
   }
 
   /**
@@ -138,7 +147,7 @@ public class FongoDB extends DB {
     if (LOG.isDebugEnabled()) {
       LOG.debug("Fongo got command " + cmd);
     }
-    if (cmd.containsField("getlasterror")) {
+    if (cmd.containsField("getlasterror") || cmd.containsField("getLastError")) {
       return okResult();
     } else if (cmd.containsField("drop")) {
       this.collMap.remove(cmd.get("drop").toString());
@@ -180,47 +189,28 @@ public class FongoDB extends DB {
       okResult.put("result", list);
       return okResult;
     } else if (cmd.containsField("findAndModify")) {
-      DBObject result = findAndModify((String) cmd.get("findAndModify"), (DBObject) cmd.get("query"), (DBObject) cmd.get("sort"), Boolean.TRUE.equals(cmd.get("remove")),
-          (DBObject) cmd.get("update"), Boolean.TRUE.equals(cmd.get("new")), (DBObject) cmd.get("fields"), Boolean.TRUE.equals(cmd.get("upsert")));
-      CommandResult okResult = okResult();
-      okResult.put("value", result);
-      return okResult;
+      return runFindAndModify(cmd, "findAndModify");
+    } else if (cmd.containsField("findandmodify")) {
+      return runFindAndModify(cmd, "findandmodify");
     } else if (cmd.containsField("ping")) {
       CommandResult okResult = okResult();
       return okResult;
     } else if (cmd.containsField("validate")) {
       CommandResult okResult = okResult();
       return okResult;
-    } else if (cmd.containsField("buildInfo")) {
+    } else if (cmd.containsField("buildInfo") || cmd.containsField("buildinfo")) {
       CommandResult okResult = okResult();
       okResult.put("version", "2.4.5");
       okResult.put("maxBsonObjectSize", 16777216);
       return okResult;
-    } else if(cmd.containsField("forceerror")) {
+    } else if (cmd.containsField("forceerror")) {
       // http://docs.mongodb.org/manual/reference/command/forceerror/
       CommandResult result = notOkErrorResult(10038, null, "exception: forced error");
       return result;
     } else if (cmd.containsField("mapreduce")) {
-      DBObject result = doMapReduce(
-          (String) cmd.get("mapreduce"),
-          (String) cmd.get("map"),
-          (String) cmd.get("reduce"),
-          (String) cmd.get("finalize"),
-          (DBObject) cmd.get("out"),
-          (DBObject) cmd.get("query"),
-          (DBObject) cmd.get("sort"),
-          (Number) cmd.get("limit"));
-      if (result == null) {
-        return notOkErrorResult("can't mapReduce");
-      }
-      CommandResult okResult = okResult();
-      if(result instanceof List) {
-        // INLINE case.
-        okResult.put("results", result);
-      } else {
-        okResult.put("result", result);
-      }
-      return okResult;
+      return runMapReduce(cmd, "mapreduce");
+    } else if (cmd.containsField("mapReduce")) {
+      return runMapReduce(cmd, "mapReduce");
     } else if (cmd.containsField("geoNear")) {
       // http://docs.mongodb.org/manual/reference/command/geoNear/
       // TODO : handle "num" (override limit)
@@ -242,6 +232,36 @@ public class FongoDB extends DB {
       } catch (MongoException me) {
         CommandResult result = errorResult(me.getCode(), me.getMessage());
         return result;
+      }
+    } else {
+      String collectionName = ((Map.Entry<String, DBObject>) cmd.toMap().entrySet().iterator().next()).getKey();
+      if (collectionExists(collectionName)) {
+        DBObject newCmd = (DBObject) cmd.get(collectionName);
+        if ((newCmd.containsField("text") && ((DBObject) newCmd.get("text")).containsField("search"))) {
+          DBObject resp = doTextSearchInCollection(collectionName,
+              (String) ((DBObject) newCmd.get("text")).get("search"),
+              (Integer) ((DBObject) newCmd.get("text")).get("limit"),
+              (DBObject) ((DBObject) newCmd.get("text")).get("project"));
+          if (resp == null) {
+            return notOkErrorResult("can't perform text search");
+          }
+          CommandResult okResult = okResult();
+          okResult.put("results", resp.get("results"));
+          okResult.put("stats", resp.get("stats"));
+          return okResult;
+        } else if ((newCmd.containsField("$text") && ((DBObject) newCmd.get("$text")).containsField("$search"))) {
+          DBObject resp = doTextSearchInCollection(collectionName,
+              (String) ((DBObject) newCmd.get("$text")).get("$search"),
+              (Integer) ((DBObject) newCmd.get("text")).get("limit"),
+              (DBObject) ((DBObject) newCmd.get("text")).get("project"));
+          if (resp == null) {
+            return notOkErrorResult("can't perform text search");
+          }
+          CommandResult okResult = okResult();
+          okResult.put("results", resp.get("results"));
+          okResult.put("stats", resp.get("stats"));
+          return okResult;
+        }
       }
     }
     String command = cmd.toString();
@@ -303,5 +323,43 @@ public class FongoDB extends DB {
 
   public void addCollection(FongoDBCollection collection) {
     collMap.put(collection.getName(), collection);
+  }
+
+  private CommandResult runFindAndModify(DBObject cmd, String key) {
+    DBObject result = findAndModify(
+        (String) cmd.get(key),
+        (DBObject) cmd.get("query"),
+        (DBObject) cmd.get("sort"),
+        Boolean.TRUE.equals(cmd.get("remove")),
+        (DBObject) cmd.get("update"),
+        Boolean.TRUE.equals(cmd.get("new")),
+        (DBObject) cmd.get("fields"),
+        Boolean.TRUE.equals(cmd.get("upsert")));
+    CommandResult okResult = okResult();
+    okResult.put("value", result);
+    return okResult;
+  }
+
+  private CommandResult runMapReduce(DBObject cmd, String key) {
+    DBObject result = doMapReduce(
+        (String) cmd.get(key),
+        (String) cmd.get("map"),
+        (String) cmd.get("reduce"),
+        (String) cmd.get("finalize"),
+        (DBObject) cmd.get("out"),
+        (DBObject) cmd.get("query"),
+        (DBObject) cmd.get("sort"),
+        (Number) cmd.get("limit"));
+    if (result == null) {
+      return notOkErrorResult("can't mapReduce");
+    }
+    CommandResult okResult = okResult();
+    if (result instanceof List) {
+      // INLINE case.
+      okResult.put("results", result);
+    } else {
+      okResult.put("result", result);
+    }
+    return okResult;
   }
 }

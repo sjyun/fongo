@@ -1,11 +1,9 @@
 package com.github.fakemongo.impl.index;
 
-import java.util.Map;
-
 import com.github.fakemongo.impl.Util;
-
 import com.mongodb.DBObject;
 import com.mongodb.MongoException;
+import java.util.Map;
 
 /**
  * A factory for index.
@@ -19,8 +17,26 @@ public final class IndexFactory {
     if (geoIndex != null) {
       return new GeoIndex(name, keys, unique, geoIndex);
     } else {
+      String hashed = getHashedKey(keys);
+      if (hashed != null) {
+        return new HashedIndex(name, keys, unique, hashed);
+      }
       return new Index(name, keys, unique);
     }
+  }
+
+  private static String getHashedKey(DBObject keys) {
+    String hashed = null;
+    for (Map.Entry<String, Object> entry : Util.entrySet(keys)) {
+      Object value = entry.getValue();
+      if (value instanceof String) {
+        boolean localHashed = "hashed".equals(value);
+        if (localHashed) {
+          hashed = entry.getKey();
+        }
+      }
+    }
+    return hashed;
   }
 
   private static String getGeoKey(DBObject keys) {

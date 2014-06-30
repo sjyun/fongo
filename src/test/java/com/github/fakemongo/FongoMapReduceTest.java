@@ -1,22 +1,19 @@
 package com.github.fakemongo;
 
-import static org.junit.Assert.assertEquals;
-
-import java.io.IOException;
-import java.util.List;
-
 import com.github.fakemongo.junit.FongoRule;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-import org.junit.rules.RuleChain;
-import org.junit.rules.TestRule;
-
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
 import com.mongodb.MapReduceCommand;
 import com.mongodb.MapReduceOutput;
+import java.io.IOException;
+import java.util.List;
+import static org.junit.Assert.assertEquals;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
+import org.junit.rules.RuleChain;
+import org.junit.rules.TestRule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,6 +45,26 @@ public class FongoMapReduceTest {
 
 
     List<DBObject> results = fongoRule.newCollection("result").find().toArray();
+    assertEquals(fongoRule.parse("[{ \"_id\" : \"www.google.com\" , \"value\" : { \"count\" : 2.0}}, { \"_id\" : \"www.no-fucking-idea.com\" , \"value\" : { \"count\" : 3.0}}]"), results);
+  }
+
+  @Test
+  public void should_use_outputdb() {
+    DBCollection coll = fongoRule.newCollection();
+    fongoRule.insertJSON(coll, "[{url: \"www.google.com\", date: 1, trash_data: 5 },\n" +
+        " {url: \"www.no-fucking-idea.com\", date: 1, trash_data: 13 },\n" +
+        " {url: \"www.google.com\", date: 1, trash_data: 1 },\n" +
+        " {url: \"www.no-fucking-idea.com\", date: 2, trash_data: 69 },\n" +
+        " {url: \"www.no-fucking-idea.com\", date: 2, trash_data: 256 }]");
+
+
+    String map = "function(){    emit(this.url, 1);  };";
+    String reduce = "function(key, values){    var res = 0;    values.forEach(function(v){ res += 1});    return {count: res};  };";
+    MapReduceCommand mapReduceCommand = new MapReduceCommand(coll, map, reduce, "result", MapReduceCommand.OutputType.MERGE, new BasicDBObject());
+    mapReduceCommand.setOutputDB("otherColl");
+    coll.mapReduce(mapReduceCommand);
+
+    List<DBObject> results = fongoRule.getDb("otherColl").getCollection("result").find().toArray();
     assertEquals(fongoRule.parse("[{ \"_id\" : \"www.google.com\" , \"value\" : { \"count\" : 2.0}}, { \"_id\" : \"www.no-fucking-idea.com\" , \"value\" : { \"count\" : 3.0}}]"), results);
   }
 

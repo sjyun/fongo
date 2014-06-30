@@ -1,11 +1,19 @@
 package com.github.fakemongo.impl;
 
 import com.github.fakemongo.FongoException;
+import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 import com.mongodb.BasicDBObjectBuilder;
 import com.mongodb.DBObject;
+import java.util.Date;
+import java.util.List;
+import java.util.regex.Pattern;
+import org.bson.types.MaxKey;
+import org.bson.types.MinKey;
+import org.bson.types.ObjectId;
 import org.junit.Test;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -99,6 +107,145 @@ public class UpdateEngineTest {
         updateEngine.doUpdate(new BasicDBObject("a", Util.list(1)), update));
     assertEquals(new BasicDBObject("a", Util.list(2)),
         updateEngine.doUpdate(new BasicDBObject(), update));
+  }
+
+  @Test
+  public void testPushEachOperation() {
+    UpdateEngine updateEngine = new UpdateEngine();
+    DBObject update = new BasicDBObjectBuilder().push("$push")
+        .push("a").append("$each", Util.list(2, 3)).pop().pop().get();
+
+    assertEquals(new BasicDBObject("a", Util.list(1, 2, 3)),
+        updateEngine.doUpdate(new BasicDBObject("a", Util.list(1)), update));
+    assertEquals(new BasicDBObject("a", Util.list(1, 2, 2, 3)),
+        updateEngine.doUpdate(new BasicDBObject("a", Util.list(1, 2)), update));
+    assertEquals(new BasicDBObject("a", Util.list(2, 3)),
+        updateEngine.doUpdate(new BasicDBObject(), update));
+  }
+
+  @Test
+  public void testPushEachSliceFirstOperation() {
+    UpdateEngine updateEngine = new UpdateEngine();
+    DBObject update = new BasicDBObjectBuilder().push("$push").push("a")
+        .append("$each", Util.list(2, 3))
+        .append("$slice", 2)
+        .pop().pop().get();
+
+    assertEquals(new BasicDBObject("a", Util.list(1, 2)),
+        updateEngine.doUpdate(new BasicDBObject("a", Util.list(1)), update));
+    assertEquals(new BasicDBObject("a", Util.list(1, 4)),
+        updateEngine.doUpdate(new BasicDBObject("a", Util.list(1, 4)), update));
+    assertEquals(new BasicDBObject("a", Util.list(2, 3)),
+        updateEngine.doUpdate(new BasicDBObject(), update));
+  }
+
+  @Test
+  public void testPushEachSliceZeroOperation() {
+    UpdateEngine updateEngine = new UpdateEngine();
+    DBObject update = new BasicDBObjectBuilder().push("$push").push("a")
+        .append("$each", Util.list(2, 3))
+        .append("$slice", 0)
+        .pop().pop().get();
+
+    assertEquals(new BasicDBObject("a", Util.list()),
+        updateEngine.doUpdate(new BasicDBObject("a", Util.list(1)), update));
+    assertEquals(new BasicDBObject("a", Util.list()),
+        updateEngine.doUpdate(new BasicDBObject(), update));
+  }
+
+  @Test
+  public void testPushEachSliceLastOperation() {
+    UpdateEngine updateEngine = new UpdateEngine();
+    DBObject update = new BasicDBObjectBuilder().push("$push").push("a")
+        .append("$each", Util.list(0))
+        .append("$slice", -2)
+        .pop().pop().get();
+
+    assertEquals(new BasicDBObject("a", Util.list(3, 0)),
+        updateEngine.doUpdate(new BasicDBObject("a", Util.list(1, 2, 3)), update));
+    assertEquals(new BasicDBObject("a", Util.list(0)),
+        updateEngine.doUpdate(new BasicDBObject(), update));
+  }
+
+  @Test
+  public void testPushEachPositionOperation() {
+    UpdateEngine updateEngine = new UpdateEngine();
+    DBObject update0 = new BasicDBObjectBuilder().push("$push").push("a")
+        .append("$each", Util.list(0))
+        .append("$position", 0)
+        .pop().pop().get();
+    assertEquals(new BasicDBObject("a", Util.list(0)),
+        updateEngine.doUpdate(new BasicDBObject("a", Util.list()), update0));
+    assertEquals(new BasicDBObject("a", Util.list(0,1,2,3)),
+        updateEngine.doUpdate(new BasicDBObject("a", Util.list(1, 2, 3)), update0));
+
+    DBObject update1 = new BasicDBObjectBuilder().push("$push").push("a")
+        .append("$each", Util.list(0))
+        .append("$position", 1)
+        .pop().pop().get();
+    assertEquals(new BasicDBObject("a", Util.list(0)),
+        updateEngine.doUpdate(new BasicDBObject("a", Util.list()), update1));
+    assertEquals(new BasicDBObject("a", Util.list(1, 0)),
+        updateEngine.doUpdate(new BasicDBObject("a", Util.list(1)), update1));
+    assertEquals(new BasicDBObject("a", Util.list(1,0,2,3)),
+        updateEngine.doUpdate(new BasicDBObject("a", Util.list(1, 2, 3)), update1));
+  }
+
+  @Test
+  public void testPushEachSlicePositionOperation() {
+    UpdateEngine updateEngine = new UpdateEngine();
+    DBObject update0 = new BasicDBObjectBuilder().push("$push").push("a")
+        .append("$slice", 2)
+        .append("$position", 1)
+        .append("$each", Util.list(0))
+        .pop().pop().get();
+
+    assertEquals(new BasicDBObject("a", Util.list(0)),
+        updateEngine.doUpdate(new BasicDBObject("a", Util.list()), update0));
+    assertEquals(new BasicDBObject("a", Util.list(1,0)),
+        updateEngine.doUpdate(new BasicDBObject("a", Util.list(1, 2, 3)), update0));
+  }
+
+  @Test
+  public void testPushEachSortObjectOperation() {
+    Date date = new Date();
+    DBObject obja0 = new BasicDBObjectBuilder().append("a", 0).get();
+    DBObject obja2 = new BasicDBObjectBuilder().append("a", 2).get();
+    DBObject obja1b2 = new BasicDBObjectBuilder().append("a", 1).append("b", 2).get();
+    DBObject objb0 = new BasicDBObjectBuilder().append("b", 0).get();
+    List list = new BasicDBList();
+    double d = 0.5D;
+    int i = 0;
+    MinKey minKey = new MinKey();
+    MaxKey maxKey = new MaxKey();
+    long l = 1L;
+    ObjectId objId = new ObjectId();
+    Pattern regex = Pattern.compile("\\s*");
+
+    // arbitrary order
+    List<Object> objects = Util.list(obja0, obja2, objb0, obja1b2, d, i, null, minKey, maxKey, l, false, true, date, regex, objId, list, "");
+
+    UpdateEngine updateEngine = new UpdateEngine();
+    DBObject updateASortAsc = new BasicDBObjectBuilder().push("$push").push("a")
+        .append("$sort", new BasicDBObjectBuilder().append("a", 1).get())
+        .append("$each", Util.list())
+        .pop().pop().get();
+
+    assertArrayEquals(
+        new Object[]{minKey, null, i, d, l, "", objb0, list, objId, false, true, date, regex, maxKey, obja0, obja1b2, obja2},
+        ((List) updateEngine.doUpdate(new BasicDBObject("a", objects), updateASortAsc).get("a")).toArray()
+    );
+
+    DBObject updateAsc = new BasicDBObjectBuilder().push("$push").push("a")
+        .append("$sort", 1)
+        .append("$each", Util.list())
+        .pop().pop().get();
+
+    Object[] actual = ((List) updateEngine.doUpdate(new BasicDBObject("a", objects), updateAsc).get("a")).toArray();
+    assertArrayEquals(
+        new Object[]{minKey, null, i, d, l, "", obja0, obja1b2, obja2, objb0, list, objId, false, true, date, regex, maxKey},
+        actual
+    );
   }
   
   @Test

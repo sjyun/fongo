@@ -10,6 +10,8 @@ import com.mongodb.DBRefBase;
 import com.mongodb.LazyDBObject;
 import com.mongodb.QueryOperators;
 import com.mongodb.util.JSON;
+import com.vividsolutions.jts.geom.Geometry;
+
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -19,10 +21,12 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
+
 import org.bson.LazyBSONList;
 import org.bson.types.Binary;
 import org.bson.types.MaxKey;
@@ -53,11 +57,12 @@ public class ExpressionParser {
   public final static String REGEX = "$regex";
   public final static String REGEX_OPTIONS = "$options";
   public final static String TYPE = "$type";
-  public final static String NEAR = "$near";
-  public final static String NEAR_SPHERE = "$nearSphere";
+  public final static String NEAR = QueryOperators.NEAR;
+  public final static String NEAR_SPHERE = QueryOperators.NEAR_SPHERE;
   public final static String MAX_DISTANCE = "$maxDistance";
   public final static String ELEM_MATCH = QueryOperators.ELEM_MATCH;
   public final static String WHERE = QueryOperators.WHERE;
+  public final static String GEO_WITHIN = "$geoWithin";
 
   // TODO : http://docs.mongodb.org/manual/reference/operator/query-geospatial/
   // TODO : http://docs.mongodb.org/manual/reference/operator/geoWithin/#op._S_geoWithin
@@ -69,24 +74,8 @@ public class ExpressionParser {
   private static final Map<Class, Integer> CLASS_TO_WEIGHT;
 
   static {
-    // http://docs.mongodb.org/manual/reference/operator/type
+    // Sort order per http://docs.mongodb.org/manual/reference/operator/aggregation/sort/
     Map<Class, Integer> map = new HashMap<Class, Integer>();
-//    map.put(Double.class, 1);
-//    map.put(Float.class, 1);
-//    map.put(String.class, 2);
-//    map.put(Object.class, 3);
-//    map.put(BasicDBList.class, 4);
-//    map.put(LazyBSONList.class, 4);
-//    map.put(ObjectId.class, 6);
-//    map.put(Boolean.class, 7);
-//    map.put(Date.class, 9);
-//    map.put(Null.class, 10);
-//    map.put(Pattern.class, 11);
-//    map.put(Integer.class, 16);
-////    map.put(Timestamp.class, 17);
-//    map.put(Long.class, 18);
-//    map.put(MinKey.class, -1); // 255
-//    map.put(MaxKey.class, 127);
     map.put(MinKey.class, Integer.MIN_VALUE);
     map.put(Null.class, 0);
     map.put(Double.class, 1);
@@ -96,20 +85,26 @@ public class ExpressionParser {
     map.put(Short.class, 1);
     map.put(String.class, 2);
     map.put(Object.class, 3);
-    map.put(BasicDBList.class, 4);
-    map.put(LazyBSONList.class, 4);
     map.put(BasicDBObject.class, 4);
     map.put(LazyDBObject.class, 4);
-    map.put(byte[].class, 5);
-    map.put(Binary.class, 5);
-    map.put(ObjectId.class, 6);
-    map.put(Boolean.class, 7);
-    map.put(Date.class, 8);
-    map.put(Pattern.class, 9);
-//    map.put(Timestamp.class, 17);
+    map.put(BasicDBList.class, 5);
+    map.put(LazyBSONList.class, 5);
+    map.put(byte[].class, 6);
+    map.put(Binary.class, 6);
+    map.put(ObjectId.class, 7);
+    map.put(Boolean.class, 8);
+    map.put(Date.class, 9);
+    map.put(Pattern.class, 10);
     map.put(MaxKey.class, Integer.MAX_VALUE);
 
     CLASS_TO_WEIGHT = Collections.unmodifiableMap(map);
+  }
+
+  public ObjectComparator objectComparator(int sortDirection) {
+    if (!(sortDirection == -1 || sortDirection == 1)) {
+      throw new FongoException("The $sort element value must be either 1 or -1. Actual: " + sortDirection);
+    }
+    return new ObjectComparator(sortDirection == 1);
   }
 
   public class ObjectComparator implements Comparator {
@@ -123,6 +118,65 @@ public class ExpressionParser {
     public int compare(Object o1, Object o2) {
       return asc * compareObjects(o1, o2);
     }
+  }
+
+  public SortSpecificationComparator sortSpecificationComparator(DBObject orderBy) {
+    return new SortSpecificationComparator(orderBy);
+  }
+
+  public class SortSpecificationComparator implements Comparator<Object> {
+
+    private final DBObject orderBy;
+    private final Set<String> orderByKeySet;
+
+    public SortSpecificationComparator(DBObject orderBy) {
+      this.orderBy = orderBy;
+      this.orderByKeySet = orderBy.keySet();
+
+      if (this.orderByKeySet.isEmpty()) {
+        throw new FongoException("The $sort pattern is empty when it should be a set of fields.");
+      }
+    }
+
+    @Override
+    public int compare(Object o1, Object o2) {
+      if (isDBObjectButNotDBList(o1) && isDBObjectButNotDBList(o2)) {
+        DBObject dbo1 = (DBObject) o1;
+        DBObject dbo2 = (DBObject) o2;
+        for (String sortKey : orderByKeySet) {
+          final List<String> path = Util.split(sortKey);
+          int sortDirection = (Integer) orderBy.get(sortKey);
+
+          List<Object> o1list = getEmbeddedValues(path, dbo1);
+          List<Object> o2list = getEmbeddedValues(path, dbo2);
+
+          int compareValue = compareLists(o1list, o2list) * sortDirection;
+          if (compareValue != 0) {
+            return compareValue;
+          }
+        }
+        return 0;
+      } else if (isDBObjectButNotDBList(o1) || isDBObjectButNotDBList(o2)) {
+        DBObject dbo = (DBObject) (o1 instanceof DBObject ? o1 : o2);
+        for (String sortKey : orderByKeySet) {
+          final List<String> path = Util.split(sortKey);
+          int sortDirection = (Integer) orderBy.get(sortKey);
+
+          List<Object> foundValues = getEmbeddedValues(path, dbo);
+
+          if (!foundValues.isEmpty()) {
+            return o1 instanceof DBObject ? sortDirection : -sortDirection;
+          }
+        }
+        return compareTo(o1, o2);
+      } else {
+        return compareTo(o1, o2);
+      }
+    }
+  }
+
+  private boolean isDBObjectButNotDBList(Object o) {
+    return o instanceof DBObject && !(o instanceof List);
   }
 
   public Filter buildFilter(DBObject ref) {
@@ -141,7 +195,6 @@ public class ExpressionParser {
    *
    * @param ref  query for filter.
    * @param keys must match to build the filter.
-   * @return
    */
   public Filter buildFilter(DBObject ref, Collection<String> keys) {
     AndFilter andFilter = new AndFilter();
@@ -301,6 +354,21 @@ public class ExpressionParser {
     }
   }
 
+  private final class GeoWithinCommandFilterFactory extends BasicCommandFilterFactory {
+
+    public GeoWithinCommandFilterFactory(final String command) {
+      super(command);
+    }
+
+    // http://docs.mongodb.org/manual/reference/operator/query/geoWithin/
+    @Override
+    public Filter createFilter(final List<String> path, DBObject refExpression) {
+      LOG.info("geoWithin path:{}, refExp:{}", path, refExpression);
+      Geometry geometry = GeoUtil.getGeometry(typecast("$geoWithin", refExpression.get("$geoWithin"), DBObject.class));
+      return createGeowithinFilter(path, geometry);
+    }
+  }
+
   public <T> T typecast(String fieldName, Object obj, Class<T> clazz) {
     try {
       return clazz.cast(obj);
@@ -371,17 +439,17 @@ public class ExpressionParser {
               Object queryValue = refExpression.get(command);
               List<Object> storedList = getEmbeddedValues(path, o);
               if (storedList.isEmpty()) {
-                return true;
+                return queryValue != null;
               } else {
                 for (Object storedValue : storedList) {
                   if (storedValue instanceof List) {
                     for (Object aValue : (List) storedValue) {
-                      if (queryValue.equals(aValue)) {
+                      if (isEqual(queryValue, aValue)) {
                         return false;
                       }
                     }
                   } else {
-                    if (queryValue.equals(storedValue)) {
+                    if (isEqual(queryValue, storedValue)) {
                       return false;
                     }
                   }
@@ -389,6 +457,18 @@ public class ExpressionParser {
                 return true;
               }
             }
+
+			private boolean isEqual(Object obj1, Object obj2) {
+				if (obj1 == null) {
+					if (obj2 == null) {
+						return true;
+					}
+					
+					return false;
+				}
+				
+				return obj1.equals(obj2);
+			}
           };
         }
       },
@@ -448,9 +528,9 @@ public class ExpressionParser {
         boolean compare(Object queryValue, Object storedValue) {
           List<Integer> queryList = typecast(command + " clause", queryValue, List.class);
           enforce(queryList.size() == 2, command + " clause must be a List of size 2");
-          int modulus = queryList.get(0);
-          int expectedValue = queryList.get(1);
-          return (storedValue != null) && (typecast("value", storedValue, Number.class).longValue()) % modulus == expectedValue;
+          Number modulus = (Number) queryList.get(0);
+          Number expectedValue = queryList.get(1);
+          return (storedValue != null) && (typecast("value", storedValue, Number.class).longValue()) % modulus.longValue() == expectedValue.longValue();
         }
       },
       new InFilterFactory(IN, true),
@@ -474,6 +554,7 @@ public class ExpressionParser {
       },
       new NearCommandFilterFactory(NEAR_SPHERE, true),
       new NearCommandFilterFactory(NEAR, false),
+      new GeoWithinCommandFilterFactory(GEO_WITHIN),
       new BasicCommandFilterFactory(TYPE) {
         @Override
         public Filter createFilter(final List<String> path, DBObject refExpression) {
@@ -701,10 +782,6 @@ public class ExpressionParser {
   /**
    * Compare objects between {@code queryValue} and {@code storedValue}.
    * Can return null if {@code comparableFilter} is true and {@code queryValue} and {@code storedValue} can't be compared.
-   *
-   * @param queryValue
-   * @param storedValue
-   * @return
    */
   public int compareObjects(Object queryValue, Object storedValue) {
     return compareObjects(queryValue, storedValue, false).intValue();
@@ -723,7 +800,7 @@ public class ExpressionParser {
   private Integer compareObjects(Object queryValue, Object storedValue, boolean comparableFilter) {
     LOG.debug("comparing {} and {}", queryValue, storedValue);
 
-    if (queryValue instanceof DBObject && storedValue instanceof DBObject) {
+    if (isDBObjectButNotDBList(queryValue) && isDBObjectButNotDBList(storedValue)) {
       return compareDBObjects((DBObject) queryValue, (DBObject) storedValue);
     } else if (queryValue instanceof List && storedValue instanceof List) {
       List queryList = (List) queryValue;
@@ -771,14 +848,14 @@ public class ExpressionParser {
         cc2 = convertFrom((byte[]) cc2);
         checkTypes = false;
       }
-      if (cc1 instanceof ObjectId && cc2 instanceof String && ObjectId.isValid((String) cc2)) {
-        cc2 = ObjectId.massageToObjectId(cc2);
-        checkTypes = false;
-      }
-      if (cc2 instanceof ObjectId && cc1 instanceof String && ObjectId.isValid((String) cc1)) {
-        cc1 = ObjectId.massageToObjectId(cc2);
-        checkTypes = false;
-      }
+//      if (cc1 instanceof ObjectId && cc2 instanceof String && ObjectId.isValid((String) cc2)) {
+//        cc2 = ObjectId.massageToObjectId(cc2);
+//        checkTypes = false;
+//      }
+//      if (cc2 instanceof ObjectId && cc1 instanceof String && ObjectId.isValid((String) cc1)) {
+//        cc1 = ObjectId.massageToObjectId(cc2);
+//        checkTypes = false;
+//      }
       LatLong ll1 = GeoUtil.getLatLong(cc1);
       if (ll1 != null) {
         LatLong ll2 = GeoUtil.getLatLong(cc2);
@@ -844,19 +921,27 @@ public class ExpressionParser {
   }
 
   private int compareDBObjects(DBObject db0, DBObject db1) {
-    Set<String> db0KeySet = db0.keySet();
-    Set<String> db1KeySet = db1.keySet();
-    int db0Size = db0KeySet.size();
-    int db1Size = db1KeySet.size();
-    if (db0Size != db1Size) {
-      return (db0Size < db1Size ? -1 : (db0Size > db1Size ? 1 : 0));
-    }
-    for (String key : db0KeySet) {
-      int compareValue = compareObjects(db0.get(key), db1.get(key));
-      if (compareValue != 0) {
-        return compareValue;
+    Iterator<String> i0 = db0.keySet().iterator();
+    Iterator<String> i1 = db1.keySet().iterator();
+    
+    while (i0.hasNext() || i1.hasNext()) {
+      String key0 = i0.hasNext() ? i0.next() : null;
+      String key1 = i1.hasNext() ? i1.next() : null;
+
+      int keyComparison = Util.compareToNullable(key0, key1);
+      if (keyComparison != 0) {
+        return keyComparison;
+      }
+      
+      Object value0 = key0 == null ? null : db0.get(key0);
+      Object value1 = key1 == null ? null : db1.get(key1);
+      
+      int valueComparison = compareObjects(value0, value1);
+      if (valueComparison != 0) {
+        return valueComparison;
       }
     }
+    
     return 0;
   }
 
@@ -911,7 +996,7 @@ public class ExpressionParser {
   // Take care of : https://groups.google.com/forum/?fromgroups=#!topic/mongomapper/MfRDh2vtCFg
   public Filter createNearFilter(final List<String> path, final List<LatLong> coordinates, final Number maxDistance, final boolean sphere) {
     return new Filter() {
-      final LatLong coordinate = coordinates.get(0); // TODO(twillouer) try to get all coordinate.
+      final LatLong coordinate = coordinates.get(0); // TODO(twillouer) try to get all coordinates.
       int limit = 100;
 
       public boolean apply(DBObject o) {
@@ -943,6 +1028,28 @@ public class ExpressionParser {
       }
     };
   }
+
+  private Filter createGeowithinFilter(final List<String> path, final Geometry geometry) {
+    return new Filter() {
+
+      public boolean apply(DBObject o) {
+        boolean result = false;
+
+        List<LatLong> storedOption = GeoUtil.latLon(path, o);
+        if (!storedOption.isEmpty()) {
+          for (LatLong point : storedOption) {
+            result = GeoUtil.geowithin(point, geometry);
+            LOG.debug("geowithin : {}", result);
+            if (result) {
+              break;
+            }
+          }
+        }
+        return result;
+      }
+    };
+  }
+
 
   static class NotFilter implements Filter {
     private final Filter filter;

@@ -7,26 +7,27 @@ import com.mongodb.DBObject;
 import com.mongodb.Mongo;
 import com.mongodb.MongoClient;
 import com.mongodb.util.JSON;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import org.junit.rules.ExternalResource;
-
 import java.net.UnknownHostException;
 import java.util.List;
 import java.util.UUID;
+import org.junit.rules.ExternalResource;
 
 /**
  * Create a Junit Rule to use with annotation
- *
- * @Rule
+ * <p>
+ * &#64;Rule
  * public FongoRule rule = new FongoRule().
- *
+ * </p>
+ * <p>
  * Note than you can switch to a realmongodb on your localhost (for now).
- *
+ * </p>
+ * <p><b>
  * WARNING : database is dropped after the test !!
+ * </b></P>
  */
 public class FongoRule extends ExternalResource {
 
@@ -37,6 +38,8 @@ public class FongoRule extends ExternalResource {
 
   private final String dbName;
 
+  private final Fongo fongo;
+
   private Mongo mongo;
 
   private DB db;
@@ -44,31 +47,45 @@ public class FongoRule extends ExternalResource {
   /**
    * Setup a rule with a real MongoDB.
    *
-   * @param realMongo
+   * @param dbName            the dbName to use.
+   * @param realMongo         set to true if you want to use a real mongoDB.
+   * @param mongoClientIfReal real client to use if realMongo si true.
    */
-  public FongoRule(String dbName, boolean realMongo) {
+  public FongoRule(String dbName, boolean realMongo, MongoClient mongoClientIfReal) {
     this.dbName = dbName;
     this.realMongo = realMongo;
+    this.fongo = realMongo ? null : newFongo();
+    this.mongo = mongoClientIfReal;
   }
 
   public FongoRule() {
-    this(UUID.randomUUID().toString(), false);
+    this(UUID.randomUUID().toString(), false, null);
   }
 
   public FongoRule(boolean realMongo) {
-    this(UUID.randomUUID().toString(), realMongo);
+    this(UUID.randomUUID().toString(), realMongo, null);
+  }
+
+  public FongoRule(boolean realMongo, MongoClient mongoClientIfReal) {
+    this(UUID.randomUUID().toString(), realMongo, mongoClientIfReal);
+  }
+
+  public FongoRule(String dbName, boolean realMongo) {
+    this(dbName, realMongo, null);
   }
 
   public FongoRule(String dbName) {
-    this(dbName, false);
+    this(dbName, false, null);
   }
 
   @Override
   protected void before() throws UnknownHostException {
     if (realMongo) {
-      mongo = new MongoClient();
+      if (mongo == null) {
+        mongo = new MongoClient();
+      }
     } else {
-      mongo = newFongo().getMongo();
+      mongo = this.fongo.getMongo();
     }
     db = mongo.getDB(dbName);
   }
@@ -124,9 +141,35 @@ public class FongoRule extends ExternalResource {
     return collection;
   }
 
-  public Fongo newFongo() {
+  private Fongo newFongo() {
     Fongo fongo = new Fongo("test");
     return fongo;
+  }
+
+  public Fongo getFongo() {
+    return this.fongo;
+  }
+
+  @Deprecated
+  public DB getDb() {
+    return this.db;
+  }
+
+  @Deprecated
+  public DB getDb(String name) {
+    return this.mongo.getDB(name);
+  }
+
+  public DB getDB() {
+    return this.db;
+  }
+
+  public DB getDB(String name) {
+    return this.mongo.getDB(name);
+  }
+
+  public Mongo getMongo() {
+    return this.mongo;
   }
 
 }

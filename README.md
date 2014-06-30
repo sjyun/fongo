@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/fakemongo/fongo.svg?branch=master)](https://travis-ci.org/fakemongo/fongo)
+
 # fongo
 
 Fongo is an in-memory java implementation of mongo. It intercepts calls to the standard mongo-java-driver for 
@@ -12,7 +14,7 @@ Add dependency to your project:
 <dependency>
   <groupId>com.github.fakemongo</groupId>
   <artifactId>fongo</artifactId>
-  <version>1.3.7</version>
+  <version>1.5.3</version>
   <scope>test</scope>
 </dependency>
 ```
@@ -42,9 +44,12 @@ fongo doesn't implement all mongo functionality. most query and update syntax is
 Gridfs and capped collections are not supported.
 MapReduce is in minimal way but will be enhanced soon.
 
+   $near can be used
+   $geoWithin can be used with $box for now.
+
 ## Implementation Details
 
-Fongo depends on [Objenesis](http://objenesis.org/) to hijack the `com.mongodb.MongoClient` class.  It has a "provided" dependency on the mongo-java-driver and was tested with 2.11.3.
+Fongo depends on [Objenesis](http://objenesis.org/) to hijack the `com.mongodb.MongoClient` class.  It has a "provided" dependency on the mongo-java-driver and was tested with 2.12.0.
 It also has a "provided" dependency on sl4j-api for logging.  If you don't already have sl4j in your project, you can add a maven dependency to the logback implementation like this:
 
 ```
@@ -52,7 +57,7 @@ It also has a "provided" dependency on sl4j-api for logging.  If you don't alrea
   <groupId>ch.qos.logback</groupId>
   <artifactId>logback-classic</artifactId>
   <version>1.1.1</version>
-  <scope>test</test>
+  <scope>test</scope>
 </dependency>
 ```
 
@@ -111,6 +116,45 @@ public FongoRule fongoRule = new FongoRule(true);
 WARNING : in this case, the database WILL BE DROPPED when test is finish.
 So, use UUID, random database, BUT NOT your real database.
 
+### Text Search Simulation
+**Fongo** simulates [text search](http://docs.mongodb.org/manual/reference/command/text/) now.
+The results of text search are qute similar to real, but not exactly.
+
+#### Next features are supported:
+* Plain words search
+* Search strings
+* Negated words
+* Projections in search query
+* Limits
+
+#### Fongo text search simulation does not support:
+* Languages (including language-specific stop words)
+* Filter (maybe in future)
+* Weights in text index (we plan to support them in future)
+
+#### Limitations, Differences:
+* Only [text command](http://docs.mongodb.org/manual/reference/command/text/) search is supported. We will support [find query with $text operator](http://docs.mongodb.org/master/reference/operator/query/text/) probably in future.
+* Scores in returned results are not always the same as the real Mongo's scores.
+* Only one field can be indexed as text field now. This limitation will be removed soon.
+
+#### Usage example of the text search simulation:
+```java
+    @Test
+    public void findByTextTest() {
+    //....
+    //Define index:
+    collection.createIndex(new BasicDBObject("myTextFieldToIndex", "text"));
+
+    DBObject textSearchCommand = new BasicDBObject("search", "my search \"my phrase\" -without -this -words");
+
+    //Search Command
+    DBObject textSearchResult = collection.getDB()
+            .command(new BasicDBObject("collection", new BasicDBObject("text", textSearchCommand)));
+
+    //Make your assertions
+    //....
+	}
+```
 
 ## Todo
 
@@ -150,3 +194,9 @@ your name to the patch contributers below. Please maintain the same code formatt
 * [lldata](https://github.com/lldata)
 * [renej-github](https://github.com/renej-github)
 * [mathieubodin](https://github.com/mathieubodin)
+* [Alex Art](https://github.com/elennaro)
+* [htmldoug](https://github.com/htmldoug)
+* [antonbobukh](https://github.com/antonbobukh)
+* [Alban Dericbourg](https://github.com/adericbourg)
+* [louisnerys](https://github.com/louisnerys)
+* [Changgeng Li](https://github.com/changgengli)
