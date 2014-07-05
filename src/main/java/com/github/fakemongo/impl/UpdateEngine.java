@@ -165,6 +165,14 @@ public class UpdateEngine {
           subObject.put(subKey, object);
         }
       },
+      new BasicUpdate("$setOnInsert", true) {
+        @Override
+        void mergeAction(String subKey, DBObject subObject, Object object, DBObject objOriginal) {
+          if (objOriginal.keySet().isEmpty()) {
+            subObject.put(subKey, object);
+          }
+        }
+      },
       new BasicUpdate("$inc", true) {
         @Override
         void mergeAction(String subKey, DBObject subObject, Object object, DBObject objOriginal) {

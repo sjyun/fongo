@@ -2179,7 +2179,59 @@ public class FongoTest {
     // Then
     Assertions.assertThat(collection.findOne(new BasicDBObject("_id", objectId))).isEqualTo(object);
     Assertions.assertThat(collection.findOne(new BasicDBObject("_id", objectId.toString()))).isNull();
+  }
 
+  @Test
+  public void should_setOnInsert_insert_value() {
+    // Given
+    DBCollection collection = newCollection();
+    ObjectId objectId = ObjectId.get();
+    // When
+    collection
+        .update(
+            new BasicDBObject(),
+            new BasicDBObject()
+                .append("$setOnInsert", new BasicDBObject("insertedAttr", "insertedValue"))
+                .append("$set", new BasicDBObject("updatedAttr", "updatedValue").append("_id", objectId)),
+            true,
+            true
+        );
+
+    // Then
+    Assertions.assertThat(collection.findOne(new BasicDBObject("_id", objectId))).isEqualTo(new BasicDBObject("_id", objectId)
+        .append("insertedAttr", "insertedValue")
+        .append("updatedAttr", "updatedValue"));
+  }
+
+  @Test
+  public void should_setOnInsert_insert_value_only_one() {
+    // Given
+    DBCollection collection = newCollection();
+    ObjectId objectId = ObjectId.get();
+    // When
+    collection
+        .update(
+            new BasicDBObject(),
+            new BasicDBObject()
+                .append("$setOnInsert", new BasicDBObject("insertedAttr", "insertedValue"))
+                .append("$set", new BasicDBObject("updatedAttr", "updatedValue").append("_id", objectId)),
+            true,
+            true
+        );
+    collection
+        .update(
+            new BasicDBObject("_id", objectId),
+            new BasicDBObject()
+                .append("$setOnInsert", new BasicDBObject("insertedAttr", "insertedValue2"))
+                .append("$set", new BasicDBObject("updatedAttr", "updatedValue2")),
+            true,
+            true
+        );
+
+    // Then
+    Assertions.assertThat(collection.findOne(new BasicDBObject("_id", objectId))).isEqualTo(new BasicDBObject("_id", objectId)
+        .append("insertedAttr", "insertedValue")
+        .append("updatedAttr", "updatedValue2"));
   }
 
   static class Seq {
