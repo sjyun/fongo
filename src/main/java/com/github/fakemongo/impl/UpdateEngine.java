@@ -163,9 +163,7 @@ public class UpdateEngine {
 
   BasicDBList asDbList(Object... objects) {
     BasicDBList dbList = new BasicDBList();
-    for (Object o : objects) {
-      dbList.add(o);
-    }
+    Collections.addAll(dbList, objects);
     return dbList;
   }
 
@@ -451,7 +449,7 @@ public class UpdateEngine {
     if (!updateDone) {
       for (Iterator<String> iter = obj.keySet().iterator(); iter.hasNext(); ) {
         String key = iter.next();
-        if (key != "_id") {
+        if (!key.equals("_id")) {
           iter.remove();
         }
       }

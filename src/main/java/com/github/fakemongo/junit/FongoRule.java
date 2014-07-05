@@ -23,7 +23,7 @@ import org.junit.rules.ExternalResource;
  * public FongoRule rule = new FongoRule().
  * </p>
  * <p>
- * Note than you can switch to a realmongodb on your localhost (for now).
+ * Note than you can switch to a real mongodb on your localhost (for now).
  * </p>
  * <p><b>
  * WARNING : database is dropped after the test !!
@@ -128,6 +128,7 @@ public class FongoRule extends ExternalResource {
     return parse(json);
   }
 
+  @SuppressWarnings("unchecked")
   public <T> T parse(String json) {
     return (T) JSON.parse(json);
   }
@@ -137,13 +138,11 @@ public class FongoRule extends ExternalResource {
   }
 
   public DBCollection newCollection(String collectionName) {
-    DBCollection collection = db.getCollection(collectionName);
-    return collection;
+    return db.getCollection(collectionName);
   }
 
   private Fongo newFongo() {
-    Fongo fongo = new Fongo("test");
-    return fongo;
+    return new Fongo("test");
   }
 
   public Fongo getFongo() {
