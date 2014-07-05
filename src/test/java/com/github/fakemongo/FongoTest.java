@@ -2234,6 +2234,51 @@ public class FongoTest {
         .append("updatedAttr", "updatedValue2"));
   }
 
+  @Test
+  public void should_mul_multiply_values() {
+    // Given
+    DBCollection collection = newCollection();
+    collection.insert(fongoRule.parseDBObject("{ _id: 1, item: \"ABC\", price: 10.99 }\n"));
+
+    // When
+    collection.update(new BasicDBObject("_id", 1), fongoRule.parseDBObject("{ $mul: { price: 1.25 } }"));
+
+    // Then
+    Assertions.assertThat(collection.findOne(new BasicDBObject("_id", 1))).isEqualTo(new BasicDBObject("_id", 1)
+        .append("item", "ABC")
+        .append("price", 13.7375D));
+  }
+
+  @Test
+  public void should_mul_add_field_if_not_exist() {
+    // Given
+    DBCollection collection = newCollection();
+    collection.insert(fongoRule.parseDBObject("{ _id: 2, item: \"Unknown\"}\n"));
+
+    // When
+    collection.update(new BasicDBObject("_id", 2), new BasicDBObject("$mul", new BasicDBObject("price", 100L)));
+
+    // Then
+    Assertions.assertThat(collection.findOne(new BasicDBObject("_id", 2))).isEqualTo(new BasicDBObject("_id", 2)
+        .append("item", "Unknown")
+        .append("price", 0L));
+  }
+
+  @Test
+  public void should_mul_with_mixed_types_handle_long_as_result() {
+    // Given
+    DBCollection collection = newCollection();
+    collection.insert(new BasicDBObject("_id", 3).append("item", "XYZ").append("price", 10L));
+
+    // When
+    collection.update(new BasicDBObject("_id", 3), new BasicDBObject("$mul", new BasicDBObject("price", 5)));
+
+    // Then
+    Assertions.assertThat(collection.findOne(new BasicDBObject("_id", 3))).isEqualTo(new BasicDBObject("_id", 3)
+        .append("item", "XYZ")
+        .append("price", 50L));
+  }
+
   static class Seq {
     Object[] data;
 

@@ -142,11 +142,22 @@ public class UpdateEngine {
 
   Number genericAdd(Number left, Number right) {
     if (left instanceof Float || left instanceof Double || right instanceof Float || right instanceof Double) {
-      return left.doubleValue() + (right.doubleValue());
+      return left.doubleValue() + right.doubleValue();
     } else if (left instanceof Integer) {
-      return left.intValue() + (right.intValue());
+      return left.intValue() + right.intValue();
     } else {
-      return left.longValue() + (right.intValue());
+      return left.longValue() + right.longValue();
+    }
+  }
+
+  // http://docs.mongodb.org/manual/faq/developers/#faq-developers-multiplication-type-conversion
+  Number genericMul(Number left, Number right) {
+    if (left instanceof Float || left instanceof Double || right instanceof Float || right instanceof Double) {
+      return left.doubleValue() * (right.doubleValue());
+    } else if (left instanceof Integer && right instanceof Integer) {
+      return left.intValue() * right.intValue();
+    } else {
+      return left.longValue() * right.longValue();
     }
   }
 
@@ -183,6 +194,19 @@ public class UpdateEngine {
           } else {
             Number oldNumber = expressionParser.typecast(subKey + " value", oldValue, Number.class);
             subObject.put(subKey, genericAdd(oldNumber, updateNumber));
+          }
+        }
+      },
+      new BasicUpdate("$mul", true) {
+        @Override
+        void mergeAction(String subKey, DBObject subObject, Object object, DBObject objOriginal) {
+          Number updateNumber = expressionParser.typecast(command + " value", object, Number.class);
+          Object oldValue = subObject.get(subKey);
+          if (oldValue == null) {
+            subObject.put(subKey, genericMul(0, updateNumber));
+          } else {
+            Number oldNumber = expressionParser.typecast(subKey + " value", oldValue, Number.class);
+            subObject.put(subKey, genericMul(oldNumber, updateNumber));
           }
         }
       },
