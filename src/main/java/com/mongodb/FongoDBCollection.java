@@ -229,7 +229,7 @@ public class FongoDBCollection extends DBCollection {
       for (DBObject obj : filterByIndexes(q)) {
         if (filter.apply(obj)) {
           DBObject newObject = Util.clone(obj);
-          updateEngine.doUpdate(newObject, o, q);
+          updateEngine.doUpdate(newObject, o, q, false);
           // Check for uniqueness (throw MongoException if error)
           addToIndexes(newObject, obj, concern);
 
@@ -243,7 +243,7 @@ public class FongoDBCollection extends DBCollection {
       }
       if (updatedDocuments == 0 && upsert) {
         BasicDBObject newObject = createUpsertObject(q);
-        fInsert(updateEngine.doUpdate(newObject, o, q), concern);
+        fInsert(updateEngine.doUpdate(newObject, o, q, true), concern);
       }
     }
     return new WriteResult(updateResult(updatedDocuments, updatedExisting), concern);
@@ -277,6 +277,7 @@ public class FongoDBCollection extends DBCollection {
 
   protected BasicDBObject createUpsertObject(DBObject q) {
     BasicDBObject newObject = new BasicDBObject();
+    newObject.markAsPartialObject();
     List idsIn = idsIn(q);
 
     if (!idsIn.isEmpty()) {
@@ -796,7 +797,7 @@ public class FongoDBCollection extends DBCollection {
         beforeObject = dbo;
         if (!remove) {
           afterObject = Util.clone(beforeObject);
-          updateEngine.doUpdate(afterObject, update, query);
+          updateEngine.doUpdate(afterObject, update, query, false);
           addToIndexes(afterObject, beforeObject, getWriteConcern());
           break;
         } else {
@@ -811,7 +812,7 @@ public class FongoDBCollection extends DBCollection {
     if (beforeObject == null && upsert && !remove) {
       beforeObject = new BasicDBObject();
       afterObject = createUpsertObject(query);
-      fInsert(updateEngine.doUpdate(afterObject, update, query), getWriteConcern());
+      fInsert(updateEngine.doUpdate(afterObject, update, query, upsert), getWriteConcern());
     }
     if (returnNew) {
       return applyProjections(afterObject, fields);

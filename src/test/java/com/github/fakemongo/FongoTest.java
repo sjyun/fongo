@@ -828,7 +828,6 @@ public class FongoTest {
 
     final BasicDBObject query = new BasicDBObject("_id", 1);
     final BasicDBObject update = new BasicDBObject("$inc", new BasicDBObject("a", 1).append("b.c", 1));
-    System.out.println("update: " + update);
     final DBObject result = collection.findAndModify(query, null, null, false, update, false, false);
 
     assertEquals(new BasicDBObject("_id", 1).append("a", 1).append("b", new BasicDBObject("c", 1)), result);
@@ -857,7 +856,6 @@ public class FongoTest {
 
     final BasicDBObject query = new BasicDBObject("_id", new BasicDBObject("$in", Util.list(1, 2, 3)));
     final BasicDBObject update = new BasicDBObject("$inc", new BasicDBObject("a", 1).append("b.c", 1));
-    System.out.println("update: " + update);
     final DBObject result = collection.findAndModify(query, null, null, false, update, false, false);
 
     assertEquals(new BasicDBObject("_id", 1).append("a", 1).append("b", new BasicDBObject("c", 1)), result);
@@ -871,7 +869,6 @@ public class FongoTest {
 
     final BasicDBObject query = new BasicDBObject("_id", 1);
     final BasicDBObject update = new BasicDBObject("$inc", new BasicDBObject("a", 1).append("b.c", 1));
-    System.out.println("update: " + update);
     final DBObject result = collection.findAndModify(query, null, null, false, update, true, false);
 
     assertEquals(new BasicDBObject("_id", 1).append("a", 2).append("b", new BasicDBObject("c", 2)), result);
@@ -1187,7 +1184,6 @@ public class FongoTest {
     Fongo fongo = newFongo();
     DB db = fongo.getDB("db");
     CommandResult result = db.command("forceerror");
-    System.out.print(result);
     assertEquals("ok should always be defined", 0.0, result.get("ok"));
     assertEquals("exception: forced error", result.get("errmsg"));
     assertEquals(10038, result.get("code"));
@@ -2232,6 +2228,72 @@ public class FongoTest {
     Assertions.assertThat(collection.findOne(new BasicDBObject("_id", objectId))).isEqualTo(new BasicDBObject("_id", objectId)
         .append("insertedAttr", "insertedValue")
         .append("updatedAttr", "updatedValue2"));
+  }
+
+  @Test
+  public void should_setOnInsert_insert_value_on_composite_fields() {
+    // Given
+    DBCollection collection = newCollection();
+
+    DBObject insertedValues = new BasicDBObject("insertedAttr1", "insertedValue1").append("data.insertedAttr2", "insertedValue2");
+
+    DBObject updatedValues = new BasicDBObject("updatedAttr1", "updatedValue1").append("data.updatedAttr2", "updatedValue2");
+
+    collection.update(
+        new BasicDBObject(),
+        new BasicDBObject()
+            .append("$setOnInsert", insertedValues)
+            .append("$set", updatedValues),
+        true,
+        true
+    );
+
+    DBObject obj = collection.findOne();
+    System.out.println(obj);
+    // { "_id" : { "$oid" : "53bd59cd7c2e6dc6f98160e0"} , "insertedAttr1" : "insertedValue1" , "data" : { "insertedAttr2" : "insertedValue2" , "updatedAttr2" : "updatedValue2"} , "updatedAttr1" : "updatedValue1"}
+    Assertions.assertThat(obj.get("insertedAttr1")).isEqualTo("insertedValue1");
+    Assertions.assertThat(obj.get("updatedAttr1")).isEqualTo("updatedValue1");
+
+    DBObject data = (DBObject) obj.get("data");
+    Assertions.assertThat(data.get("insertedAttr2")).isEqualTo("insertedValue2");
+    Assertions.assertThat(data.get("updatedAttr2")).isEqualTo("updatedValue2");
+  }
+
+  @Test
+  public void should_not_setOnInsert_insert_value_on_composite_fields() {
+    // Given
+    DBCollection collection = newCollection();
+
+    DBObject insertedValues = new BasicDBObject("insertedAttr1", "insertedValue1").append("data.insertedAttr2", "insertedValue2");
+
+    DBObject updatedValues = new BasicDBObject("updatedAttr1", "updatedValue1").append("data.updatedAttr2", "updatedValue2");
+
+    ObjectId objectId = ObjectId.get();
+    collection.update(
+        new BasicDBObject("_id", objectId),
+        new BasicDBObject()
+            .append("$set", updatedValues),
+        true,
+        true
+    );
+
+    collection.update(
+        new BasicDBObject("_id", objectId),
+        new BasicDBObject()
+            .append("$setOnInsert", insertedValues)
+            .append("$set", updatedValues),
+        true,
+        true
+    );
+
+    DBObject obj = collection.findOne();
+    System.out.println(obj);
+    // { "_id" : { "$oid" : "53bd59cd7c2e6dc6f98160e0"} , "insertedAttr1" : "insertedValue1" , "data" : { "insertedAttr2" : "insertedValue2" , "updatedAttr2" : "updatedValue2"} , "updatedAttr1" : "updatedValue1"}
+    Assertions.assertThat(obj.get("insertedAttr1")).isNull();
+    Assertions.assertThat(obj.get("updatedAttr1")).isEqualTo("updatedValue1");
+
+    DBObject data = (DBObject) obj.get("data");
+    Assertions.assertThat(data).isEqualTo(new BasicDBObject("updatedAttr2", "updatedValue2"));
   }
 
   @Test
