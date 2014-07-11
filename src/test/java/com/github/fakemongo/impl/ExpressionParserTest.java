@@ -1,11 +1,10 @@
 package com.github.fakemongo.impl;
 
-import com.github.fakemongo.Fongo;
-import com.mongodb.BasicDBList;
-import com.mongodb.BasicDBObject;
-import com.mongodb.BasicDBObjectBuilder;
-import com.mongodb.DBObject;
-import com.mongodb.DBRef;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -13,16 +12,21 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.regex.Pattern;
-import static org.assertj.core.api.Assertions.assertThat;
+
 import org.bson.types.Binary;
 import org.bson.types.MaxKey;
 import org.bson.types.MinKey;
 import org.bson.types.ObjectId;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
+import com.github.fakemongo.Fongo;
+import com.mongodb.BasicDBList;
+import com.mongodb.BasicDBObject;
+import com.mongodb.BasicDBObjectBuilder;
+import com.mongodb.DBObject;
+import com.mongodb.DBRef;
+
+@SuppressWarnings("javadoc")
 public class ExpressionParserTest {
 
   @Test
@@ -271,7 +275,6 @@ public class ExpressionParserTest {
 
   @Test
   public void testInEmbeddedOperator() {
-
     DBObject query = new BasicDBObject("a.b", new BasicDBObject("$in", asList(2)));
     List<DBObject> results = doFilter(
         query,
@@ -289,6 +292,23 @@ public class ExpressionParserTest {
             new BasicDBObject("b", 1),
             new BasicDBObject("b", 2)
         ))
+    ), results);
+  }
+  
+  @SuppressWarnings("unchecked")
+  @Test
+  public void testInListOfLists() {
+    DBObject query = new BasicDBObject("a", new BasicDBObject("$in", asList(asList(1, 2))));
+    List<DBObject> results = doFilter(
+        query,
+        new BasicDBObject("a", asList(asList(0))),
+        new BasicDBObject("a", asList(asList(1))),
+        new BasicDBObject("a", asList(asList(2))),
+        new BasicDBObject("a", asList(asList(1), asList(2))),
+        new BasicDBObject("a", asList(1, 2))
+    );
+    assertEquals(Arrays.<DBObject>asList(
+        new BasicDBObject("a", asList(1, 2))
     ), results);
   }
 
@@ -781,7 +801,7 @@ public class ExpressionParserTest {
     DBObject obja2 = new BasicDBObjectBuilder().append("a", 2).get();
     DBObject obja1b2 = new BasicDBObjectBuilder().append("a", 1).append("b", 2).get();
     DBObject objb0 = new BasicDBObjectBuilder().append("b", 0).get();
-    List list = new BasicDBList();
+    List<Object> list = new BasicDBList();
     double d = 0.5D;
     int i = 0;
     MinKey minKey = new MinKey();

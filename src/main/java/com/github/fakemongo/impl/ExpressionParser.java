@@ -1,17 +1,5 @@
 package com.github.fakemongo.impl;
 
-import com.github.fakemongo.FongoException;
-import com.github.fakemongo.impl.geo.GeoUtil;
-import com.github.fakemongo.impl.geo.LatLong;
-import com.mongodb.BasicDBList;
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBObject;
-import com.mongodb.DBRefBase;
-import com.mongodb.LazyDBObject;
-import com.mongodb.QueryOperators;
-import com.mongodb.util.JSON;
-import com.vividsolutions.jts.geom.Geometry;
-
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -37,6 +25,19 @@ import org.mozilla.javascript.Scriptable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.github.fakemongo.FongoException;
+import com.github.fakemongo.impl.geo.GeoUtil;
+import com.github.fakemongo.impl.geo.LatLong;
+import com.mongodb.BasicDBList;
+import com.mongodb.BasicDBObject;
+import com.mongodb.DBObject;
+import com.mongodb.DBRefBase;
+import com.mongodb.LazyDBObject;
+import com.mongodb.QueryOperators;
+import com.mongodb.util.JSON;
+import com.vividsolutions.jts.geom.Geometry;
+
+@SuppressWarnings("javadoc")
 public class ExpressionParser {
   private static final Logger LOG = LoggerFactory.getLogger(ExpressionParser.class);
 
@@ -221,6 +222,7 @@ public class ExpressionParser {
       this.command = command;
     }
 
+    @Override
     public boolean matchesCommand(DBObject refExpression) {
       return refExpression.containsField(command);
     }
@@ -231,6 +233,7 @@ public class ExpressionParser {
       super(command);
     }
 
+    @Override
     public boolean matchesCommand(DBObject refExpression) {
       return refExpression.containsField(command);
     }
@@ -238,6 +241,7 @@ public class ExpressionParser {
     @Override
     public Filter createFilter(final List<String> path, final DBObject refExpression) {
       return new Filter() {
+        @Override
         public boolean apply(DBObject o) {
           List<Object> storedList = getEmbeddedValues(path, o);
           if (storedList.isEmpty()) {
@@ -301,6 +305,7 @@ public class ExpressionParser {
       Collection queryList = typecast(command + " clause", refExpression.get(command), Collection.class);
       final Set querySet = new HashSet(queryList);
       return new Filter() {
+        @Override
         public boolean apply(DBObject o) {
           List<Object> storedList = getEmbeddedValues(path, o);
           if (storedList.isEmpty()) {
@@ -320,7 +325,12 @@ public class ExpressionParser {
     boolean compare(Object queryValueIgnored, Object storedValue, Set querySet) {
       if (storedValue instanceof List) {
         for (Object valueItem : (List) storedValue) {
-          if (querySet.contains(valueItem)) return direction;
+          if (querySet.contains(valueItem)) {
+            return direction;
+          }
+        }
+        if (querySet.contains(storedValue)) {
+          return direction;
         }
         return !direction;
       } else {
@@ -389,6 +399,7 @@ public class ExpressionParser {
       super(command);
     }
 
+    @Override
     final boolean compare(Object queryValue, Object storedValue) {
       if (storedValue instanceof List) {
         for (Object aValue : (List) storedValue) {
@@ -409,32 +420,38 @@ public class ExpressionParser {
   @SuppressWarnings("all")
   List<FilterFactory> filterFactories = Arrays.<FilterFactory>asList(
       new ConditionalOperatorFilterFactory(GTE) {
+        @Override
         boolean singleCompare(Object queryValue, Object storedValue) {
           Integer result = compareObjects(queryValue, storedValue, true);
           return result != null && result.intValue() <= 0;
         }
       },
       new ConditionalOperatorFilterFactory(LTE) {
+        @Override
         boolean singleCompare(Object queryValue, Object storedValue) {
           Integer result = compareObjects(queryValue, storedValue, true);
           return result != null && result.intValue() >= 0;
         }
       },
       new ConditionalOperatorFilterFactory(GT) {
+        @Override
         boolean singleCompare(Object queryValue, Object storedValue) {
           Integer result = compareObjects(queryValue, storedValue, true);
           return result != null && result.intValue() < 0;
         }
       },
       new ConditionalOperatorFilterFactory(LT) {
+        @Override
         boolean singleCompare(Object queryValue, Object storedValue) {
           Integer result = compareObjects(queryValue, storedValue, true);
           return result != null && result.intValue() > 0;
         }
       },
       new BasicCommandFilterFactory(NE) {
+        @Override
         public Filter createFilter(final List<String> path, final DBObject refExpression) {
           return new Filter() {
+            @Override
             public boolean apply(DBObject o) {
               Object queryValue = refExpression.get(command);
               List<Object> storedList = getEmbeddedValues(path, o);
@@ -473,6 +490,7 @@ public class ExpressionParser {
         }
       },
       new BasicFilterFactory(ALL) {
+        @Override
         boolean compare(Object queryValue, Object storedValue) {
           Collection queryList = typecast(command + " clause", queryValue, Collection.class);
           List storedList = typecast("value", storedValue, List.class);
@@ -496,6 +514,7 @@ public class ExpressionParser {
         }
       },
       new BasicFilterFactory(ELEM_MATCH) {
+        @Override
         boolean compare(Object queryValue, Object storedValue) {
           DBObject query = typecast(command + " clause", queryValue, DBObject.class);
           List storedList = typecast("value", storedValue, List.class);
@@ -514,8 +533,10 @@ public class ExpressionParser {
         }
       },
       new BasicCommandFilterFactory(EXISTS) {
+        @Override
         public Filter createFilter(final List<String> path, final DBObject refExpression) {
           return new Filter() {
+            @Override
             public boolean apply(DBObject o) {
               List<Object> storedOption = getEmbeddedValues(path, o);
               return typecast(command + " clause", refExpression.get(command), Boolean.class) == !storedOption.isEmpty();
@@ -525,10 +546,11 @@ public class ExpressionParser {
       },
       new BasicFilterFactory(MOD) {
 
+        @Override
         boolean compare(Object queryValue, Object storedValue) {
           List<Integer> queryList = typecast(command + " clause", queryValue, List.class);
           enforce(queryList.size() == 2, command + " clause must be a List of size 2");
-          Number modulus = (Number) queryList.get(0);
+          Number modulus = queryList.get(0);
           Number expectedValue = queryList.get(1);
           return (storedValue != null) && (typecast("value", storedValue, Number.class).longValue()) % modulus.longValue() == expectedValue.longValue();
         }
@@ -536,6 +558,7 @@ public class ExpressionParser {
       new InFilterFactory(IN, true),
       new InFilterFactory(NIN, false),
       new BasicFilterFactory(SIZE) {
+        @Override
         boolean compare(Object queryValue, Object storedValue) {
           Integer size = typecast(command + " clause", queryValue, Integer.class);
           List storedList = typecast("value", storedValue, List.class);
@@ -748,6 +771,7 @@ public class ExpressionParser {
 
   public Filter simpleFilter(final List<String> path, final Object expression) {
     return new Filter() {
+      @Override
       public boolean apply(DBObject o) {
         List<Object> storedOption = getEmbeddedValues(path, o);
         if (storedOption.isEmpty()) {
@@ -947,6 +971,7 @@ public class ExpressionParser {
 
   public Filter createPatternFilter(final List<String> path, final Pattern pattern) {
     return new Filter() {
+      @Override
       public boolean apply(DBObject o) {
         List<Object> storedOption = getEmbeddedValues(path, o);
         if (storedOption.isEmpty()) {
@@ -971,6 +996,7 @@ public class ExpressionParser {
 
   public Filter createTypeFilter(final List<String> path, final int type) {
     return new Filter() {
+      @Override
       public boolean apply(DBObject o) {
         List<Object> storedOption = getEmbeddedValues(path, o);
         if (storedOption.isEmpty()) {
@@ -999,6 +1025,7 @@ public class ExpressionParser {
       final LatLong coordinate = coordinates.get(0); // TODO(twillouer) try to get all coordinates.
       int limit = 100;
 
+      @Override
       public boolean apply(DBObject o) {
         if (limit <= 0) {
           return false;
@@ -1032,6 +1059,7 @@ public class ExpressionParser {
   private Filter createGeowithinFilter(final List<String> path, final Geometry geometry) {
     return new Filter() {
 
+      @Override
       public boolean apply(DBObject o) {
         boolean result = false;
 
@@ -1058,6 +1086,7 @@ public class ExpressionParser {
       this.filter = filter;
     }
 
+    @Override
     public boolean apply(DBObject o) {
       return !filter.apply(o);
     }
