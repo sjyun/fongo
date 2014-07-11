@@ -4,7 +4,7 @@
 
 Fongo is an in-memory java implementation of MongoDB. It intercepts calls to the standard mongo-java-driver for 
 finds, updates, inserts, removes and other methods. The primary use is for lightweight unit testing where you
-don't want to spin up a mongo process.
+don't want to spin up a `mongod` process.
 
 
 ## Usage
@@ -40,7 +40,7 @@ collection.insert(new BasicDBObject("name", "jon"));
 
 ## Scope
 
-Fongo doesn't implement all mongo functionality. Most query and update syntax is supported. 
+Fongo doesn't implement all MongoDB functionality. Most query and update syntax is supported. 
 Gridfs and capped collections are not supported.
 MapReduce is in minimal way but will be enhanced soon.
 
@@ -62,7 +62,7 @@ It also has a "provided" dependency on sl4j-api for logging. If you don't alread
 ```
 
 Fongo should be thread safe. All read and write operations on collections are synchronized. It's pretty course, but
-should be good enough for simple testing. Fongo doesn't have any shared state (no statics). Each Fongo instance is completely independent.
+should be good enough for simple testing. Fongo doesn't have any shared state (no statics). Each fongo instance is completely independent.
 
 ## Usage Details
 
@@ -99,7 +99,7 @@ If you use Spring, you can configure fongo in your XML configuration context:
 
 ## Junit
 
-If you use JUnit in your project, you can use Rule to instanciate a Fongo object :
+If you use JUnit in your project, you can use Rule to instanciate a `Fongo` object :
 
 ```java
 @Rule
@@ -117,7 +117,7 @@ WARNING : In this case, the database WILL BE DROPPED when test is finish.
 So, use a random database name (e.g. UUID), BUT NOT your real database.
 
 ## Text Search Simulation
-**Fongo** simulates [text search](http://docs.mongodb.org/manual/reference/command/text/) now.
+Fongo simulates [text search](http://docs.mongodb.org/manual/reference/command/text/) now.
 The results of text search are qute similar to real, but not exactly.
 
 ### Next features are supported:
