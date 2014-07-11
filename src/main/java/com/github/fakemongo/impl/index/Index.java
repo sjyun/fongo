@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import com.github.fakemongo.impl.ExpressionParser;
+import com.github.fakemongo.impl.Util;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 import com.mongodb.FongoDBCollection;
@@ -51,14 +52,15 @@ public class Index extends IndexAbstract<DBObject> {
         final Object actualValue = object.get(key);
 
         DBObject expandedObject = null;
-        final String[] splittedKeys = key.split("\\.");
 
-        for (int i = splittedKeys.length - 1; i >= 0; i--) {
+        final List<String> splittedKeys = Util.split(key);
+
+        for (int i = splittedKeys.size() - 1; i >= 0; i--) {
           if (expandedObject == null) {
-            expandedObject = new BasicDBObject(splittedKeys[i], actualValue);
+            expandedObject = new BasicDBObject(splittedKeys.get(i), actualValue);
           } else {
             final DBObject partialObject = expandedObject;
-            expandedObject = new BasicDBObject(splittedKeys[i], partialObject);
+            expandedObject = new BasicDBObject(splittedKeys.get(i), partialObject);
           }
         }
 
