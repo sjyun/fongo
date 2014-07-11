@@ -583,6 +583,42 @@ public class FongoDBCollection extends DBCollection {
   }
 
   /**
+   * Replaces the result {@link DBObject} with the configured object class of this collection. If the object class is
+   * <code>null</code> the result object itself will be returned.
+   * 
+   * @param resultObject
+   *          the original result value from the command.
+   * @return replaced {@link DBObject} if necessary, or resultObject.
+   */
+  private DBObject replaceWithObjectClass(DBObject resultObject) {
+    if (resultObject == null || getObjectClass() == null) {
+      return resultObject;
+    }
+
+    final DBObject targetObject = instantiateObjectClassInstance();
+
+    for (final String key : resultObject.keySet()) {
+      targetObject.put(key, resultObject.get(key));
+    }
+
+    return targetObject;
+  }
+
+  /**
+   * Returns a new instance of the object class.
+   * @return a new instance of the object class.
+   */
+  private DBObject instantiateObjectClassInstance() {
+    try {
+      return (DBObject) getObjectClass().newInstance();
+    } catch (InstantiationException e) {
+      throw new MongoInternalException("Can't create instance of type: " + getObjectClass(), e);
+    } catch (IllegalAccessException e) {
+      throw new MongoInternalException("Can't create instance of type: " + getObjectClass(), e);
+    }
+  }
+
+  /**
    * Applies the requested <a href="http://docs.mongodb.org/manual/core/read-operations/#result-projections">projections</a> to the given object.
    * TODO: Support for projection operators: http://docs.mongodb.org/manual/reference/operator/projection/
    */
@@ -807,18 +843,22 @@ public class FongoDBCollection extends DBCollection {
       }
     }
     if (beforeObject != null && !returnNew) {
-      return applyProjections(beforeObject, fields);
+      return replaceWithObjectClass(applyProjections(beforeObject, fields));
     }
     if (beforeObject == null && upsert && !remove) {
       beforeObject = new BasicDBObject();
       afterObject = createUpsertObject(query);
       fInsert(updateEngine.doUpdate(afterObject, update, query, upsert), getWriteConcern());
     }
+
+    final DBObject resultObject;
     if (returnNew) {
-      return applyProjections(afterObject, fields);
+      resultObject = applyProjections(afterObject, fields);
     } else {
-      return applyProjections(beforeObject, fields);
+      resultObject = applyProjections(beforeObject, fields);
     }
+
+    return replaceWithObjectClass(resultObject);
   }
 
   @Override
