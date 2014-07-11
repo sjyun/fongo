@@ -2,19 +2,19 @@
 
 # fongo
 
-Fongo is an in-memory java implementation of mongo. It intercepts calls to the standard mongo-java-driver for 
+Fongo is an in-memory java implementation of MongoDB. It intercepts calls to the standard mongo-java-driver for 
 finds, updates, inserts, removes and other methods. The primary use is for lightweight unit testing where you
-don't want to spin up a mongo process.
+don't want to spin up a `mongod` process.
 
 
 ## Usage
 Add dependency to your project:
 
-```
+```xml
 <dependency>
   <groupId>com.github.fakemongo</groupId>
   <artifactId>fongo</artifactId>
-  <version>1.5.3</version>
+  <version>1.5.4</version>
   <scope>test</scope>
 </dependency>
 ```
@@ -40,19 +40,19 @@ collection.insert(new BasicDBObject("name", "jon"));
 
 ## Scope
 
-fongo doesn't implement all mongo functionality. most query and update syntax is supported. 
+Fongo doesn't implement all MongoDB functionality. Most query and update syntax is supported. 
 Gridfs and capped collections are not supported.
 MapReduce is in minimal way but will be enhanced soon.
 
-   $near can be used
-   $geoWithin can be used with $box for now.
+   `$near` can be used
+   `$geoWithin` can be used with $box for now.
 
 ## Implementation Details
 
-Fongo depends on [Objenesis](http://objenesis.org/) to hijack the `com.mongodb.MongoClient` class.  It has a "provided" dependency on the mongo-java-driver and was tested with 2.12.0.
-It also has a "provided" dependency on sl4j-api for logging.  If you don't already have sl4j in your project, you can add a maven dependency to the logback implementation like this:
+Fongo depends on [Objenesis](http://objenesis.org/) to hijack the `com.mongodb.MongoClient` class. It has a "provided" dependency on the mongo-java-driver and was tested with 2.12.0.
+It also has a "provided" dependency on sl4j-api for logging. If you don't already have sl4j in your project, you can add a maven dependency to the logback implementation like this:
 
-```
+```xml
 <dependency> 
   <groupId>ch.qos.logback</groupId>
   <artifactId>logback-classic</artifactId>
@@ -61,8 +61,8 @@ It also has a "provided" dependency on sl4j-api for logging.  If you don't alrea
 </dependency>
 ```
 
-Fongo should be thread safe. All read and write operations on collections are synchronized.  It's pretty course, but
-should be good enough for simple testing.  Fongo doesn't have any shared state (no statics).  Each Fongo instance is completely independent.
+Fongo should be thread safe. All read and write operations on collections are synchronized. It's pretty course, but
+should be good enough for simple testing. Fongo doesn't have any shared state (no statics). Each fongo instance is completely independent.
 
 ## Usage Details
 
@@ -99,45 +99,45 @@ If you use Spring, you can configure fongo in your XML configuration context:
 
 ## Junit
 
-If you use JUnit in your project, you can use Rule to instanciate a Fongo object :
+If you use JUnit in your project, you can use Rule to instanciate a `Fongo` object :
 
 ```java
 @Rule
 public FongoRule fongoRule = new FongoRule();
 ```
 
-If you need, you can easely swith to your real MongoDB server (on localhost for now).
+If you need, you can easely switch to your real MongoDB server (on localhost for now).
 
 ```java
 @Rule
 public FongoRule fongoRule = new FongoRule(true);
 ```
 
-WARNING : in this case, the database WILL BE DROPPED when test is finish.
-So, use UUID, random database, BUT NOT your real database.
+WARNING : In this case, the database WILL BE DROPPED when test is finish.
+So, use a random database name (e.g. UUID), BUT NOT your real database.
 
-### Text Search Simulation
-**Fongo** simulates [text search](http://docs.mongodb.org/manual/reference/command/text/) now.
+## Text Search Simulation
+Fongo simulates [text search](http://docs.mongodb.org/manual/reference/command/text/) now.
 The results of text search are qute similar to real, but not exactly.
 
-#### Next features are supported:
+### Next features are supported:
 * Plain words search
 * Search strings
 * Negated words
 * Projections in search query
 * Limits
 
-#### Fongo text search simulation does not support:
+### Fongo text search simulation does not support:
 * Languages (including language-specific stop words)
 * Filter (maybe in future)
 * Weights in text index (we plan to support them in future)
 
-#### Limitations, Differences:
+### Limitations, Differences:
 * Only [text command](http://docs.mongodb.org/manual/reference/command/text/) search is supported. We will support [find query with $text operator](http://docs.mongodb.org/master/reference/operator/query/text/) probably in future.
 * Scores in returned results are not always the same as the real Mongo's scores.
 * Only one field can be indexed as text field now. This limitation will be removed soon.
 
-#### Usage example of the text search simulation:
+### Usage example of the text search simulation:
 ```java
     @Test
     public void findByTextTest() {
