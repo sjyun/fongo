@@ -6,4 +6,4 @@ jdk:
  - openjdk6
  - oraclejdk8
 
-install: travis_wait mvn install
+install: travis_wait mvn install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
