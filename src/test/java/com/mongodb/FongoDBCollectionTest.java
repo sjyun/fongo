@@ -1,22 +1,26 @@
 package com.mongodb;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import org.assertj.core.api.Assertions;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
+import org.assertj.core.api.Assertions;
 import org.bson.BSONObject;
+import org.bson.types.ObjectId;
 import org.junit.Before;
 import org.junit.Test;
 
 import com.github.fakemongo.Fongo;
-import org.bson.types.ObjectId;
 
 public class FongoDBCollectionTest {
+
+  private static final String ARBITRARY_ID = UUID.randomUUID().toString();
+  
   private FongoDBCollection collection;
 
   @Before
@@ -26,9 +30,9 @@ public class FongoDBCollectionTest {
 
   @Test
   public void applyProjectionsInclusionsOnly() {
-    BasicDBObject obj = new BasicDBObject().append("_id", "_id").append("a", "a").append("b", "b");
+    BasicDBObject obj = new BasicDBObject().append("_id", ARBITRARY_ID).append("a", "a").append("b", "b");
     DBObject actual = collection.applyProjections(obj, new BasicDBObject().append("b", 1));
-    DBObject expected = new BasicDBObject().append("_id", "_id").append("b", "b");
+    DBObject expected = new BasicDBObject().append("_id", ARBITRARY_ID).append("b", "b");
 
     assertEquals("applied", expected, actual);
   }
@@ -38,12 +42,12 @@ public class FongoDBCollectionTest {
     BasicDBList dbl = new BasicDBList();
     dbl.add(new BasicDBObject("a","a"));
     dbl.add(new BasicDBObject("b","b"));
-    BasicDBObject obj = new BasicDBObject().append("_id", "_id").append("list", dbl);
+    BasicDBObject obj = new BasicDBObject().append("_id", ARBITRARY_ID).append("list", dbl);
     DBObject actual = collection.applyProjections(obj, 
         new BasicDBObject().append("list", new BasicDBObject("$elemMatch", new BasicDBObject("b", "b"))));
     BasicDBList expextedDbl = new BasicDBList();
     expextedDbl.add(new BasicDBObject("b","b"));
-    DBObject expected = new BasicDBObject().append("_id", "_id").append("list", expextedDbl);
+    DBObject expected = new BasicDBObject().append("_id", ARBITRARY_ID).append("list", expextedDbl);
     assertEquals("applied", expected, actual);
   }
 	
@@ -52,12 +56,12 @@ public class FongoDBCollectionTest {
     BasicDBList dbl = new BasicDBList();
     dbl.add(new BasicDBObject("a","a").append("b", "b"));
     dbl.add(new BasicDBObject("c","c").append("d", "d"));
-    BasicDBObject obj = new BasicDBObject().append("_id", "_id").append("list", dbl);
+    BasicDBObject obj = new BasicDBObject().append("_id", ARBITRARY_ID).append("list", dbl);
     DBObject actual = collection.applyProjections(obj, 
         new BasicDBObject().append("list", new BasicDBObject("$elemMatch", new BasicDBObject("d", "d"))));
     BasicDBList expextedDbl = new BasicDBList();
     expextedDbl.add(new BasicDBObject("c","c").append("d", "d"));
-    DBObject expected = new BasicDBObject().append("_id", "_id").append("list", expextedDbl);
+    DBObject expected = new BasicDBObject().append("_id", ARBITRARY_ID).append("list", expextedDbl);
     assertEquals("applied", expected, actual);
   }
 	
@@ -66,13 +70,13 @@ public class FongoDBCollectionTest {
     BasicDBList dbl = new BasicDBList();
     dbl.add(new BasicDBObject("c","a").append("_id", "531ef0060bd4d252a197bdaf"));
     dbl.add(new BasicDBObject("c","c").append("_id", "531ef0060bd4d252a197bda7"));
-    BasicDBObject obj = new BasicDBObject().append("_id", "_id").append("list", dbl);
+    BasicDBObject obj = new BasicDBObject().append("_id", ARBITRARY_ID).append("list", dbl);
     DBObject actual = collection.applyProjections(obj, 
         new BasicDBObject().append("list", new BasicDBObject("$elemMatch", 
                 new BasicDBObject("_id", new ObjectId("531ef0060bd4d252a197bda7")))));
     BasicDBList expextedDbl = new BasicDBList();
     expextedDbl.add(new BasicDBObject("c","c").append("_id", "531ef0060bd4d252a197bda7"));
-    DBObject expected = new BasicDBObject().append("_id", "_id").append("list", expextedDbl);
+    DBObject expected = new BasicDBObject().append("_id", ARBITRARY_ID).append("list", expextedDbl);
     assertEquals("applied", expected, actual);
   }
 
@@ -80,7 +84,7 @@ public class FongoDBCollectionTest {
   @Test
   public void applyNestedProjectionsInclusionsOnly() {
       final DBObject obj = new BasicDBObjectBuilder()
-          .add("_id", "_id")
+          .add("_id", ARBITRARY_ID)
           .add("foo", 123)
           .push("a")
               .push("b")
@@ -92,7 +96,7 @@ public class FongoDBCollectionTest {
     final DBObject actual = collection.applyProjections(obj, new BasicDBObject().append("a.b.c", 1)
                                                                                  .append("a.b.d", 1));
     final DBObject expected =  new BasicDBObjectBuilder()
-                        .add("_id", "_id")
+                        .add("_id", ARBITRARY_ID)
                         .push("a")
                             .push("b")
                                 .append("c", 50)
@@ -105,7 +109,7 @@ public class FongoDBCollectionTest {
 
   @Test
   public void applyProjectionsInclusionsWithoutId() {
-    BasicDBObject obj = new BasicDBObject().append("_id", "_id").append("a", "a").append("b", "b");
+    BasicDBObject obj = new BasicDBObject().append("_id", ARBITRARY_ID).append("a", "a").append("b", "b");
     DBObject actual = collection.applyProjections(obj, new BasicDBObject().append("_id", 0).append("b", 1));
     BasicDBObject expected = new BasicDBObject().append("b", "b");
 
@@ -114,16 +118,16 @@ public class FongoDBCollectionTest {
 
   @Test
   public void applyProjectionsExclusionsOnly() {
-    BasicDBObject obj = new BasicDBObject().append("_id", "_id").append("a", "a").append("b", "b");
+    BasicDBObject obj = new BasicDBObject().append("_id", ARBITRARY_ID).append("a", "a").append("b", "b");
     DBObject actual = collection.applyProjections(obj, new BasicDBObject().append("b", 0));
-    BasicDBObject expected = new BasicDBObject().append("_id", "_id").append("a", "a");
+    BasicDBObject expected = new BasicDBObject().append("_id", ARBITRARY_ID).append("a", "a");
 
     assertEquals("applied", expected, actual);
   }
 
   @Test
   public void applyProjectionsExclusionsWithoutId() {
-    BasicDBObject obj = new BasicDBObject().append("_id", "_id").append("a", "a").append("b", "b");
+    BasicDBObject obj = new BasicDBObject().append("_id", ARBITRARY_ID).append("a", "a").append("b", "b");
     DBObject actual = collection.applyProjections(obj, new BasicDBObject().append("_id", 0).append("b", 0));
     BasicDBObject expected = new BasicDBObject().append("a", "a");
 
@@ -132,7 +136,7 @@ public class FongoDBCollectionTest {
 
   @Test(expected = IllegalArgumentException.class)
   public void applyProjectionsInclusionsAndExclusionsMixedThrowsException() {
-    BasicDBObject obj = new BasicDBObject().append("_id", "_id").append("a", "a").append("b", "b");
+    BasicDBObject obj = new BasicDBObject().append("_id", ARBITRARY_ID).append("a", "a").append("b", "b");
     collection.applyProjections(obj, new BasicDBObject().append("a", 1).append("b", 0));
   }
 
@@ -191,7 +195,7 @@ public class FongoDBCollectionTest {
   @Test
   public void applyProjectionsWithBooleanValues() {
      final DBObject obj = new BasicDBObjectBuilder()
-          .add("_id", "_id")
+          .add("_id", ARBITRARY_ID)
           .add("foo", "oof")
           .add("bar", "rab")
           .add("gone", "fishing")
@@ -200,7 +204,7 @@ public class FongoDBCollectionTest {
     final DBObject actual = collection.applyProjections(obj, new BasicDBObject().append("foo", true)
                                                                                  .append("bar", 1));
     final DBObject expected =  new BasicDBObjectBuilder()
-                        .add("_id", "_id")
+                        .add("_id", ARBITRARY_ID)
                         .add("foo", "oof")
                         .add("bar", "rab")
                         .get();
@@ -238,16 +242,53 @@ public class FongoDBCollectionTest {
   }
 
   @Test
-  public void setResultObjectClass() {
-    final BasicDBObject object = new BasicDBObject().append("_id", "_id")
-                                                     .append("a", "a")
-                                                     .append("b", "b");
+  public void setResultObjectClassForFindAndModify() {
+    final BasicDBObject object = new BasicDBObject()
+        .append("_id", ARBITRARY_ID)
+        .append("a", "a")
+        .append("b", "b");
     collection.insert(object);
     collection.setObjectClass(TestResultObject.class);
-
+    
     final TestResultObject result = (TestResultObject) collection.findAndModify(object, new BasicDBObject());
     final String id = result.getEntityId();
-    assertThat(id).isEqualTo("_id");
+    assertThat(id).isEqualTo(ARBITRARY_ID);
+  }
+  
+  @Test
+  public void setResultObjectClassForFindOne() {
+    final BasicDBObject object = new BasicDBObject()
+        .append("_id", ARBITRARY_ID)
+        .append("a", "a")
+        .append("b", "b");
+    collection.insert(object);
+    collection.setObjectClass(TestResultObject.class);
+    
+    final TestResultObject result = (TestResultObject) collection.findOne(object, new BasicDBObject());
+    final String id = result.getEntityId();
+    assertThat(id).isEqualTo(ARBITRARY_ID);
+  }
+  
+  @Test
+  public void setResultObjectClassFind() {
+    final BasicDBObject object = new BasicDBObject()
+        .append("_id", ARBITRARY_ID)
+        .append("a", "a")
+        .append("b", "b");
+    collection.insert(object);
+    collection.setObjectClass(TestResultObject.class);
+    
+    final DBCursor cursorWithKeys = collection.find(object, new BasicDBObject());
+    final TestResultObject resultWithKeys = (TestResultObject) cursorWithKeys.next();
+    assertThat(resultWithKeys.getEntityId()).isEqualTo(ARBITRARY_ID);
+
+    final DBCursor cursorWithQuery = collection.find(object);
+    final TestResultObject resultWithQuery = (TestResultObject) cursorWithQuery.next();
+    assertThat(resultWithQuery.getEntityId()).isEqualTo(ARBITRARY_ID);
+
+    final DBCursor cursor = collection.find();
+    final TestResultObject result = (TestResultObject) cursor.next();
+    assertThat(result.getEntityId()).isEqualTo(ARBITRARY_ID);
   }
 
   @Test
