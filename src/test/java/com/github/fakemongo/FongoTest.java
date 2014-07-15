@@ -773,8 +773,10 @@ public class FongoTest {
     DBObject query = queryBuilder.get();
 
     DBObject update = BasicDBObjectBuilder.start().push("$inc").append("n.!", 1).append("n.a.b:false", 1).pop().get();
-    collection.update(query, update, true, false);
-
+    final WriteResult result = collection.update(query, update, true, false);
+    assertFalse(result.isUpdateOfExisting());
+    assertTrue(result.getN() == 1);
+    
     DBObject expected = queryBuilder.push("n").append("!", 1).push("a").append("b:false", 1).pop().pop().get();
     assertEquals(expected, collection.findOne());
   }

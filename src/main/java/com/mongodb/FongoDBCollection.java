@@ -244,6 +244,9 @@ public class FongoDBCollection extends DBCollection {
       if (updatedDocuments == 0 && upsert) {
         BasicDBObject newObject = createUpsertObject(q);
         fInsert(updateEngine.doUpdate(newObject, o, q, true), concern);
+        
+        updatedDocuments++;
+        updatedExisting = false;
       }
     }
     return new WriteResult(updateResult(updatedDocuments, updatedExisting), concern);
