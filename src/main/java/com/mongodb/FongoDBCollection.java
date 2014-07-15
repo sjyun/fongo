@@ -1,17 +1,7 @@
 package com.mongodb;
 
-import com.github.fakemongo.FongoException;
-import com.github.fakemongo.impl.ExpressionParser;
-import com.github.fakemongo.impl.Filter;
-import com.github.fakemongo.impl.Tuple2;
-import com.github.fakemongo.impl.UpdateEngine;
-import com.github.fakemongo.impl.Util;
-import com.github.fakemongo.impl.geo.GeoUtil;
-import com.github.fakemongo.impl.geo.LatLong;
-import com.github.fakemongo.impl.index.GeoIndex;
-import com.github.fakemongo.impl.index.IndexAbstract;
-import com.github.fakemongo.impl.index.IndexFactory;
-import com.github.fakemongo.impl.text.TextSearch;
+import static org.bson.util.Assertions.isTrue;
+
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -25,15 +15,28 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
+
 import org.bson.BSON;
 import org.bson.io.BasicOutputBuffer;
 import org.bson.io.OutputBuffer;
 import org.bson.types.Binary;
 import org.bson.types.ObjectId;
-import static org.bson.util.Assertions.isTrue;
 import org.objenesis.ObjenesisStd;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.github.fakemongo.FongoException;
+import com.github.fakemongo.impl.ExpressionParser;
+import com.github.fakemongo.impl.Filter;
+import com.github.fakemongo.impl.Tuple2;
+import com.github.fakemongo.impl.UpdateEngine;
+import com.github.fakemongo.impl.Util;
+import com.github.fakemongo.impl.geo.GeoUtil;
+import com.github.fakemongo.impl.geo.LatLong;
+import com.github.fakemongo.impl.index.GeoIndex;
+import com.github.fakemongo.impl.index.IndexAbstract;
+import com.github.fakemongo.impl.index.IndexFactory;
+import com.github.fakemongo.impl.text.TextSearch;
 
 /**
  * fongo override of com.mongodb.DBCollection
@@ -403,7 +406,7 @@ public class FongoDBCollection extends DBCollection {
   public DBObject findOne(DBObject query, DBObject fields, DBObject orderBy, ReadPreference readPref) {
     QueryOpBuilder queryOpBuilder = new QueryOpBuilder().addQuery(query).addOrderBy(orderBy);
     Iterator<DBObject> resultIterator = __find(queryOpBuilder.get(), fields, 0, 1, -1, 0, readPref, null);
-    return resultIterator.hasNext() ? resultIterator.next() : null;
+    return resultIterator.hasNext() ? replaceWithObjectClass(resultIterator.next()) : null;
   }
 
   /**
@@ -494,7 +497,7 @@ public class FongoDBCollection extends DBCollection {
 
     LOG.debug("found results {}", results);
 
-    return results.iterator();
+    return replaceWithObjectClass(results).iterator();
   }
 
   /**
@@ -602,6 +605,18 @@ public class FongoDBCollection extends DBCollection {
     }
 
     return targetObject;
+  }
+  
+  private List<DBObject> replaceWithObjectClass(List<DBObject> resultObjects) {
+    
+    final List<DBObject> targetObjects = new ArrayList<DBObject>(resultObjects.size());
+    
+    for(final DBObject resultObject : resultObjects)
+    {
+      targetObjects.add(replaceWithObjectClass(resultObject));
+    }
+    
+    return targetObjects;
   }
 
   /**
