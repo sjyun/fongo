@@ -362,8 +362,53 @@ public class FongoAggregateTest {
       result = ((Number) resultAggregate.get("sum"));
     }
 
-    Assertions.assertThat(result).isEqualTo(14.0); // TODO : now it's 14
+    Assertions.assertThat(result).isEqualTo(14);
   }
+
+
+  @Test
+  public void shouldHandleSumOfNumberOfDouble() {
+    DBCollection collection = createTestCollection();
+    DBObject match = new BasicDBObject("$match", new BasicDBObject("myId", new BasicDBObject("$in", Util.list("p0", "p1"))));
+    DBObject group = new BasicDBObject("$group", new BasicDBObject("_id", null).append("sum", new BasicDBObject("$sum", 2.0)));
+
+    // Aggregate
+    AggregationOutput output = collection.aggregate(Arrays.asList(match, group));
+
+    // Assert
+    assertTrue(output.getCommandResult().ok());
+    assertTrue(output.getCommandResult().containsField("result"));
+    Number result = -1;
+    DBObject resultAggregate = (DBObject) ((DBObject) output.getCommandResult().get("result")).get("0");
+    if (resultAggregate != null && resultAggregate.containsField("sum")) {
+      result = ((Number) resultAggregate.get("sum"));
+    }
+    Assertions.assertThat(result).isEqualTo(14.0);
+  }
+
+
+
+  @Test
+  public void shouldHandleSumOfNumberOfLong() {
+    DBCollection collection = createTestCollection();
+    DBObject match = new BasicDBObject("$match", new BasicDBObject("myId", new BasicDBObject("$in", Util.list("p0", "p1"))));
+    DBObject group = new BasicDBObject("$group", new BasicDBObject("_id", null).append("sum", new BasicDBObject("$sum", Integer.MAX_VALUE)));
+
+    // Aggregate
+    AggregationOutput output = collection.aggregate(Arrays.asList(match, group));
+
+    // Assert
+    assertTrue(output.getCommandResult().ok());
+    assertTrue(output.getCommandResult().containsField("result"));
+    Number result = -1;
+    DBObject resultAggregate = (DBObject) ((DBObject) output.getCommandResult().get("result")).get("0");
+    if (resultAggregate != null && resultAggregate.containsField("sum")) {
+      result = ((Number) resultAggregate.get("sum"));
+    }
+    Assertions.assertThat(result).isEqualTo(Integer.MAX_VALUE * 7l);
+  }
+
+
 
   // Group with "simple _id"
   @Test
@@ -403,8 +448,8 @@ public class FongoAggregateTest {
 
     List<DBObject> resultAggregate = (List<DBObject>) output.getCommandResult().get("result");
     Assert.assertEquals(Arrays.asList(
-        new BasicDBObject("_id", "p0").append("count", 12.0),
-        new BasicDBObject("_id", "p1").append("count", 2.0)), resultAggregate);
+        new BasicDBObject("_id", "p0").append("count", 12),
+        new BasicDBObject("_id", "p1").append("count", 2)), resultAggregate);
   }
 
   // see http://stackoverflow.com/questions/8161444/mongodb-getting-list-of-values-by-using-group

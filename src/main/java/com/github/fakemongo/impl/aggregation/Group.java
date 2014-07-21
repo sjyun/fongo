@@ -283,12 +283,34 @@ public class Group extends PipelineKeyword {
     } else {
       Number iValue = (Number) value;
       // TODO : handle null value ?
-      result = coll.count() * iValue.doubleValue();
+      if (iValue instanceof Float || iValue instanceof Double) {
+        result = coll.count() * iValue.doubleValue();
+      } else if (iValue instanceof Byte || iValue instanceof Short || iValue instanceof Integer) {
+        result = intOrLong(coll.count() * iValue.longValue());
+      } else if (iValue instanceof Long) {
+        result = coll.count() * iValue.longValue();
+      } else {
+        LOG.warn("type of field not handled for sum: {}", result.getClass());
+      }
     }
     return result;
   }
 
   /**
+   * return Integer if the parameter could be safely cast to an integer
+   *
+   * @param number
+   * @return
+   */
+  private static Number intOrLong(long number) {
+    if (number <= Integer.MAX_VALUE && number >= Integer.MIN_VALUE) {
+      return (int) number;
+    } else {
+      return number;
+    }
+  }
+
+    /**
    * {@see http://docs.mongodb.org/manual/reference/aggregation/avg/#grp._S_avg}
    *
    * @param coll  grouped collection to make the avg
