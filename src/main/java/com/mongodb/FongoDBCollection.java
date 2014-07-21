@@ -1,7 +1,17 @@
 package com.mongodb;
 
-import static org.bson.util.Assertions.isTrue;
-
+import com.github.fakemongo.FongoException;
+import com.github.fakemongo.impl.ExpressionParser;
+import com.github.fakemongo.impl.Filter;
+import com.github.fakemongo.impl.Tuple2;
+import com.github.fakemongo.impl.UpdateEngine;
+import com.github.fakemongo.impl.Util;
+import com.github.fakemongo.impl.geo.GeoUtil;
+import com.github.fakemongo.impl.geo.LatLong;
+import com.github.fakemongo.impl.index.GeoIndex;
+import com.github.fakemongo.impl.index.IndexAbstract;
+import com.github.fakemongo.impl.index.IndexFactory;
+import com.github.fakemongo.impl.text.TextSearch;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -15,28 +25,15 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
-
 import org.bson.BSON;
 import org.bson.io.BasicOutputBuffer;
 import org.bson.io.OutputBuffer;
 import org.bson.types.Binary;
 import org.bson.types.ObjectId;
+import static org.bson.util.Assertions.isTrue;
 import org.objenesis.ObjenesisStd;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.github.fakemongo.FongoException;
-import com.github.fakemongo.impl.ExpressionParser;
-import com.github.fakemongo.impl.Filter;
-import com.github.fakemongo.impl.Tuple2;
-import com.github.fakemongo.impl.UpdateEngine;
-import com.github.fakemongo.impl.Util;
-import com.github.fakemongo.impl.geo.GeoUtil;
-import com.github.fakemongo.impl.geo.LatLong;
-import com.github.fakemongo.impl.index.GeoIndex;
-import com.github.fakemongo.impl.index.IndexAbstract;
-import com.github.fakemongo.impl.index.IndexFactory;
-import com.github.fakemongo.impl.text.TextSearch;
 
 /**
  * fongo override of com.mongodb.DBCollection
@@ -48,6 +45,8 @@ public class FongoDBCollection extends DBCollection {
   private final static Logger LOG = LoggerFactory.getLogger(FongoDBCollection.class);
 
   public static final String ID_KEY = "_id";
+
+  public static final String FONGO_SPECIAL_ORDER_BY = "$$$$$FONGO_ORDER_BY$$$$$";
 
   private static final String ID_NAME_INDEX = "_id_";
   private final FongoDB fongoDb;
@@ -247,7 +246,7 @@ public class FongoDBCollection extends DBCollection {
       if (updatedDocuments == 0 && upsert) {
         BasicDBObject newObject = createUpsertObject(q);
         fInsert(updateEngine.doUpdate(newObject, o, q, true), concern);
-        
+
         updatedDocuments++;
         updatedExisting = false;
       }
@@ -482,6 +481,7 @@ public class FongoDBCollection extends DBCollection {
           if (nonIdCollection) {
             clonedDbo.removeField(ID_KEY);
           }
+          clonedDbo.removeField(FONGO_SPECIAL_ORDER_BY);
           for (String key : clonedDbo.keySet()) {
             Object value = clonedDbo.get(key);
             if (value instanceof DBRef && ((DBRef) value).getDB() == null) {
@@ -591,9 +591,8 @@ public class FongoDBCollection extends DBCollection {
   /**
    * Replaces the result {@link DBObject} with the configured object class of this collection. If the object class is
    * <code>null</code> the result object itself will be returned.
-   * 
-   * @param resultObject
-   *          the original result value from the command.
+   *
+   * @param resultObject the original result value from the command.
    * @return replaced {@link DBObject} if necessary, or resultObject.
    */
   private DBObject replaceWithObjectClass(DBObject resultObject) {
@@ -609,21 +608,21 @@ public class FongoDBCollection extends DBCollection {
 
     return targetObject;
   }
-  
+
   private List<DBObject> replaceWithObjectClass(List<DBObject> resultObjects) {
-    
+
     final List<DBObject> targetObjects = new ArrayList<DBObject>(resultObjects.size());
-    
-    for(final DBObject resultObject : resultObjects)
-    {
+
+    for (final DBObject resultObject : resultObjects) {
       targetObjects.add(replaceWithObjectClass(resultObject));
     }
-    
+
     return targetObjects;
   }
 
   /**
    * Returns a new instance of the object class.
+   *
    * @return a new instance of the object class.
    */
   private DBObject instantiateObjectClassInstance() {
@@ -801,6 +800,8 @@ public class FongoDBCollection extends DBCollection {
         });
         objectsToSearch = Arrays.asList(objectsToSort);
       }
+    } else {
+      objectsToSearch = sortObjects(new BasicDBObject(FONGO_SPECIAL_ORDER_BY, 1), objects);
     }
     if (LOG.isDebugEnabled()) {
       LOG.debug("sorted objectsToSearch " + objectsToSearch);

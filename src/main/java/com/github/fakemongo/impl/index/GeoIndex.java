@@ -6,6 +6,7 @@ import com.github.fakemongo.impl.Util;
 import com.github.fakemongo.impl.geo.LatLong;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
+import com.mongodb.FongoDBCollection;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -95,8 +96,6 @@ public class GeoIndex extends IndexAbstract<GeoUtil.GeoDBObject> {
               for (LatLong coordinate : coordinates) {
                 geoNearResults(values, filterValue, coordinate, resultSet, spherical);
               }
-//              copyMap.remove(entry.getKey());
-//              break;
             }
           }
           // Add more hash if limit is not reached.
@@ -152,6 +151,7 @@ public class GeoIndex extends IndexAbstract<GeoUtil.GeoDBObject> {
       // Test against the query filter.
       if (geoDBObject.getLatLong() != null && filterValue.apply(geoDBObject)) {
         double radians = GeoUtil.distanceInRadians(geoDBObject.getLatLong(), point, spherical);
+        geoDBObject.removeField(FongoDBCollection.FONGO_SPECIAL_ORDER_BY);
         result.add(new BasicDBObject("dis", radians).append("obj", Util.clone(geoDBObject)));
       }
     }

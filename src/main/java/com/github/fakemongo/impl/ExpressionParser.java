@@ -1,5 +1,17 @@
 package com.github.fakemongo.impl;
 
+import com.github.fakemongo.FongoException;
+import com.github.fakemongo.impl.geo.GeoUtil;
+import com.github.fakemongo.impl.geo.LatLong;
+import com.mongodb.BasicDBList;
+import com.mongodb.BasicDBObject;
+import com.mongodb.DBObject;
+import com.mongodb.DBRefBase;
+import com.mongodb.FongoDBCollection;
+import com.mongodb.LazyDBObject;
+import com.mongodb.QueryOperators;
+import com.mongodb.util.JSON;
+import com.vividsolutions.jts.geom.Geometry;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -14,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
-
 import org.bson.LazyBSONList;
 import org.bson.types.Binary;
 import org.bson.types.MaxKey;
@@ -24,18 +35,6 @@ import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.github.fakemongo.FongoException;
-import com.github.fakemongo.impl.geo.GeoUtil;
-import com.github.fakemongo.impl.geo.LatLong;
-import com.mongodb.BasicDBList;
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBObject;
-import com.mongodb.DBRefBase;
-import com.mongodb.LazyDBObject;
-import com.mongodb.QueryOperators;
-import com.mongodb.util.JSON;
-import com.vividsolutions.jts.geom.Geometry;
 
 @SuppressWarnings("javadoc")
 public class ExpressionParser {
@@ -475,17 +474,17 @@ public class ExpressionParser {
               }
             }
 
-			private boolean isEqual(Object obj1, Object obj2) {
-				if (obj1 == null) {
-					if (obj2 == null) {
-						return true;
-					}
-					
-					return false;
-				}
-				
-				return obj1.equals(obj2);
-			}
+            private boolean isEqual(Object obj1, Object obj2) {
+              if (obj1 == null) {
+                if (obj2 == null) {
+                  return true;
+                }
+
+                return false;
+              }
+
+              return obj1.equals(obj2);
+            }
           };
         }
       },
@@ -947,7 +946,7 @@ public class ExpressionParser {
   private int compareDBObjects(DBObject db0, DBObject db1) {
     Iterator<String> i0 = db0.keySet().iterator();
     Iterator<String> i1 = db1.keySet().iterator();
-    
+
     while (i0.hasNext() || i1.hasNext()) {
       String key0 = i0.hasNext() ? i0.next() : null;
       String key1 = i1.hasNext() ? i1.next() : null;
@@ -956,16 +955,16 @@ public class ExpressionParser {
       if (keyComparison != 0) {
         return keyComparison;
       }
-      
+
       Object value0 = key0 == null ? null : db0.get(key0);
       Object value1 = key1 == null ? null : db1.get(key1);
-      
+
       int valueComparison = compareObjects(value0, value1);
       if (valueComparison != 0) {
         return valueComparison;
       }
     }
-    
+
     return 0;
   }
 
@@ -1023,33 +1022,23 @@ public class ExpressionParser {
   public Filter createNearFilter(final List<String> path, final List<LatLong> coordinates, final Number maxDistance, final boolean sphere) {
     return new Filter() {
       final LatLong coordinate = coordinates.get(0); // TODO(twillouer) try to get all coordinates.
-      int limit = 100;
 
       @Override
       public boolean apply(DBObject o) {
-        if (limit <= 0) {
-          return false;
-        }
         boolean result = false;
 
         List<LatLong> storedOption = GeoUtil.latLon(path, o);
         if (!storedOption.isEmpty()) {
-          if (maxDistance == null) {
-            result = true;
-          } else {
-            for (LatLong point : storedOption) {
+          for (LatLong point : storedOption) {
 
-              double distance = GeoUtil.distanceInRadians(point, coordinate, sphere);
-              LOG.debug("distance : {}", distance);
-              result = distance < maxDistance.doubleValue();
-              if (result) {
-                break;
-              }
+            double distance = GeoUtil.distanceInRadians(point, coordinate, sphere);
+            LOG.debug("distance : {}", distance);
+            result = maxDistance == null || distance < maxDistance.doubleValue();
+            o.put(FongoDBCollection.FONGO_SPECIAL_ORDER_BY, distance);
+            if (result) {
+              break;
             }
           }
-        }
-        if (result) {
-          limit--;
         }
         return result;
       }
