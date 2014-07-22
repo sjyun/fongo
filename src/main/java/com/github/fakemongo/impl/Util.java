@@ -280,4 +280,11 @@ public final class Util {
     }
     return newobj;
   }
+
+  /**
+   * @return true if the projection should not be applied at all
+   */
+  public static boolean isProjectionEmpty(DBObject projection) {
+    return projection == null || projection.keySet().isEmpty();
+  }
 }
