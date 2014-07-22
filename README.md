@@ -6,6 +6,7 @@ Fongo is an in-memory java implementation of MongoDB. It intercepts calls to the
 finds, updates, inserts, removes and other methods. The primary use is for lightweight unit testing where you
 don't want to spin up a `mongod` process.
 
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.fakemongo/fongo/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.github.fakemongo/fongo/) ![License Apache2](https://go-shields.herokuapp.com/license-apache2-blue.png)
 
 ## Usage
 Add dependency to your project:
@@ -14,7 +15,7 @@ Add dependency to your project:
 <dependency>
   <groupId>com.github.fakemongo</groupId>
   <artifactId>fongo</artifactId>
-  <version>1.5.4</version>
+  <version>1.5.5</version>
   <scope>test</scope>
 </dependency>
 ```
