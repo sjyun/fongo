@@ -493,8 +493,7 @@ public class FongoDBCollection extends DBCollection {
       }
     }
 
-    if (fields != null && !fields.keySet().isEmpty()) {
-      LOG.debug("applying projections {}", fields);
+    if (!Util.isProjectionEmpty(fields)) {
       results = applyProjections(results, fields);
     }
 
@@ -640,7 +639,8 @@ public class FongoDBCollection extends DBCollection {
    * TODO: Support for projection operators: http://docs.mongodb.org/manual/reference/operator/projection/
    */
   public static DBObject applyProjections(DBObject result, DBObject projectionObject) {
-    if (projectionObject == null) {
+    LOG.debug("applying projections {}", projectionObject);
+    if (Util.isProjectionEmpty(projectionObject)) {
       return Util.cloneIdFirst(result);
     }
 

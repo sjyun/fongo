@@ -836,6 +836,18 @@ public class FongoTest {
     assertEquals(new BasicDBObject("_id", 1).append("a", 2).append("b", new BasicDBObject("c", 2)), collection.findOne());
   }
 
+  @Test
+  public void testFindAndModifyWithEmptyObjectProjection() {
+    final DBCollection collection = newCollection();
+    collection.insert(new BasicDBObject("_id", 1).append("a", 1).append("b", new BasicDBObject("c", 1)));
+
+    final BasicDBObject query = new BasicDBObject("_id", 1);
+    final BasicDBObject update = new BasicDBObject("$unset", new BasicDBObject("b", ""));
+    final DBObject result = collection.findAndModify(query, new BasicDBObject(), null, false, update, true, false);
+
+    assertEquals(new BasicDBObject("_id", 1).append("a", 1), result);
+  }
+
   /**
    * See issue #35
    */
