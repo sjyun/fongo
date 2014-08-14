@@ -2191,6 +2191,59 @@ public class FongoTest {
     Assertions.assertThat(collection.findOne(new BasicDBObject("_id", objectId.toString()))).isNull();
   }
 
+    @Test
+    public void should_max_int_insert() {
+        long now = new Date().getTime();
+        // Given
+        DBCollection collection = newCollection();
+        collection.insert(new BasicDBObject("_id", 1)
+                .append("a", 100)
+                .append("b", 200)
+
+                .append("x", -100.0)
+                .append("y", 200.0)
+
+                .append("later", new Date(now + 1))
+                .append("before", new Date(now - 1))
+        );
+
+        // When
+        collection
+                .update(
+                        new BasicDBObject("_id", 1),
+                        new BasicDBObject("$max", new BasicDBObject()
+                                .append("a", 101)
+                                .append("b", 102)
+                                .append("c", 103)
+
+                                .append("x", 1.0)
+                                .append("y", 2.0)
+                                .append("z", -1.0)
+
+                                .append("later", new Date(now))
+                                .append("before", new Date(now))
+                                .append("new", new Date(now))
+                        ),
+                        true,
+                        true
+                );
+
+        // Then
+        DBObject result = collection.findOne();
+        assertEquals(new BasicDBObject("_id", 1)
+                .append("a", 101)
+                .append("b", 200)
+                .append("c", 103)
+
+                .append("x", 1.0)
+                .append("y", 200.0)
+                .append("z", -1.0)
+
+                .append("later", new Date(now + 1))
+                .append("before", new Date(now))
+                .append("new", new Date(now))
+                , result);
+    }
   @Test
   public void should_setOnInsert_insert_value() {
     // Given
