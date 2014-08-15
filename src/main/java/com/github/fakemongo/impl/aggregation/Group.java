@@ -310,7 +310,7 @@ public class Group extends PipelineKeyword {
     }
   }
 
-    /**
+  /**
    * {@see http://docs.mongodb.org/manual/reference/aggregation/avg/#grp._S_avg}
    *
    * @param coll  grouped collection to make the avg
@@ -347,7 +347,7 @@ public class Group extends PipelineKeyword {
   /**
    * Return the first or the last of a collection.
    *
-   * @param coll collection who contains data.
+   * @param coll  collection who contains data.
    * @param value fieldname for searching.
    * @return
    */

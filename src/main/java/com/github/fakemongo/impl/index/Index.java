@@ -1,16 +1,15 @@
 package com.github.fakemongo.impl.index;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-
 import com.github.fakemongo.impl.ExpressionParser;
 import com.github.fakemongo.impl.Util;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 import com.mongodb.FongoDBCollection;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * An index for the MongoDB.
@@ -33,14 +32,13 @@ public class Index extends IndexAbstract<DBObject> {
 
   @Override
   public DBObject embedded(DBObject object) {
-		return expandObject(object); // Important : do not clone, indexes share objects between them.
+    return expandObject(object); // Important : do not clone, indexes share objects between them.
   }
 
   /**
    * Expand all flattened {@link DBObject}s to match the current MongoDB behaviour.
-   * 
-   * @param object
-   *          The {@link DBObject} to insert.
+   *
+   * @param object The {@link DBObject} to insert.
    * @return The expanded {@link DBObject}.
    */
   private DBObject expandObject(final DBObject object) {

@@ -26,7 +26,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Emulates (mongo 2.6.rc-1) Text Search by sending multiple finds with regex
- *
+ * <p/>
  * Can be used for:
  * db runCommand search:
  * http://docs.mongodb.org/manual/tutorial/search-for-text/
@@ -34,13 +34,13 @@ import org.slf4j.LoggerFactory;
  * http://docs.mongodb.org/master/reference/operator/query/text/
  * aggregation text search:
  * http://docs.mongodb.org/master/tutorial/text-search-in-aggregation/
- *
+ * <p/>
  * Requires a text index on a single field http://docs.mongodb.org/manual/core/index-text/
- *
+ * <p/>
  * Supports search.
  * Supports limit.
  * Supports project.
- *
+ * <p/>
  * Not quite correct: actually works better (finds more results) than mongo's (2.6.rc-1) text Search.
  * Does not support languages and stop words.
  * Does not support filter yet.
@@ -61,7 +61,7 @@ public class TextSearch {
   private final DBCollection collection;
   private final Set<String> textIndexFields;
 
-  private final Map<DBObject,Double> results = new LinkedHashMap<DBObject, Double>();
+  private final Map<DBObject, Double> results = new LinkedHashMap<DBObject, Double>();
 
   private String searchString;
   private DBObject project;
@@ -89,7 +89,7 @@ public class TextSearch {
   }
 
   private Set<String> searchTextIndexFields(DBCollection collection, boolean unique) {
-    Collection<IndexAbstract> indexes = ((FongoDBCollection)collection) .getIndexes();
+    Collection<IndexAbstract> indexes = ((FongoDBCollection) collection).getIndexes();
     IndexAbstract result = null;
     Set<String> indexFields = new TreeSet<String>();
     for (IndexAbstract index : indexes) {
@@ -98,7 +98,7 @@ public class TextSearch {
         if (keys.get(field).equals("text")) {
           if (result != null && unique) {
             ((FongoDB) collection.getDB())
-                    .notOkErrorResult(-5, "more than one text index, not sure which to run text search on").throwOnError();
+                .notOkErrorResult(-5, "more than one text index, not sure which to run text search on").throwOnError();
           }
           result = index;
           indexFields.add(field);
@@ -117,8 +117,8 @@ public class TextSearch {
   private List<String> getWordsByRegex(String string, String regex) {
     List<String> result = new ArrayList();
     Matcher matcherSW
-            = Pattern.compile(regex)
-            .matcher(searchString);
+        = Pattern.compile(regex)
+        .matcher(searchString);
     while (matcherSW.find()) {
       String matchPhrase = matcherSW.group(1);
       result.add(matchPhrase);
@@ -135,13 +135,13 @@ public class TextSearch {
       String key = (String) textKeyIterator.next();
       for (int i = 0; i < wordsCount; i++) {
         ors.add(new BasicDBObject(key,
-                java.util.regex.Pattern.compile("\\b" + stringsToSearch.get(i) + "\\b", Pattern.CASE_INSENSITIVE)));
+            java.util.regex.Pattern.compile("\\b" + stringsToSearch.get(i) + "\\b", Pattern.CASE_INSENSITIVE)));
       }
     }
     findQuery = new BasicDBObject("$or", ors);
 
     DBCursor searchResultCursor = collection.find(findQuery, project);
-    
+
     List<DBObject> result = new ArrayList<DBObject>();
 
     while (searchResultCursor.hasNext()) {
@@ -154,14 +154,14 @@ public class TextSearch {
   private BasicDBList sortByScoreAndLimit(Map mapToSotr, int limit) {
     List<Map.Entry> sortedRes = new ArrayList<Map.Entry>(mapToSotr.entrySet());
     Collections.sort(sortedRes,
-            new Comparator() {
-              @Override
-              public int compare(Object o1, Object o2) {
-                Map.Entry e1 = (Map.Entry) o1;
-                Map.Entry e2 = (Map.Entry) o2;
-                return ((Comparable) e2.getValue()).compareTo(e1.getValue());
-              }
-            });
+        new Comparator() {
+          @Override
+          public int compare(Object o1, Object o2) {
+            Map.Entry e1 = (Map.Entry) o1;
+            Map.Entry e2 = (Map.Entry) o2;
+            return ((Comparable) e2.getValue()).compareTo(e1.getValue());
+          }
+        });
 
     BasicDBList res = new BasicDBList();
     int till = 0;
@@ -196,7 +196,7 @@ public class TextSearch {
     res.put("results", results);
     //It's fake data just for fields match
     res.put("stats",
-            new BasicDBObject("nscannedObjects", nscannedObjects)
+        new BasicDBObject("nscannedObjects", nscannedObjects)
             .append("nscanned", nscanned)
             .append("n", (long) results.size())
             .append("timeMicros", 1)

@@ -1,11 +1,9 @@
 package com.github.fakemongo.impl.aggregation;
 
-import java.util.List;
-
-import org.bson.util.annotations.ThreadSafe;
-
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
+import java.util.List;
+import org.bson.util.annotations.ThreadSafe;
 
 /**
  * User: william

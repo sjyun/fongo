@@ -1,15 +1,13 @@
 package com.github.fakemongo.impl.aggregation;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.bson.util.annotations.ThreadSafe;
 import com.github.fakemongo.impl.Util;
-
 import com.mongodb.BasicDBList;
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
 import com.mongodb.MongoException;
+import java.util.ArrayList;
+import java.util.List;
+import org.bson.util.annotations.ThreadSafe;
 
 /**
  * User: william

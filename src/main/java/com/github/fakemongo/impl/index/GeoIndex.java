@@ -1,8 +1,8 @@
 package com.github.fakemongo.impl.index;
 
 import com.github.fakemongo.impl.Filter;
-import com.github.fakemongo.impl.geo.GeoUtil;
 import com.github.fakemongo.impl.Util;
+import com.github.fakemongo.impl.geo.GeoUtil;
 import com.github.fakemongo.impl.geo.LatLong;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;

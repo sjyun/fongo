@@ -5,11 +5,12 @@ public class Tuple2<A, B> {
 
   public final A _1;
   public final B _2;
-  
+
   public Tuple2(A _1, B _2) {
     this._1 = _1;
     this._2 = _2;
   }
+
   @Override
   public int hashCode() {
     final int prime = 31;
@@ -18,6 +19,7 @@ public class Tuple2<A, B> {
     result = prime * result + ((_2 == null) ? 0 : _2.hashCode());
     return result;
   }
+
   @Override
   public boolean equals(Object obj) {
     if (this == obj)
@@ -39,9 +41,10 @@ public class Tuple2<A, B> {
       return false;
     return true;
   }
+
   @Override
   public String toString() {
     return "Tuple2(" + _1 + ", " + _2 + ")";
   }
-  
+
 }

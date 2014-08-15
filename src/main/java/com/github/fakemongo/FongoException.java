@@ -2,8 +2,8 @@ package com.github.fakemongo;
 
 /**
  * Internal fongo exception
- * @author jon
  *
+ * @author jon
  */
 public class FongoException extends RuntimeException {
   private static final long serialVersionUID = 1L;
