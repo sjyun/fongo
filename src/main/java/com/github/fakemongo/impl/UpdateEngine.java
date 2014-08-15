@@ -4,14 +4,9 @@ import com.github.fakemongo.FongoException;
 import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+
+import java.util.*;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -161,7 +156,23 @@ public class UpdateEngine {
     }
   }
 
-  BasicDBList asDbList(Object... objects) {
+  Number genericMax(Number left, Number right) {
+     if (left instanceof Float || left instanceof Double || right instanceof Float || right instanceof Double) {
+        return Math.max(left.doubleValue(), right.doubleValue());
+     } else if  (left instanceof Integer) {
+        return Math.max(left.intValue(), right.intValue());
+     } else {
+        return Math.max(left.longValue(), right.intValue());
+     }
+  }
+
+  Date genericMax(Date left, Date right) {
+    if (left == null) { return right; }
+    if (right == null) { return left; }
+    return left.after(right) ? left : right;
+  }
+  
+  BasicDBList asDbList(Object ... objects){
     BasicDBList dbList = new BasicDBList();
     Collections.addAll(dbList, objects);
     return dbList;
@@ -177,10 +188,36 @@ public class UpdateEngine {
       new BasicUpdate("$setOnInsert", true) {
         @Override
         void mergeAction(String subKey, DBObject subObject, Object object, DBObject objOriginal, boolean isCreated) {
-          if (isCreated) {
-            subObject.put(subKey, object);
-          }
+            if (isCreated) {
+                subObject.put(subKey, object);
+            }
         }
+      },
+      new BasicUpdate("$max", true) {
+          @Override
+          void mergeAction(String subKey, DBObject subObject, Object object, DBObject objOriginal, boolean isCreated) {
+              if (object instanceof Number) {
+                  Number updateNumber = expressionParser.typecast(command + " value", object, Number.class);
+                  Object oldValue = subObject.get(subKey);
+                  if (oldValue == null) {
+                      subObject.put(subKey, updateNumber);
+                  } else {
+                      Number oldNumber = expressionParser.typecast(subKey + " value", oldValue, Number.class);
+                      subObject.put(subKey, genericMax(oldNumber, updateNumber));
+                  }
+              } else if (object instanceof Date) {
+                  Date updateNumber = expressionParser.typecast(command + " value", object, Date.class);
+                  Object oldValue = subObject.get(subKey);
+                  if (oldValue == null) {
+                      subObject.put(subKey, updateNumber);
+                  } else {
+                      Date oldNumber = expressionParser.typecast(subKey + " value", oldValue, Date.class);
+                      subObject.put(subKey, genericMax(oldNumber, updateNumber));
+                  }
+              } else {
+                  throw new FongoException(subKey + " expected to be of type Date/Number but is " + (object != null ? object.getClass() : "null") + " toString:" + object);
+              }
+          }
       },
       new BasicUpdate("$inc", true) {
         @Override
