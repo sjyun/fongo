@@ -321,7 +321,7 @@ public class FongoTest {
 
     DBObject textSearchResult = collection.getDB()
         .command(new BasicDBObject(collection.getName(), new BasicDBObject("text", textSearchCommand)));
-    DBObject expected = new BasicDBObject("serverUsed", "0.0.0.0:27017").append("ok", 1.0);
+    DBObject expected = new BasicDBObject("serverUsed", "localhost:27017").append("ok", 1.0);
     expected.put("results", JSON.parse("[ "
             + "{ \"score\" : 0.75 , "
             + "\"obj\" : { \"_id\" : 1 , \"textField\" : \"aaa bbb\"}}]"
