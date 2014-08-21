@@ -21,6 +21,8 @@ import com.mongodb.QueryBuilder;
 import com.mongodb.WriteConcern;
 import com.mongodb.WriteResult;
 import com.mongodb.util.JSON;
+
+import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -321,7 +323,9 @@ public class FongoTest {
 
     DBObject textSearchResult = collection.getDB()
         .command(new BasicDBObject(collection.getName(), new BasicDBObject("text", textSearchCommand)));
-    DBObject expected = new BasicDBObject("serverUsed", "localhost:27017").append("ok", 1.0);
+    InetSocketAddress address = new InetSocketAddress("localhost", 27017);
+    String host = address.getHostName() + ":" + address.getPort();
+    DBObject expected = new BasicDBObject("serverUsed", host).append("ok", 1.0);
     expected.put("results", JSON.parse("[ "
             + "{ \"score\" : 0.75 , "
             + "\"obj\" : { \"_id\" : 1 , \"textField\" : \"aaa bbb\"}}]"
