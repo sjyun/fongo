@@ -4,22 +4,7 @@ import ch.qos.logback.classic.Level;
 import com.github.fakemongo.impl.ExpressionParser;
 import com.github.fakemongo.impl.Util;
 import com.github.fakemongo.junit.FongoRule;
-import com.mongodb.AggregationOutput;
-import com.mongodb.BasicDBList;
-import com.mongodb.BasicDBObject;
-import com.mongodb.BasicDBObjectBuilder;
-import com.mongodb.CommandResult;
-import com.mongodb.DB;
-import com.mongodb.DBCollection;
-import com.mongodb.DBCursor;
-import com.mongodb.DBObject;
-import com.mongodb.DBRef;
-import com.mongodb.DuplicateKeyException;
-import com.mongodb.FongoDBCollection;
-import com.mongodb.MongoException;
-import com.mongodb.QueryBuilder;
-import com.mongodb.WriteConcern;
-import com.mongodb.WriteResult;
+import com.mongodb.*;
 import com.mongodb.util.JSON;
 
 import java.net.InetSocketAddress;
@@ -323,8 +308,8 @@ public class FongoTest {
 
     DBObject textSearchResult = collection.getDB()
         .command(new BasicDBObject(collection.getName(), new BasicDBObject("text", textSearchCommand)));
-    InetSocketAddress address = new InetSocketAddress("localhost", 27017);
-    String host = address.getHostName() + ":" + address.getPort();
+    ServerAddress serverAddress = new ServerAddress(new InetSocketAddress(ServerAddress.defaultHost(), ServerAddress.defaultPort()));
+    String host = serverAddress.getHost() + ":" + serverAddress.getPort();
     DBObject expected = new BasicDBObject("serverUsed", host).append("ok", 1.0);
     expected.put("results", JSON.parse("[ "
             + "{ \"score\" : 0.75 , "
