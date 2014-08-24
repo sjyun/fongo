@@ -44,7 +44,7 @@ public class Fongo {
    */
   public Fongo(String name) {
     this.name = name;
-    this.serverAddress = new ServerAddress(new InetSocketAddress(ServerAddress.defaultPort()));
+    this.serverAddress = new ServerAddress(new InetSocketAddress(ServerAddress.defaultHost(), ServerAddress.defaultPort()));
     this.mongo = createMongo();
   }
 
