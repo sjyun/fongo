@@ -4,9 +4,24 @@ import ch.qos.logback.classic.Level;
 import com.github.fakemongo.impl.ExpressionParser;
 import com.github.fakemongo.impl.Util;
 import com.github.fakemongo.junit.FongoRule;
-import com.mongodb.*;
+import com.mongodb.AggregationOutput;
+import com.mongodb.BasicDBList;
+import com.mongodb.BasicDBObject;
+import com.mongodb.BasicDBObjectBuilder;
+import com.mongodb.CommandResult;
+import com.mongodb.DB;
+import com.mongodb.DBCollection;
+import com.mongodb.DBCursor;
+import com.mongodb.DBObject;
+import com.mongodb.DBRef;
+import com.mongodb.DuplicateKeyException;
+import com.mongodb.FongoDBCollection;
+import com.mongodb.MongoException;
+import com.mongodb.QueryBuilder;
+import com.mongodb.ServerAddress;
+import com.mongodb.WriteConcern;
+import com.mongodb.WriteResult;
 import com.mongodb.util.JSON;
-
 import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.Collections;
@@ -765,7 +780,7 @@ public class FongoTest {
     final WriteResult result = collection.update(query, update, true, false);
     assertFalse(result.isUpdateOfExisting());
     assertTrue(result.getN() == 1);
-    
+
     DBObject expected = queryBuilder.push("n").append("!", 1).push("a").append("b:false", 1).pop().pop().get();
     assertEquals(expected, collection.findOne());
   }
@@ -2180,59 +2195,60 @@ public class FongoTest {
     Assertions.assertThat(collection.findOne(new BasicDBObject("_id", objectId.toString()))).isNull();
   }
 
-    @Test
-    public void should_max_int_insert() {
-        long now = new Date().getTime();
-        // Given
-        DBCollection collection = newCollection();
-        collection.insert(new BasicDBObject("_id", 1)
-                .append("a", 100)
-                .append("b", 200)
+  @Test
+  public void should_max_int_insert() {
+    long now = new Date().getTime();
+    // Given
+    DBCollection collection = newCollection();
+    collection.insert(new BasicDBObject("_id", 1)
+            .append("a", 100)
+            .append("b", 200)
 
-                .append("x", -100.0)
-                .append("y", 200.0)
+            .append("x", -100.0)
+            .append("y", 200.0)
 
-                .append("later", new Date(now + 1))
-                .append("before", new Date(now - 1))
-        );
+            .append("later", new Date(now + 1))
+            .append("before", new Date(now - 1))
+    );
 
-        // When
-        collection
-                .update(
-                        new BasicDBObject("_id", 1),
-                        new BasicDBObject("$max", new BasicDBObject()
-                                .append("a", 101)
-                                .append("b", 102)
-                                .append("c", 103)
-
-                                .append("x", 1.0)
-                                .append("y", 2.0)
-                                .append("z", -1.0)
-
-                                .append("later", new Date(now))
-                                .append("before", new Date(now))
-                                .append("new", new Date(now))
-                        ),
-                        true,
-                        true
-                );
-
-        // Then
-        DBObject result = collection.findOne();
-        assertEquals(new BasicDBObject("_id", 1)
+    // When
+    collection
+        .update(
+            new BasicDBObject("_id", 1),
+            new BasicDBObject("$max", new BasicDBObject()
                 .append("a", 101)
-                .append("b", 200)
+                .append("b", 102)
                 .append("c", 103)
 
                 .append("x", 1.0)
-                .append("y", 200.0)
+                .append("y", 2.0)
                 .append("z", -1.0)
 
-                .append("later", new Date(now + 1))
+                .append("later", new Date(now))
                 .append("before", new Date(now))
                 .append("new", new Date(now))
-                , result);
-    }
+            ),
+            true,
+            true
+        );
+
+    // Then
+    DBObject result = collection.findOne();
+    assertEquals(new BasicDBObject("_id", 1)
+        .append("a", 101)
+        .append("b", 200)
+        .append("c", 103)
+
+        .append("x", 1.0)
+        .append("y", 200.0)
+        .append("z", -1.0)
+
+        .append("later", new Date(now + 1))
+        .append("before", new Date(now))
+        .append("new", new Date(now))
+        , result);
+  }
+
   @Test
   public void should_setOnInsert_insert_value() {
     // Given
@@ -2395,6 +2411,23 @@ public class FongoTest {
     Assertions.assertThat(collection.findOne(new BasicDBObject("_id", 3))).isEqualTo(new BasicDBObject("_id", 3)
         .append("item", "XYZ")
         .append("price", 50L));
+  }
+
+  // https://github.com/fakemongo/fongo/issues/61
+  @Test
+  public void should_be_able_to_query_array_elements() {
+    // Given
+    DBCollection collection = newCollection();
+    BasicDBList array = new BasicDBList();
+    array.add(0);
+    array.add(1);
+    collection.insert(new BasicDBObject("_id", 1).append("items", array));
+
+    // When
+    DBObject result = collection.findOne(new BasicDBObject("items", 0));
+
+    // Then
+    Assertions.assertThat(result).isEqualTo(new BasicDBObject("_id", 1).append("items", array));
   }
 
   static class Seq {
