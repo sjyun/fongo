@@ -4,23 +4,7 @@ import ch.qos.logback.classic.Level;
 import com.github.fakemongo.impl.ExpressionParser;
 import com.github.fakemongo.impl.Util;
 import com.github.fakemongo.junit.FongoRule;
-import com.mongodb.AggregationOutput;
-import com.mongodb.BasicDBList;
-import com.mongodb.BasicDBObject;
-import com.mongodb.BasicDBObjectBuilder;
-import com.mongodb.CommandResult;
-import com.mongodb.DB;
-import com.mongodb.DBCollection;
-import com.mongodb.DBCursor;
-import com.mongodb.DBObject;
-import com.mongodb.DBRef;
-import com.mongodb.DuplicateKeyException;
-import com.mongodb.FongoDBCollection;
-import com.mongodb.MongoException;
-import com.mongodb.QueryBuilder;
-import com.mongodb.ServerAddress;
-import com.mongodb.WriteConcern;
-import com.mongodb.WriteResult;
+import com.mongodb.*;
 import com.mongodb.util.JSON;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
@@ -2243,11 +2227,95 @@ public class FongoTest {
         .append("y", 200.0)
         .append("z", -1.0)
 
-        .append("later", new Date(now + 1))
-        .append("before", new Date(now))
-        .append("new", new Date(now))
-        , result);
-  }
+                .append("later", new Date(now + 1))
+                .append("before", new Date(now))
+                .append("new", new Date(now))
+                , result);
+    }
+
+    @Test
+    public void test_bulk_update() {
+        // Given
+        DBCollection collection = newCollection();
+        collection.insert(new BasicDBObject("_id", 100).append("hi", 1));
+
+        // When
+        collection.update(new BasicDBObject("fongo", "sucks"), new BasicDBObject("not", "upserted"), false, true);
+
+        BulkWriteOperation bulkWriteOperation = collection.initializeOrderedBulkOperation();
+        bulkWriteOperation.find(new BasicDBObject("find", "me")).upsert().update(new BasicDBObject("_id", 1).append("foo", "bar").append("find", "me"));
+        bulkWriteOperation.find(new BasicDBObject("cantFind", "me")).update(new BasicDBObject("not", "upserted"));
+        bulkWriteOperation.find(new BasicDBObject("_id", 100)).update(new BasicDBObject("hi", 2));
+        BulkWriteResult bulkResult = bulkWriteOperation.execute();
+
+        // Then
+        //assertEquals(1, bulkResult.getModifiedCount()); // 1 modified
+        //assertEquals(1, bulkResult.getUpserts().size()); // 1 upsert
+        assertEquals(0, bulkResult.getInsertedCount()); // 0 inserted
+        assertEquals(0, bulkResult.getRemovedCount()); // 0 removed
+
+        DBObject result;
+        result = collection.findOne(new BasicDBObject("find", "me"));
+        assertEquals(new BasicDBObject("_id", 1).append("find", "me").append("foo", "bar"), result);
+        result = collection.findOne(new BasicDBObject("cantFind", "me"));
+        assertNull(result);
+        result = collection.findOne(new BasicDBObject("_id", 100));
+        assertEquals(new BasicDBObject("_id", 100).append("hi", 2), result);
+    }
+
+    @Test
+    public void test_bulk_insert() {
+        // Given
+        DBCollection collection = newCollection();
+
+        // When
+        DBObject o1 = new BasicDBObject("_id", 1).append("a", 1);
+        DBObject o2 = new BasicDBObject("_id", 2).append("b", 2);
+        DBObject o3 = new BasicDBObject("_id", 3).append("c", 3);
+        BulkWriteOperation bulkWriteOperation = collection.initializeOrderedBulkOperation();
+        bulkWriteOperation.insert(o1);
+        bulkWriteOperation.insert(o2);
+        bulkWriteOperation.insert(o3);
+        BulkWriteResult bulkResult = bulkWriteOperation.execute();
+
+        // Then
+        assertEquals(0, bulkResult.getModifiedCount()); // 0 modified
+        assertEquals(0, bulkResult.getUpserts().size()); // 0 upsert
+        assertEquals(3, bulkResult.getInsertedCount()); // 0 inserted
+        assertEquals(0, bulkResult.getRemovedCount()); // 0 removed
+
+        List<DBObject> dbObjects = collection.find().toArray();
+        assertEquals(dbObjects.size(), 3);
+        assertEquals(dbObjects, Lists.newArrayList(o1, o2, o3));
+    }
+
+    @Test
+    public void test_bulk_remove() {
+        // Given
+        DBCollection collection = newCollection();
+        DBObject o1 = new BasicDBObject("_id", 1).append("a", 1);
+        DBObject o2 = new BasicDBObject("_id", 2).append("b", 2);
+        DBObject o3 = new BasicDBObject("_id", 3).append("c", 3);
+        collection.insert(o1, o2, o3);
+
+        // When
+        BulkWriteOperation bulkWriteOperation = collection.initializeOrderedBulkOperation();
+        bulkWriteOperation.find(o1).remove();
+        bulkWriteOperation.find(new BasicDBObject("x", "y")).remove();
+        bulkWriteOperation.find(o3).remove();
+        BulkWriteResult bulkResult = bulkWriteOperation.execute();
+
+        // Then
+        assertEquals(0, bulkResult.getModifiedCount()); // 0 modified
+        assertEquals(0, bulkResult.getUpserts().size()); // 0 upsert
+        assertEquals(0, bulkResult.getInsertedCount()); // 0 inserted
+        assertEquals(2, bulkResult.getRemovedCount()); // 2 removed
+
+        List<DBObject> dbObjects = collection.find().toArray();
+        assertEquals(dbObjects.size(), 1);
+        assertEquals(dbObjects, Lists.newArrayList(o2));
+    }
+
 
   @Test
   public void should_setOnInsert_insert_value() {
