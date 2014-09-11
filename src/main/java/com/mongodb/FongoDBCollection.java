@@ -34,6 +34,7 @@ import static org.bson.util.Assertions.isTrue;
 import org.objenesis.ObjenesisStd;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 /**
  * fongo override of com.mongodb.DBCollection
@@ -915,8 +916,48 @@ public class FongoDBCollection extends DBCollection {
   @Override
   BulkWriteResult executeBulkWriteOperation(boolean ordered, List<WriteRequest> requests, WriteConcern writeConcern, DBEncoder encoder) {
     isTrue("no operations", !requests.isEmpty());
-    // TODO
-    return null;
+      // TODO: unordered
+      List<BulkWriteUpsert> upserts = new ArrayList<BulkWriteUpsert>();
+      int insertedCount = 0;
+      int matchedCount = 0;
+      int removedCount = 0;
+      int modifiedCount = 0;
+      int idx = 0;
+      for (WriteRequest request : requests) {
+          WriteResult wr;
+          switch(request.getType()) {
+              case REPLACE: // fallthrough
+              case UPDATE: {
+                  ModifyRequest r = (ModifyRequest) request;
+                  wr = update(r.getQuery(), r.getUpdateDocument(), r.isUpsert(), r.isMulti(), writeConcern, encoder);
+                  matchedCount += wr.getN();
+                  if (wr.isUpdateOfExisting())  {
+                      upserts.add(new BulkWriteUpsert(idx, wr.getUpsertedId()));
+                  } else {
+                      modifiedCount += wr.getN();
+                  }
+                  break;
+              }
+              case REMOVE: {
+                  RemoveRequest r = (RemoveRequest) request;
+                  wr = remove(r.getQuery(), writeConcern, encoder);
+                  matchedCount += wr.getN();
+                  removedCount += wr.getN();
+                  break;
+              }
+
+              case INSERT: {
+                  InsertRequest r = (InsertRequest) request;
+                  wr = insert(r.getDocument());
+                  insertedCount += wr.getN();
+                  break;
+              }
+              default:
+                  throw new NotImplementedException();
+          }
+          idx++;
+      }
+      return new AcknowledgedBulkWriteResult(insertedCount, matchedCount, removedCount, modifiedCount, upserts);
   }
 
   protected synchronized void _dropIndexes(String name) throws MongoException {
