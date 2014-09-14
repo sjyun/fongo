@@ -182,6 +182,26 @@ public class UpdateEngine {
     return left.after(right) ? left : right;
   }
 
+  Number genericMin(Number left, Number right) {
+    if (left instanceof Float || left instanceof Double || right instanceof Float || right instanceof Double) {
+      return Math.min(left.doubleValue(), right.doubleValue());
+    } else if (left instanceof Integer) {
+      return Math.min(left.intValue(), right.intValue());
+    } else {
+      return Math.min(left.longValue(), right.intValue());
+    }
+  }
+
+  Date genericMin(Date left, Date right) {
+    if (left == null) {
+      return right;
+    }
+    if (right == null) {
+      return left;
+    }
+    return left.before(right) ? left : right;
+  }
+
   BasicDBList asDbList(Object... objects) {
     BasicDBList dbList = new BasicDBList();
     Collections.addAll(dbList, objects);
@@ -223,6 +243,32 @@ public class UpdateEngine {
             } else {
               Date oldNumber = expressionParser.typecast(subKey + " value", oldValue, Date.class);
               subObject.put(subKey, genericMax(oldNumber, updateNumber));
+            }
+          } else {
+            throw new FongoException(subKey + " expected to be of type Date/Number but is " + (object != null ? object.getClass() : "null") + " toString:" + object);
+          }
+        }
+      },
+      new BasicUpdate("$min", true) {
+        @Override
+        void mergeAction(String subKey, DBObject subObject, Object object, DBObject objOriginal, boolean isCreated) {
+          if (object instanceof Number) {
+            Number updateNumber = expressionParser.typecast(command + " value", object, Number.class);
+            Object oldValue = subObject.get(subKey);
+            if (oldValue == null) {
+              subObject.put(subKey, updateNumber);
+            } else {
+              Number oldNumber = expressionParser.typecast(subKey + " value", oldValue, Number.class);
+              subObject.put(subKey, genericMin(oldNumber, updateNumber));
+            }
+          } else if (object instanceof Date) {
+            Date updateNumber = expressionParser.typecast(command + " value", object, Date.class);
+            Object oldValue = subObject.get(subKey);
+            if (oldValue == null) {
+              subObject.put(subKey, updateNumber);
+            } else {
+              Date oldNumber = expressionParser.typecast(subKey + " value", oldValue, Date.class);
+              subObject.put(subKey, genericMin(oldNumber, updateNumber));
             }
           } else {
             throw new FongoException(subKey + " expected to be of type Date/Number but is " + (object != null ? object.getClass() : "null") + " toString:" + object);
