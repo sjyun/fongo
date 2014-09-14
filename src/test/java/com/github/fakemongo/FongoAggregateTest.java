@@ -11,6 +11,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import org.assertj.core.api.Assertions;
+import org.assertj.core.util.Lists;
 import org.junit.Assert;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -387,7 +388,6 @@ public class FongoAggregateTest {
   }
 
 
-
   @Test
   public void shouldHandleSumOfNumberOfLong() {
     DBCollection collection = createTestCollection();
@@ -407,7 +407,6 @@ public class FongoAggregateTest {
     }
     Assertions.assertThat(result).isEqualTo(Integer.MAX_VALUE * 7l);
   }
-
 
 
   // Group with "simple _id"
@@ -599,6 +598,19 @@ public class FongoAggregateTest {
 
     // Take care, order is not same on MongoDB (n2,n1)
     Assertions.assertThat(result).isEqualTo(fongoRule.parseList("[ { \"_id\" : \"1\" , \"events\" : [ \"LogAlertCreated\" , \"LogAlertMessageModified\" , \"LogAlertEnded\"]} , { \"_id\" : \"2\" , \"events\" : [ \"LogAlertCreated\" , \"LogAlertMessageModified\"]}]"));
+  }
+
+  // See https://github.com/fakemongo/fongo/issues/45
+  @Test
+  public void should_$sum_return_long() {
+    DBCollection collection = createTestCollection();
+
+    DBObject groupFields = new BasicDBObject("count", new BasicDBObject("$sum", 1L));
+    DBObject group = new BasicDBObject("$group", groupFields);
+    AggregationOutput output = collection.aggregate(Lists.newArrayList(group));
+
+    Assertions.assertThat(output.results()).hasSize(1);
+    Assertions.assertThat(output.results().iterator().next().get("count")).isEqualTo(10L);
   }
 
 
