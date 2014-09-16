@@ -960,7 +960,7 @@ public class FongoDBCollection extends DBCollection {
     int foundCommon = -1;
     Set<String> queryFields = query.keySet();
     for (IndexAbstract index : indexes) {
-      if (index.canHandle(queryFields)) {
+      if (index.canHandle(query)) {
         // The most restrictive first.
         if (index.getFields().size() > foundCommon || (result != null && !result.isUnique() && index.isUnique())) {
           result = index;
@@ -1008,7 +1008,6 @@ public class FongoDBCollection extends DBCollection {
   private synchronized void addToIndexes(DBObject object, DBObject oldObject, WriteConcern concern) {
     // Ensure "insert/update" create collection into "fongoDB"
     this.fongoDb.addCollection(this);
-    Set<String> queryFields = object.keySet();
     // First, try to see if index can add the new value.
     for (IndexAbstract index : indexes) {
       @SuppressWarnings("unchecked") List<List<Object>> error = index.checkAddOrUpdate(object, oldObject);
@@ -1021,12 +1020,13 @@ public class FongoDBCollection extends DBCollection {
       }
     }
 
+ //     Set<String> queryFields = object.keySet();
     DBObject idFirst = Util.cloneIdFirst(object);
     Set<String> oldQueryFields = oldObject == null ? Collections.<String>emptySet() : oldObject.keySet();
     for (IndexAbstract index : indexes) {
-      if (index.canHandle(queryFields)) {
+      if (index.canHandle(object)) {
         index.addOrUpdate(idFirst, oldObject);
-      } else if (index.canHandle(oldQueryFields))
+      } else if (index.canHandle(oldObject))
         // In case of update and removing a field, we must remove from the index.
         index.remove(oldObject);
     }
@@ -1040,7 +1040,7 @@ public class FongoDBCollection extends DBCollection {
   private synchronized void removeFromIndexes(DBObject object) {
     Set<String> queryFields = object.keySet();
     for (IndexAbstract index : indexes) {
-      if (index.canHandle(queryFields)) {
+      if (index.canHandle(object)) {
         index.remove(object);
       }
     }

@@ -174,7 +174,7 @@ public abstract class IndexAbstract<T extends DBObject> {
    */
   public List<List<Object>> addAll(Iterable<DBObject> objects) {
     for (DBObject object : objects) {
-      if (canHandle(object.keySet())) {
+      if (canHandle(object)) {
         List<List<Object>> nonUnique = addOrUpdate(object, null);
         // TODO(twillouer) : must handle writeConcern.
         if (!nonUnique.isEmpty()) {
@@ -262,9 +262,42 @@ public abstract class IndexAbstract<T extends DBObject> {
    * @param queryFields fields of the query.
    * @return true if index can be used.
    */
-  public boolean canHandle(Set<String> queryFields) {
-    return queryFields.containsAll(fields);
+  public boolean canHandle(final DBObject queryFields) {
+      if(queryFields == null) {
+          return false;
+      }
+
+      //get keys including embedded indexes
+      for (String field : fields) {
+          if (!queryFields.containsField(field) && !keyEmbeddedFieldMatch(field, queryFields)) {
+               return false;
+          }
+      }
+    return true;
+ //   return queryFields.containsAll(fields);
   }
+
+    public boolean keyEmbeddedFieldMatch(String field, DBObject queryFields)
+    {
+        //if field embedded field type
+        String[] fieldParts = field.split("\\.");
+        if(fieldParts.length == 0) {
+            return false;
+        }
+
+        DBObject searchQueryFields = queryFields;
+        int count = 0;
+        for(String fieldPart : fieldParts) {
+            count++;
+            if(!searchQueryFields.containsField(fieldPart)) {
+                return false;
+            } else if (searchQueryFields.get(fieldPart) instanceof DBObject) {
+                searchQueryFields = (DBObject)searchQueryFields.get(fieldPart);
+            }
+        }
+
+        return fieldParts.length == count;
+    }
 
   @Override
   public String toString() {
