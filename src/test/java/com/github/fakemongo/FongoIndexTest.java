@@ -577,6 +577,34 @@ public class FongoIndexTest {
   }
 
   @Test
+  public void test2dsphereIndex() {
+    DBCollection collection = fongoRule.newCollection();
+    collection.insert(new BasicDBObject("_id", 1).append("loc", Util.list(-73.97D, 40.72D)));
+    collection.insert(new BasicDBObject("_id", 2).append("loc", Util.list(2.265D, 48.791D)));
+    collection.createIndex(new BasicDBObject("loc", "2dsphere"));
+
+    IndexAbstract<?> index = getIndex(collection, "loc_2dsphere");
+    assertTrue(index.isGeoIndex());
+  }
+
+  /**
+   * 2dsphere indexes are not required to be first in compound indexes.
+   * 
+   * @see <a href="https://github.com/fakemongo/fongo/issues/65">Issue 65</a>
+   */
+  @Test
+  public void test2dsphereNotFirst() {
+    DBCollection collection = fongoRule.newCollection();
+
+    collection.insert(new BasicDBObject("_id", 1).append("name", "a").append("loc", Util.list(-73.97D, 40.72D)));
+    collection.insert(new BasicDBObject("_id", 2).append("name", "b").append("loc", Util.list(2.265D, 48.791D)));
+    collection.createIndex(new BasicDBObject("name", 1).append("loc", "2dsphere"));
+
+    IndexAbstract<?> index = getIndex(collection, "name_1_loc_2dsphere");
+    assertTrue(index.isGeoIndex());
+  }
+
+  @Test
   public void testUpdateMustModifyAllIndexes() throws Exception {
     DBCollection collection = fongoRule.newCollection();
     collection.insert(new BasicDBObject("date", 1).append("name", "jon").append("_id", 1));
@@ -729,6 +757,7 @@ public class FongoIndexTest {
 
     IndexAbstract index = null;
     for (IndexAbstract i : fongoDBCollection.getIndexes()) {
+      System.out.println(i.getName());
       if (i.getName().equals(name)) {
         index = i;
         break;

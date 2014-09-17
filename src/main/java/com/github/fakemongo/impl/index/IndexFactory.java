@@ -45,8 +45,9 @@ public final class IndexFactory {
     for (Map.Entry<String, Object> entry : Util.entrySet(keys)) {
       Object value = entry.getValue();
       if (value instanceof String) {
-        if ("2d".equals(value)) {
-          if (!first) {
+        boolean localGeo = "2d".equals(value) || "2dsphere".equals(value);
+        if (localGeo) {
+          if (!first && "2d".equals(value)) {
             //	"err" : "2d has to be first in index", "code" : 13023, "n" : 0, "connectionId" : 206, "ok" : 1
             throw new MongoException(13023, "2d has to be first in index");
           }
