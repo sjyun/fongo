@@ -757,7 +757,6 @@ public class FongoIndexTest {
 
     IndexAbstract index = null;
     for (IndexAbstract i : fongoDBCollection.getIndexes()) {
-      System.out.println(i.getName());
       if (i.getName().equals(name)) {
         index = i;
         break;
