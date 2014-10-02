@@ -247,6 +247,23 @@ public class FongoTest {
     assertNull("should not have the property 'name'", result.get("name"));
   }
 
+   @Test
+   public void testFindInWithRegex() {
+    DBCollection collection = newCollection();
+    collection.insert(new BasicDBObject("_id", 1));
+    collection.insert(new BasicDBObject("_id", 2));
+    collection.insert(new BasicDBObject("_id", "s"));
+    collection.insert(new BasicDBObject("_id", "a"));
+    collection.insert(new BasicDBObject("_id", "abbb"));
+
+    DBCursor cursor = collection.find(new BasicDBObject("_id", new BasicDBObject("$in", new Object[]{1, "s", Pattern.compile("ab+")})));
+    List<DBObject> dbObjects = cursor.toArray();
+    assertEquals(3, dbObjects.size());
+    assertTrue(dbObjects.contains(new BasicDBObject("_id", 1)));
+    assertTrue(dbObjects.contains(new BasicDBObject("_id", "s")));
+    assertTrue(dbObjects.contains(new BasicDBObject("_id", "abbb")));
+  }
+
   @Test
   public void testFindWithQuery() {
     DBCollection collection = newCollection();
