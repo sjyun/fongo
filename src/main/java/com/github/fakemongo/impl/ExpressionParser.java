@@ -324,17 +324,35 @@ public class ExpressionParser {
     boolean compare(Object queryValueIgnored, Object storedValue, Set querySet) {
       if (storedValue instanceof List) {
         for (Object valueItem : (List) storedValue) {
-          if (querySet.contains(valueItem)) {
+          if (containsWithRegex(querySet, valueItem)) {
             return direction;
           }
         }
-        if (querySet.contains(storedValue)) {
+        if (containsWithRegex(querySet, storedValue)) {
           return direction;
         }
         return !direction;
       } else {
-        return !(direction ^ querySet.contains(storedValue));
+        return !(direction ^ containsWithRegex(querySet, storedValue));
       }
+    }
+
+    boolean containsWithRegex(Set querySet, Object storedValue) {
+        if (querySet.contains(storedValue)) {
+            return true;
+        }
+        if (storedValue instanceof CharSequence) {
+            CharSequence s = (CharSequence)storedValue;
+            for (Object o : querySet) {
+                if (o instanceof Pattern) {
+                    Pattern p = (Pattern) o;
+                    if (p.matcher(s).find()) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
   }
 
