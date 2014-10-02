@@ -11,11 +11,8 @@ import com.mongodb.util.JSON;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.NativeArray;
-import org.mozilla.javascript.NativeObject;
-import org.mozilla.javascript.RhinoException;
-import org.mozilla.javascript.Scriptable;
+
+import org.mozilla.javascript.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -186,17 +183,28 @@ public class MapReduce {
     }
   }
 
-  DBObject getObject(NativeObject no) {
+  DBObject getObject(ScriptableObject no) {
+    if (no instanceof NativeArray) {
+        BasicDBList ret = new BasicDBList();
+        NativeArray noArray = (NativeArray) no;
+        for (int i = 0; i < noArray.getLength(); i++) {
+            Object value = noArray.get(i, noArray);
+            if (value instanceof NativeObject || value instanceof NativeArray) {
+                value = getObject((ScriptableObject) value);
+            }
+            ret.add(value);
+        }
+        return ret;
+    }
     DBObject ret = new BasicDBObject();
     Object[] propIds = no.getIds();
     for (Object propId : propIds) {
       String key = Context.toString(propId);
       Object value = NativeObject.getProperty(no, key);
-      if (value instanceof NativeObject) {
-        ret.put(key, getObject((NativeObject) value));
-      } else {
-        ret.put(key, value);
+      if (value instanceof NativeObject || value instanceof NativeArray) {
+          value = getObject((ScriptableObject) value);
       }
+      ret.put(key, value);
     }
     return ret;
   }
