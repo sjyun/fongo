@@ -48,6 +48,26 @@ public class FongoMapReduceTest {
     assertEquals(fongoRule.parse("[{ \"_id\" : \"www.google.com\" , \"value\" : { \"count\" : 2.0}}, { \"_id\" : \"www.no-fucking-idea.com\" , \"value\" : { \"count\" : 3.0}}]"), results);
   }
 
+    // see http://no-fucking-idea.com/blog/2012/04/01/using-map-reduce-with-mongodb/
+    @Test
+    public void testMapReduceWithArray() {
+        DBCollection coll = fongoRule.newCollection();
+        fongoRule.insertJSON(coll, "[{url: \"www.google.com\", date: 1, trash_data: 5, arr: ['a',2] },\n" +
+                " {url: \"www.no-fucking-idea.com\", date: 1, trash_data: 13, arr: ['b',4] },\n" +
+                " {url: \"www.google.com\", date: 1, trash_data: 1, arr: ['c',6] },\n" +
+                " {url: \"www.no-fucking-idea.com\", date: 2, trash_data: 69, arr: ['d',8] },\n" +
+                " {url: \"www.no-fucking-idea.com\", date: 2, trash_data: 256, arr: ['e',10] }]");
+
+
+        String map = "function(){    emit(this.url, this.arr);  };";
+        String reduce = "function(key, values){    var res = [];    values.forEach(function(v){ res = res.concat(v); });    return {mergedArray: res};  };";
+        coll.mapReduce(map, reduce, "result", new BasicDBObject());
+
+
+        List<DBObject> results = fongoRule.newCollection("result").find().toArray();
+        assertEquals(fongoRule.parse("[{ \"_id\" : \"www.google.com\" , \"value\" : { \"mergedArray\" : [\"a\",2,\"c\",6]}}, { \"_id\" : \"www.no-fucking-idea.com\" , \"value\" : { \"mergedArray\" : [\"b\",4,\"d\",8,\"e\",10]}}]"), results);
+    }
+
   @Test
   public void should_use_outputdb() {
     DBCollection coll = fongoRule.newCollection();
