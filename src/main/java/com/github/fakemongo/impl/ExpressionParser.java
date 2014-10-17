@@ -466,12 +466,12 @@ public class ExpressionParser {
         }
       },
       new ConditionalOperatorFilterFactory(EQ) {
-				@Override
-				boolean singleCompare(Object queryValue, Object storedValue) {
-					Integer result = compareObjects(queryValue, storedValue, true);
-					return result != null && result.intValue() == 0;
-				}
-			},
+        @Override
+	boolean singleCompare(Object queryValue, Object storedValue) {
+          Integer result = compareObjects(queryValue, storedValue, true);
+          return result != null && result.intValue() == 0;
+	}
+      },
       new BasicCommandFilterFactory(NE) {
         @Override
         public Filter createFilter(final List<String> path, final DBObject refExpression) {
