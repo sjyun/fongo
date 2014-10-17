@@ -41,6 +41,7 @@ public class ExpressionParser {
   private static final Logger LOG = LoggerFactory.getLogger(ExpressionParser.class);
 
   public final static String LT = "$lt";
+  public final static String EQ = "$eq";
   public final static String LTE = "$lte";
   public final static String GT = "$gt";
   public final static String GTE = "$gte";
@@ -464,6 +465,13 @@ public class ExpressionParser {
           return result != null && result.intValue() > 0;
         }
       },
+      new ConditionalOperatorFilterFactory(EQ) {
+				@Override
+				boolean singleCompare(Object queryValue, Object storedValue) {
+					Integer result = compareObjects(queryValue, storedValue, true);
+					return result != null && result.intValue() == 0;
+				}
+			},
       new BasicCommandFilterFactory(NE) {
         @Override
         public Filter createFilter(final List<String> path, final DBObject refExpression) {
