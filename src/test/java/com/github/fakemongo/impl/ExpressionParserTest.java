@@ -107,6 +107,9 @@ public class ExpressionParserTest {
         new BasicDBObject("n", "stu").append("a", 4),
         new BasicDBObject("a", asList(3, 4))
     ));
+    assertQuery(new BasicDBObject("a", new BasicDBObject("$eq", 1)), Arrays.<DBObject>asList(
+        new BasicDBObject("n", "neil").append("a", 1)
+    ));
   }
 
   @Test
