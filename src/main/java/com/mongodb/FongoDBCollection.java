@@ -821,7 +821,7 @@ public class FongoDBCollection extends DBCollection {
       upperLimit = limit;
     }
     int seen = 0;
-    for (Iterator<DBObject> iter = filterByIndexes(query).iterator(); iter.hasNext() && count <= upperLimit; ) {
+    for (Iterator<DBObject> iter = filterByIndexes(query).iterator(); iter.hasNext() && count < upperLimit; ) {
       DBObject value = iter.next();
       if (filter.apply(value)) {
         if (seen++ >= skip) {
