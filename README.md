@@ -206,3 +206,4 @@ your name to the patch contributers below. Please maintain the same code formatt
 * [Kong TO](https://github.com/newlight77)
 * [tomdearman](https://github.com/tomdearman)
 * [James Jory](https://github.com/james-jory)
+* [Riaz Ahmed](https://github.com/riyyaz)
