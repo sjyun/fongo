@@ -372,4 +372,20 @@ public class FongoDBCollectionTest {
     expected.put("ok", 1);
     Assertions.assertThat(actual).isEqualTo(expected);
   }
+  
+  @Test
+  public void testCount(){
+    long alphabetCnt = 0;
+    for (char a = 'A'; a <= 'Z'; a++, alphabetCnt++){
+    	collection.insert(new BasicDBObject("alphabet", Character.toString(a)));
+    }
+    long totalCount = collection.count();
+    Assertions.assertThat(alphabetCnt).isEqualTo(totalCount);
+
+    DBCursor cursorWithLimit = collection.find().limit(5);
+    Assertions.assertThat(5).isEqualTo(cursorWithLimit.size());
+
+    DBCursor cursorWithSkipAndLimit = collection.find().skip(23).limit(5);
+    Assertions.assertThat(3).isEqualTo(cursorWithSkipAndLimit.size());    
+  }
 }
