@@ -15,7 +15,7 @@ Add dependency to your project:
 <dependency>
   <groupId>com.github.fakemongo</groupId>
   <artifactId>fongo</artifactId>
-  <version>1.5.5</version>
+  <version>1.5.6</version>
   <scope>test</scope>
 </dependency>
 ```
@@ -119,7 +119,7 @@ So, use a random database name (e.g. UUID), BUT NOT your real database.
 
 ## Text Search Simulation
 Fongo simulates [text search](http://docs.mongodb.org/manual/reference/command/text/) now.
-The results of text search are qute similar to real, but not exactly.
+The results of text search are quite similar to real, but not exactly.
 
 ### Next features are supported:
 * Plain words search
@@ -169,7 +169,7 @@ If there were exceptions thrown, please include the complete stack traces. If it
 You can fork the project and add a new failing test case. 
 
 It's even better if you can both add the test case and fix the bug. I will merge pull requests with test cases and add 
-your name to the patch contributers below. Please maintain the same code formatting and style as the rest of the project.
+your name to the patch contributors below. Please maintain the same code formatting and style as the rest of the project.
 
 ## Original Author
 * [Jon Hoffman](https://github.com/hoffrocket)

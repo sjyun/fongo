@@ -247,8 +247,8 @@ public class FongoTest {
     assertNull("should not have the property 'name'", result.get("name"));
   }
 
-   @Test
-   public void testFindInWithRegex() {
+  @Test
+  public void testFindInWithRegex() {
     DBCollection collection = newCollection();
     collection.insert(new BasicDBObject("_id", 1));
     collection.insert(new BasicDBObject("_id", 2));
@@ -2640,6 +2640,17 @@ public class FongoTest {
     // Then
     DBObject result = collection.findOne(new BasicDBObject("_id", 1));
     Assertions.assertThat(result).isEqualTo(new BasicDBObject("_id", 1).append("price", 12));
+  }
+
+  @Test
+  public void should_fsync_return_value() {
+    // Given
+
+    // When
+    final CommandResult fsync = fongoRule.getDB().getMongo().fsync(true);
+
+    // Then
+    Assertions.assertThat(fsync.get("ok")).isEqualTo(1.0);
   }
 
   static class Seq {

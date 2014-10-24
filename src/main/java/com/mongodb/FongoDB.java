@@ -149,6 +149,8 @@ public class FongoDB extends DB {
     }
     if (cmd.containsField("getlasterror") || cmd.containsField("getLastError")) {
       return okResult();
+    } else if (cmd.containsField("fsync")) {
+      return okResult();
     } else if (cmd.containsField("drop")) {
       this.collMap.remove(cmd.get("drop").toString());
       return okResult();
