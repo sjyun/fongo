@@ -490,10 +490,9 @@ public class ExpressionParser {
                         return false;
                       }
                     }
-                  } else {
-                    if (isEqual(queryValue, storedValue)) {
-                      return false;
-                    }
+                  }
+                  if (isEqual(queryValue, storedValue)) {
+                    return false;
                   }
                 }
                 return true;
