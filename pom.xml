@@ -46,7 +46,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <scala.version>2.11.2</scala.version>
-        <version.surefire>2.15</version.surefire>
+        <version.surefire>2.18</version.surefire>
 
         <!-- Jacoco -->
         <jacoco.destFile.unit>${project.build.directory}/jacoco-unit.exec</jacoco.destFile.unit>
@@ -162,12 +162,6 @@
             <groupId>org.scala-lang</groupId>
             <artifactId>scala-compiler</artifactId>
             <version>${scala.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <version>1.14.4</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
