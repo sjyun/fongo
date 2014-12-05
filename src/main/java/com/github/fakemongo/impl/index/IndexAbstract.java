@@ -6,13 +6,9 @@ import com.github.fakemongo.impl.Util;
 import com.mongodb.DBObject;
 import com.mongodb.FongoDBCollection;
 import com.mongodb.MongoException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import org.bson.types.Binary;
+
+import java.util.*;
 
 /**
  * An index for the MongoDB.
@@ -263,41 +259,39 @@ public abstract class IndexAbstract<T extends DBObject> {
    * @return true if index can be used.
    */
   public boolean canHandle(final DBObject queryFields) {
-      if(queryFields == null) {
-          return false;
-      }
+    if (queryFields == null) {
+      return false;
+    }
 
-      //get keys including embedded indexes
-      for (String field : fields) {
-          if (!queryFields.containsField(field) && !keyEmbeddedFieldMatch(field, queryFields)) {
-               return false;
-          }
+    //get keys including embedded indexes
+    for (String field : fields) {
+      if (!queryFields.containsField(field) && !keyEmbeddedFieldMatch(field, queryFields)) {
+        return false;
       }
+    }
     return true;
- //   return queryFields.containsAll(fields);
   }
 
-    public boolean keyEmbeddedFieldMatch(String field, DBObject queryFields)
-    {
-        //if field embedded field type
-        String[] fieldParts = field.split("\\.");
-        if(fieldParts.length == 0) {
-            return false;
-        }
-
-        DBObject searchQueryFields = queryFields;
-        int count = 0;
-        for(String fieldPart : fieldParts) {
-            count++;
-            if(!searchQueryFields.containsField(fieldPart)) {
-                return false;
-            } else if (searchQueryFields.get(fieldPart) instanceof DBObject) {
-                searchQueryFields = (DBObject)searchQueryFields.get(fieldPart);
-            }
-        }
-
-        return fieldParts.length == count;
+  public boolean keyEmbeddedFieldMatch(String field, DBObject queryFields) {
+    //if field embedded field type
+    String[] fieldParts = field.split("\\.");
+    if (fieldParts.length == 0) {
+      return false;
     }
+
+    DBObject searchQueryFields = queryFields;
+    int count = 0;
+    for (String fieldPart : fieldParts) {
+      count++;
+      if (!searchQueryFields.containsField(fieldPart)) {
+        return false;
+      } else if (searchQueryFields.get(fieldPart) instanceof DBObject) {
+        searchQueryFields = (DBObject) searchQueryFields.get(fieldPart);
+      }
+    }
+
+    return fieldParts.length == count;
+  }
 
   @Override
   public String toString() {
