@@ -174,6 +174,34 @@ public class FongoTest {
     assertEquals(new BasicDBObject("date", 1), result);
   }
 
+  /**
+   * @see <a href="https://github.com/fakemongo/fongo/issues/76">
+   *   Querying indexed field in subdocument does not work, but works without index
+   *   </a>
+   */
+  @Test
+  public void testFindOneIn_within_array_and_given_index_set() {
+    DBCollection collection = newCollection();
+    // prepare documents
+    collection.insert(
+        new BasicDBObject("_id", 1)
+            .append("animals", new BasicDBObject[]{
+                new BasicDBObject("name", "dolphin").append("type", "mammal"),
+            }),
+        new BasicDBObject("_id", 2)
+            .append("animals", new BasicDBObject[]{
+                new BasicDBObject("name", "horse").append("type", "mammal"),
+                new BasicDBObject("name", "shark").append("type", "fish")
+            }));
+    // prepare index
+    collection.createIndex(new BasicDBObject("animals.type", "text"));
+
+    DBObject result = collection.findOne(new BasicDBObject("animals.type", new BasicDBObject("$in", new String[]{"fish"})));
+
+    assertNotNull(result);
+    assertEquals(2, result.get("_id"));
+  }
+
   @Test
   public void testFindOneInWithArray() {
     DBCollection collection = newCollection();

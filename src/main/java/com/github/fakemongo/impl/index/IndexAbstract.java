@@ -3,6 +3,7 @@ package com.github.fakemongo.impl.index;
 import com.github.fakemongo.impl.ExpressionParser;
 import com.github.fakemongo.impl.Filter;
 import com.github.fakemongo.impl.Util;
+import com.mongodb.BasicDBList;
 import com.mongodb.DBObject;
 import com.mongodb.FongoDBCollection;
 import com.mongodb.MongoException;
@@ -272,7 +273,7 @@ public abstract class IndexAbstract<T extends DBObject> {
     return true;
   }
 
-  public boolean keyEmbeddedFieldMatch(String field, DBObject queryFields) {
+  private boolean keyEmbeddedFieldMatch(String field, DBObject queryFields) {
     //if field embedded field type
     String[] fieldParts = field.split("\\.");
     if (fieldParts.length == 0) {
@@ -283,7 +284,10 @@ public abstract class IndexAbstract<T extends DBObject> {
     int count = 0;
     for (String fieldPart : fieldParts) {
       count++;
-      if (!searchQueryFields.containsField(fieldPart)) {
+      if (searchQueryFields instanceof BasicDBList) {
+        // when it's a list, there's no need to investigate nested documents
+        return true;
+      } else if (!searchQueryFields.containsField(fieldPart)) {
         return false;
       } else if (searchQueryFields.get(fieldPart) instanceof DBObject) {
         searchQueryFields = (DBObject) searchQueryFields.get(fieldPart);
