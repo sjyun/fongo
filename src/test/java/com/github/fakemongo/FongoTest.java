@@ -176,8 +176,8 @@ public class FongoTest {
 
   /**
    * @see <a href="https://github.com/fakemongo/fongo/issues/76">
-   *   Querying indexed field in subdocument does not work, but works without index
-   *   </a>
+   * Querying indexed field in subdocument does not work, but works without index
+   * </a>
    */
   @Test
   public void testFindOneIn_within_array_and_given_index_set() {
@@ -2679,6 +2679,95 @@ public class FongoTest {
 
     // Then
     Assertions.assertThat(fsync.get("ok")).isEqualTo(1.0);
+  }
+
+  @Test
+  public void should_projection_$slice_return_simple_count() {
+    // Given
+    DBCollection collection = newCollection();
+    collection.insert(new BasicDBObject("_id", 1).append("array", Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
+
+    // When
+    List<DBObject> dbObjects = collection.find(new BasicDBObject(), new BasicDBObject("array", new BasicDBObject("$slice", 3))).toArray();
+
+    // Then
+    Assertions.assertThat(dbObjects).isEqualTo(Arrays.asList(new BasicDBObject("_id", 1).append("array", Arrays.asList(1, 2, 3))));
+  }
+
+  @Test
+  public void should_projection_$slice_return_last_elements() {
+    // Given
+    DBCollection collection = newCollection();
+    collection.insert(new BasicDBObject("_id", 1).append("array", Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
+
+    // When
+    List<DBObject> dbObjects = collection.find(new BasicDBObject(), new BasicDBObject("array", new BasicDBObject("$slice", -3))).toArray();
+
+    // Then
+    Assertions.assertThat(dbObjects).isEqualTo(Arrays.asList(new BasicDBObject("_id", 1).append("array", Arrays.asList(8, 9, 10))));
+  }
+
+  @Test
+  public void should_projection_$slice_return_sub() {
+    // Given
+    DBCollection collection = newCollection();
+    collection.insert(new BasicDBObject("_id", 1).append("array", Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
+
+    // When
+    BasicDBList slice = new BasicDBList();
+    slice.add(3);
+    slice.add(5);
+    List<DBObject> dbObjects = collection.find(new BasicDBObject(), new BasicDBObject("array", new BasicDBObject("$slice", slice))).toArray();
+
+    // Then
+    Assertions.assertThat(dbObjects).isEqualTo(Arrays.asList(new BasicDBObject("_id", 1).append("array", Arrays.asList(4, 5, 6, 7, 8))));
+  }
+
+  @Test
+  public void should_projection_$slice_return_empty_sub() {
+    // Given
+    DBCollection collection = newCollection();
+    collection.insert(new BasicDBObject("_id", 1).append("array", Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
+
+    // When
+    BasicDBList slice = new BasicDBList();
+    slice.add(10);
+    slice.add(5);
+    List<DBObject> dbObjects = collection.find(new BasicDBObject(), new BasicDBObject("array", new BasicDBObject("$slice", slice))).toArray();
+
+    // Then
+    Assertions.assertThat(dbObjects).isEqualTo(Arrays.asList(new BasicDBObject("_id", 1).append("array", Arrays.asList())));
+  }
+
+  @Test(expected = MongoException.class)
+  public void should_projection_$slice_return_empty_sub_if_limit_neg() {
+    // Given
+    DBCollection collection = newCollection();
+    collection.insert(new BasicDBObject("_id", 1).append("array", Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
+
+    // When
+    BasicDBList slice = new BasicDBList();
+    slice.add(10);
+    slice.add(-5);
+    List<DBObject> dbObjects = collection.find(new BasicDBObject(), new BasicDBObject("array", new BasicDBObject("$slice", slice))).toArray();
+
+    // Then
+  }
+
+  @Test
+  public void should_projection_$slice_return_last_sub() {
+    // Given
+    DBCollection collection = newCollection();
+    collection.insert(new BasicDBObject("_id", 1).append("array", Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
+
+    // When
+    BasicDBList slice = new BasicDBList();
+    slice.add(-7);
+    slice.add(5);
+    List<DBObject> dbObjects = collection.find(new BasicDBObject(), new BasicDBObject("array", new BasicDBObject("$slice", slice))).toArray();
+
+    // Then
+    Assertions.assertThat(dbObjects).isEqualTo(Arrays.asList(new BasicDBObject("_id", 1).append("array", Arrays.asList(4, 5, 6, 7, 8))));
   }
 
   static class Seq {

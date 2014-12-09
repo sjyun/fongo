@@ -64,6 +64,7 @@ public class ExpressionParser {
   public final static String ELEM_MATCH = QueryOperators.ELEM_MATCH;
   public final static String WHERE = QueryOperators.WHERE;
   public final static String GEO_WITHIN = "$geoWithin";
+  public final static String SLICE = "$slice";
 
   // TODO : http://docs.mongodb.org/manual/reference/operator/query-geospatial/
   // TODO : http://docs.mongodb.org/manual/reference/operator/geoWithin/#op._S_geoWithin

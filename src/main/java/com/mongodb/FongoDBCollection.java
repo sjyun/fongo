@@ -725,6 +725,8 @@ public class FongoDBCollection extends DBCollection {
         final Object projectionValue = projectionObject.get(projectionKey);
         final boolean isElemMatch =
             ((BasicDBObject) projectionObject.get(projectionKey)).containsField(QueryOperators.ELEM_MATCH);
+        final boolean isSlice =
+            ((BasicDBObject) projectionObject.get(projectionKey)).containsField(ExpressionParser.SLICE);
         if (isElemMatch) {
           ret.removeField(projectionKey);
           List searchIn = ((BasicDBList) result.get(projectionKey));
@@ -732,7 +734,7 @@ public class FongoDBCollection extends DBCollection {
               (BasicDBObject) ((BasicDBObject) projectionObject.get(projectionKey)).get(QueryOperators.ELEM_MATCH);
           String searchKey = (String) searchFor.keySet().toArray()[0];
           int pos = -1;
-          for (int i = 0; i < searchIn.size(); i++) {
+          for (int i = 0, length = searchIn.size(); i < length; i++) {
             boolean matches;
             DBObject fieldToSearch = (BasicDBObject) searchIn.get(i);
             if (fieldToSearch.containsField(searchKey)) {
@@ -761,6 +763,8 @@ public class FongoDBCollection extends DBCollection {
             ret.append(projectionKey, append);
             LOG.debug("$elemMatch projection of field \"{}\", gave result: {} ({})", projectionKey, ret, ret.getClass());
           }
+        } else if (isSlice) {
+          slice(result, projectionObject, projectionKey, projectionValue, ret);
         } else {
           final String msg = "Projection `" + projectionKey
               + "' has a value that Fongo doesn't know how to handle: " + projectionValue
@@ -772,6 +776,48 @@ public class FongoDBCollection extends DBCollection {
     }
 
     return ret;
+  }
+
+  private static void slice(DBObject result, DBObject projectionObject, String projectionKey, Object projectionValue, BasicDBObject ret) throws MongoException {
+    ret.removeField(projectionKey);
+    List searchIn = ((BasicDBList) result.get(projectionKey));
+    final BasicDBObject basicDBObject = (BasicDBObject) projectionObject.get(projectionKey);
+    int start = 0;
+    int limit;
+    if (basicDBObject.get(ExpressionParser.SLICE) instanceof Number) {
+      limit = ((Number) (basicDBObject.get(ExpressionParser.SLICE))).intValue();
+      if (limit < 0) {
+        start = limit;
+        limit = -limit;
+      }
+    } else if (basicDBObject.get(ExpressionParser.SLICE) instanceof List) {
+      List range = (List) basicDBObject.get(ExpressionParser.SLICE);
+      if (range.size() != 2) {
+        throw new IllegalArgumentException("$slice with an Array must have size of 2");
+      }
+      start = (Integer) range.get(0);
+      limit = (Integer) range.get(1);
+    } else {
+      final String msg = "Projection `" + projectionKey
+          + "' has a value that Fongo doesn't know how to handle: " + projectionValue
+          + " (" + (projectionValue == null ? " " : projectionValue.getClass() + ")");
+
+      throw new IllegalArgumentException(msg);
+    }
+    if (limit < 0) {
+      throw new MongoException("Can't canonicalize query: BadValue $slice limit must be positive");
+    }
+    List slice = new BasicDBList();
+    final int startArray;
+    if (start < 0) {
+      startArray = Math.max(0, searchIn.size() + start) + 1;
+    } else {
+      startArray = Math.min(searchIn.size(), start) + 1;
+    }
+    for (int i = startArray, count = 0; i <= searchIn.size() && count < limit; i++, count++) {
+      slice.add(searchIn.get(i - 1));
+    }
+    ret.put(projectionKey, slice);
   }
 
   public Collection<DBObject> sortObjects(final DBObject orderby, final Collection<DBObject> objects) {
@@ -916,48 +962,48 @@ public class FongoDBCollection extends DBCollection {
   @Override
   BulkWriteResult executeBulkWriteOperation(boolean ordered, List<WriteRequest> requests, WriteConcern writeConcern, DBEncoder encoder) {
     isTrue("no operations", !requests.isEmpty());
-      // TODO: unordered
-      List<BulkWriteUpsert> upserts = new ArrayList<BulkWriteUpsert>();
-      int insertedCount = 0;
-      int matchedCount = 0;
-      int removedCount = 0;
-      int modifiedCount = 0;
-      int idx = 0;
-      for (WriteRequest request : requests) {
-          WriteResult wr;
-          switch(request.getType()) {
-              case REPLACE: // fallthrough
-              case UPDATE: {
-                  ModifyRequest r = (ModifyRequest) request;
-                  wr = update(r.getQuery(), r.getUpdateDocument(), r.isUpsert(), r.isMulti(), writeConcern, encoder);
-                  matchedCount += wr.getN();
-                  if (wr.isUpdateOfExisting())  {
-                      upserts.add(new BulkWriteUpsert(idx, wr.getUpsertedId()));
-                  } else {
-                      modifiedCount += wr.getN();
-                  }
-                  break;
-              }
-              case REMOVE: {
-                  RemoveRequest r = (RemoveRequest) request;
-                  wr = remove(r.getQuery(), writeConcern, encoder);
-                  matchedCount += wr.getN();
-                  removedCount += wr.getN();
-                  break;
-              }
-
-              case INSERT: {
-                  InsertRequest r = (InsertRequest) request;
-                  wr = insert(r.getDocument());
-                  insertedCount += wr.getN();
-                  break;
-              }
-              default:
-                  throw new NotImplementedException();
+    // TODO: unordered
+    List<BulkWriteUpsert> upserts = new ArrayList<BulkWriteUpsert>();
+    int insertedCount = 0;
+    int matchedCount = 0;
+    int removedCount = 0;
+    int modifiedCount = 0;
+    int idx = 0;
+    for (WriteRequest request : requests) {
+      WriteResult wr;
+      switch (request.getType()) {
+        case REPLACE: // fallthrough
+        case UPDATE: {
+          ModifyRequest r = (ModifyRequest) request;
+          wr = update(r.getQuery(), r.getUpdateDocument(), r.isUpsert(), r.isMulti(), writeConcern, encoder);
+          matchedCount += wr.getN();
+          if (wr.isUpdateOfExisting()) {
+            upserts.add(new BulkWriteUpsert(idx, wr.getUpsertedId()));
+          } else {
+            modifiedCount += wr.getN();
           }
-          idx++;
+          break;
+        }
+        case REMOVE: {
+          RemoveRequest r = (RemoveRequest) request;
+          wr = remove(r.getQuery(), writeConcern, encoder);
+          matchedCount += wr.getN();
+          removedCount += wr.getN();
+          break;
+        }
+
+        case INSERT: {
+          InsertRequest r = (InsertRequest) request;
+          wr = insert(r.getDocument());
+          insertedCount += wr.getN();
+          break;
+        }
+        default:
+          throw new NotImplementedException();
       }
-      return new AcknowledgedBulkWriteResult(insertedCount, matchedCount, removedCount, modifiedCount, upserts);
+      idx++;
+    }
+    return new AcknowledgedBulkWriteResult(insertedCount, matchedCount, removedCount, modifiedCount, upserts);
   }
 
   protected synchronized void _dropIndexes(String name) throws MongoException {
@@ -1061,7 +1107,7 @@ public class FongoDBCollection extends DBCollection {
       }
     }
 
- //     Set<String> queryFields = object.keySet();
+    //     Set<String> queryFields = object.keySet();
     DBObject idFirst = Util.cloneIdFirst(object);
     Set<String> oldQueryFields = oldObject == null ? Collections.<String>emptySet() : oldObject.keySet();
     for (IndexAbstract index : indexes) {
