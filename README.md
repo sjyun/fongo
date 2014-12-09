@@ -207,3 +207,4 @@ your name to the patch contributors below. Please maintain the same code formatt
 * [tomdearman](https://github.com/tomdearman)
 * [James Jory](https://github.com/james-jory)
 * [Riaz Ahmed](https://github.com/riyyaz)
+* [Martin W. Kirst](https://github.com/nitram509)
