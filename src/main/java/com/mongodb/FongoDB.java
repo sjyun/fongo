@@ -176,7 +176,7 @@ public class FongoDB extends DB {
       if ("*".equals(indexName)) {
         doGetCollection(collectionName)._dropIndexes();
       } else {
-        doGetCollection(collectionName)._dropIndexes(indexName);
+        doGetCollection(collectionName)._dropIndex(indexName);
       }
       CommandResult okResult = okResult();
       return okResult;

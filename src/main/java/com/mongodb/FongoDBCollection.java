@@ -1006,7 +1006,7 @@ public class FongoDBCollection extends DBCollection {
     return new AcknowledgedBulkWriteResult(insertedCount, matchedCount, removedCount, modifiedCount, upserts);
   }
 
-  protected synchronized void _dropIndexes(String name) throws MongoException {
+  protected synchronized void _dropIndex(String name) throws MongoException {
     DBCollection indexColl = fongoDb.getCollection("system.indexes");
     indexColl.remove(new BasicDBObject("name", name));
     ListIterator<IndexAbstract> iterator = indexes.listIterator();
@@ -1020,11 +1020,12 @@ public class FongoDBCollection extends DBCollection {
   }
 
   protected synchronized void _dropIndexes() {
-    List<DBObject> indexes = fongoDb.getCollection("system.indexes").find().toArray();
+    final List<DBObject> indexes = fongoDb.getCollection("system.indexes").find().toArray();
     // Two step for no concurrent modification exception
-    for (DBObject index : indexes) {
-      if (!ID_NAME_INDEX.equals(index.get("name").toString())) {
-        dropIndexes(index.get("name").toString());
+    for (final DBObject index : indexes) {
+      final String indexName = index.get("name").toString();
+      if (!ID_NAME_INDEX.equals(indexName)) {
+        dropIndexes(indexName);
       }
     }
   }
