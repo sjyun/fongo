@@ -11,9 +11,10 @@ import java.util.regex.Pattern;
 import org.bson.types.MaxKey;
 import org.bson.types.MinKey;
 import org.bson.types.ObjectId;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
+
 import org.junit.Test;
+
+import static org.junit.Assert.*;
 
 public class UpdateEngineTest {
 
@@ -440,4 +441,69 @@ public class UpdateEngineTest {
   }
 
 
+  @Test
+  public void testCurrentDateOperation() {
+      UpdateEngine updateEngine = new UpdateEngine();
+      DBObject update = new BasicDBObjectBuilder().push("$currentDate").append("a", true).pop().get();
+
+      long timeBeforeUpdate = System.currentTimeMillis();
+      DBObject updateResult = updateEngine.doUpdate(new BasicDBObject("_id", 1), update);
+      long timeAfterUpdate = System.currentTimeMillis();
+
+      assertNotNull(updateResult.get("a"));
+
+      Date updateTime = (Date) updateResult.get("a");
+      assertTrue(updateTime.getTime() >= timeBeforeUpdate);
+      assertTrue(updateTime.getTime() <= timeAfterUpdate);
+  }
+
+  @Test
+  public void testCurrentDateByTypeOperation() {
+      UpdateEngine updateEngine = new UpdateEngine();
+      DBObject update = new BasicDBObjectBuilder().push("$currentDate").append("a", new BasicDBObject("$type", "date")).pop().get();
+
+      long timeBeforeUpdate = System.currentTimeMillis();
+      DBObject updateResult = updateEngine.doUpdate(new BasicDBObject("_id", 1), update);
+      long timeAfterUpdate = System.currentTimeMillis();
+
+      assertNotNull(updateResult.get("a"));
+
+      Date updateTime = (Date) updateResult.get("a");
+      assertTrue(updateTime.getTime() >= timeBeforeUpdate);
+      assertTrue(updateTime.getTime() <= timeAfterUpdate);
+  }
+
+  @Test
+  public void testOverrideCurrentDateOperation() {
+      UpdateEngine updateEngine = new UpdateEngine();
+      DBObject update = new BasicDBObjectBuilder().push("$currentDate").append("a", true).pop().get();
+
+      long timeBeforeUpdate = System.currentTimeMillis();
+      DBObject updateResult = updateEngine.doUpdate(new BasicDBObject("_id", 1).append("a", timeBeforeUpdate - 1), update);
+      long timeAfterUpdate = System.currentTimeMillis();
+
+      assertNotNull(updateResult.get("a"));
+
+      Date updateTime = (Date) updateResult.get("a");
+      assertTrue(updateTime.getTime() >= timeBeforeUpdate);
+      assertTrue(updateTime.getTime() <= timeAfterUpdate);
+  }
+
+  @Test
+  public void testEmbeddedCurrentOperation() {
+      UpdateEngine updateEngine = new UpdateEngine();
+      DBObject update = new BasicDBObjectBuilder().push("$currentDate").append("a.b", true).pop().get();
+
+      long timeBeforeUpdate = System.currentTimeMillis();
+      DBObject updateResult = updateEngine.doUpdate(new BasicDBObject("_id", 1), update);
+      long timeAfterUpdate = System.currentTimeMillis();
+
+      assertNotNull(updateResult.get("a"));
+      DBObject aObject = (DBObject) updateResult.get("a");
+      assertNotNull(aObject.get("b"));
+
+      Date updateTime = (Date) aObject.get("b");
+      assertTrue(updateTime.getTime() >= timeBeforeUpdate);
+      assertTrue(updateTime.getTime() <= timeAfterUpdate);
+  }
 }
