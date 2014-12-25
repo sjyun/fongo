@@ -13,6 +13,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import org.bson.types.BSONTimestamp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -500,6 +502,24 @@ public class UpdateEngine {
               }
             }
             subObject.put(subKey, currentNumber);
+          }
+        }
+      },
+      new BasicUpdate("$currentDate", true) {
+        @Override
+        void mergeAction(String subKey, DBObject subObject, Object object, DBObject objOriginal, boolean isCreated) {
+          if (Boolean.TRUE.equals(object)) {
+            subObject.put(subKey, new Date());
+          } else if ((objOriginal != null) && (object instanceof DBObject)) {
+            Object typeObject = ((DBObject) object).get("$type");
+            String type = expressionParser.typecast(command, typeObject, String.class);
+            if ("date".equals(type)) {
+              subObject.put(subKey, new Date());
+            } else {
+              throw new FongoException(command + " called with unsupported type");
+            }
+          } else {
+            throw new FongoException(command + " parameters should be either a boolean true or a document specifying a type");
           }
         }
       }
