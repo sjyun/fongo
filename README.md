@@ -7,6 +7,7 @@ finds, updates, inserts, removes and other methods. The primary use is for light
 don't want to spin up a `mongod` process.
 
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.fakemongo/fongo/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.github.fakemongo/fongo/) ![License Apache2](https://go-shields.herokuapp.com/license-apache2-blue.png)
+[![Coverage Status](https://img.shields.io/coveralls/fakemongo/fongo.svg)](https://coveralls.io/r/fakemongo/fongo)
 
 ## Usage
 Add dependency to your project:
