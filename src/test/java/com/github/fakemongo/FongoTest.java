@@ -1,6 +1,7 @@
 package com.github.fakemongo;
 
 import ch.qos.logback.classic.Level;
+
 import com.github.fakemongo.impl.ExpressionParser;
 import com.github.fakemongo.impl.Util;
 import com.github.fakemongo.junit.FongoRule;
@@ -24,6 +25,7 @@ import com.mongodb.ServerAddress;
 import com.mongodb.WriteConcern;
 import com.mongodb.WriteResult;
 import com.mongodb.util.JSON;
+
 import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.Collections;
@@ -31,11 +33,15 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
+
 import org.assertj.core.api.Assertions;
+
 import static org.assertj.core.api.Assertions.assertThat;
+
 import org.assertj.core.util.Lists;
 import org.bson.BSON;
 import org.bson.Transformer;
@@ -43,6 +49,7 @@ import org.bson.types.Binary;
 import org.bson.types.MaxKey;
 import org.bson.types.MinKey;
 import org.bson.types.ObjectId;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -50,6 +57,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
@@ -1633,7 +1641,33 @@ public class FongoTest {
     assertEquals(Arrays.asList(
         new BasicDBObject("_id", 2).append("a", 2)), objects);
   }
+  
+  //PR#82
+  @Test
+  public void testAddOrReplaceElementMustWorkWithDollarOperator() {
 
+    DBCollection collection = newCollection();
+    String random1 = UUID.randomUUID().toString();
+    String random2 = UUID.randomUUID().toString();
+    BasicDBList list1 = new BasicDBList();
+    list1.add(new BasicDBObject("_id", random1).append("var3", "val31"));
+    list1.add(new BasicDBObject("_id", random2).append("var3", "val32"));
+    collection.insert(new BasicDBObject("_id", 1234).append("var1", "val1").append("parentObject", 
+            new BasicDBObject("var2", "val21").append("subObject", list1)));
+    
+    DBObject query = new BasicDBObject("_id", 1234).append("parentObject.subObject._id", random1);
+    DBObject update = new BasicDBObject("$set", new BasicDBObject ("parentObject.subObject.$", 
+            new BasicDBObject ("_id", random1).append("var3", "val33")));
+
+    BasicDBList list2 = new BasicDBList();
+    list2.add(new BasicDBObject("_id", random1).append("var3", "val33"));
+    list2.add(new BasicDBObject("_id", random2).append("var3", "val32"));
+    DBObject expected = new BasicDBObject("_id", 1234).append("var1", "val1").append("parentObject", 
+            new BasicDBObject("var2", "val21").append("subObject", list2));
+    
+    collection.update(query, update);
+    assertEquals(collection.findOne(new BasicDBObject("_id", 1234)), expected);
+  }
   @Test
   public void shouldCompareObjectId() throws Exception {
     // Given

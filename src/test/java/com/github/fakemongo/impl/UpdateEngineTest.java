@@ -409,6 +409,22 @@ public class UpdateEngineTest {
     assertEquals(expected.toString(),
         updateEngine.doUpdate(object, update, query, false).toString());
   }
+  
+  @Test
+  public void testAddOrReplaceElementMustWorkWithDollarOperator() {
+    String random1 = UUID.randomUUID().toString();
+    String random2 = UUID.randomUUID().toString();
+    
+    DBObject object = (DBObject) JSON.parse("{ \"_id\" : \"1234\" , \"var1\" : \"val1\" , \"parentObject\" : { \"var2\" : \"val21\" , \"subObject\" : [ { \"_id\" : \"" + random1 + "\" , \"var3\" : \"val31\"}, { \"_id\" : \"" + random2 + "\" , \"var3\" : \"val32\"}]}}");
+    DBObject update = (DBObject) JSON.parse("{ \"$set\" : { \"parentObject.subObject.$\" : { \"_id\" : \"" + random1 + "\" , \"var3\" : \"val33\"}}}");
+    DBObject query = (DBObject) JSON.parse("{ \"_id\" : \"1234\" , \"parentObject.subObject._id\" : \"" + random1 + "\"}");
+
+    DBObject expected = (DBObject) JSON.parse("{ \"_id\" : \"1234\" , \"var1\" : \"val1\" , \"parentObject\" : { \"var2\" : \"val21\" , \"subObject\" : [ { \"_id\" : \"" + random1 + "\" , \"var3\" : \"val33\"} , { \"_id\" : \"" + random2 + "\" , \"var3\" : \"val32\"}]}}");
+    UpdateEngine updateEngine = new UpdateEngine();
+
+    assertEquals(expected.toString(),
+        updateEngine.doUpdate(object, update, query, false).toString());
+  }
 
   @Test(expected = FongoException.class)
   public void testPositionalArrayOperatorForInvalidPath() {
