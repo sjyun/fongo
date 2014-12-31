@@ -5,13 +5,19 @@ import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 import com.mongodb.BasicDBObjectBuilder;
 import com.mongodb.DBObject;
+import com.mongodb.util.JSON;
+
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 import java.util.regex.Pattern;
+
+import org.assertj.core.util.Sets;
 import org.bson.types.MaxKey;
 import org.bson.types.MinKey;
 import org.bson.types.ObjectId;
-
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -385,6 +391,26 @@ public class UpdateEngineTest {
     assertEquals(new BasicDBObject("b", Util.list(new BasicDBObject("c", 2).append("n", "jon"))),
         updateEngine.doUpdate(new BasicDBObject("b", Util.list(
             new BasicDBObject("c", 1).append("n", "jon"))), update, new BasicDBObject("b.n", "jon"), false));
+  }
+
+  @Test
+  public void testPositionalOperatorWithElemMatch() {
+    String random1 = UUID.randomUUID().toString();
+    String random2 = UUID.randomUUID().toString();
+    
+    DBObject object = (DBObject) JSON.parse("{ \"name\" : \"Tenant 1\", \"appAllocations\" : [ { \"appId\" : \"" 
+                                      + random1 + "\" , \"maxUser\" : 4} , { \"appId\""
+                                      + ": \"" + random2 + "\" , \"maxUser\" : 42}]}");
+    DBObject update = (DBObject) JSON.parse("{ \"$set\" : { \"appAllocations.$.maxUser\" : 9}}");
+    DBObject query = (DBObject) JSON.parse("{ \"appAllocations\" : { \"$elemMatch\" : { \"appId\" : \"" + random1 + "\"}}}");
+
+    DBObject expected = (DBObject) JSON.parse("{ \"name\" : \"Tenant 1\", \"appAllocations\" : [ { \"appId\" : \"" 
+            + random1 + "\" , \"maxUser\" : 9} , { \"appId\""
+            + ": \"" + random2 + "\" , \"maxUser\" : 42}]}");
+    UpdateEngine updateEngine = new UpdateEngine();
+
+    assertEquals(expected.toString(),
+        updateEngine.doUpdate(object, update, query, false).toString());
   }
 
   @Test(expected = FongoException.class)

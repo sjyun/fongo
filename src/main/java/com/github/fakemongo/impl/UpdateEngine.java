@@ -126,7 +126,9 @@ public class UpdateEngine {
 
           BasicDBList listWithSingleItem = new BasicDBList ();
           listWithSingleItem.add(listItem);
-          if (filter.apply(new BasicDBObject (prePath, listWithSingleItem))) {
+          if (filter.apply((DBObject) listItem) || 
+                //Case of a nested $elemMatch
+                  filter.apply(new BasicDBObject (prePath, listWithSingleItem))) {
             doSingleKeyUpdate(postPath, (DBObject) listItem, object, query, false);
             break;
           }
