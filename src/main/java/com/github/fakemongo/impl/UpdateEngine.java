@@ -138,8 +138,11 @@ public class UpdateEngine {
           if (filter.apply(o)) {
             BasicDBList newList = new BasicDBList();
             newList.addAll(valueList);
-            ownerObj.put(prePath, newList);
+            //do not put any data on ownerObj, because the prePath can be composed of different parts
             mergeAction(String.valueOf(i), newList, object, objOriginal, false);
+            //repopulate the valueList
+            valueList.clear();
+            valueList.addAll(newList);
             break;
           }
         }
