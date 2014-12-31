@@ -3,7 +3,6 @@ package com.github.fakemongo;
 import ch.qos.logback.classic.Level;
 
 import com.github.fakemongo.impl.ExpressionParser;
-import com.github.fakemongo.impl.UpdateEngine;
 import com.github.fakemongo.impl.Util;
 import com.github.fakemongo.junit.FongoRule;
 import com.mongodb.AggregationOutput;
