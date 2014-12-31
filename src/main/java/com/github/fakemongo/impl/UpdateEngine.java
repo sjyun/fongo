@@ -124,7 +124,11 @@ public class UpdateEngine {
             throw new FongoException("can not update \"" + postPath + "\" field of non-DBObject object");
           }
 
-          if (filter.apply((DBObject) listItem)) {
+          BasicDBList listWithSingleItem = new BasicDBList ();
+          listWithSingleItem.add(listItem);
+          if (filter.apply((DBObject) listItem) || 
+                //Case of a nested $elemMatch
+                  filter.apply(new BasicDBObject (prePath, listWithSingleItem))) {
             doSingleKeyUpdate(postPath, (DBObject) listItem, object, query, false);
             break;
           }
