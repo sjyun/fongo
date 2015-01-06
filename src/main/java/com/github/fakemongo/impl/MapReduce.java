@@ -304,17 +304,17 @@ public class MapReduce {
     sb.append("var reduce = ").append(reduce).append("\n");
     sb.append("var $$$fongoOuts$$$ = new Array();\n");
     for (DBObject object : objects) {
-      String json = JSON.serialize(object);
+      String objectValue = JSON.serialize(object);
 
       DBObject existing = coll.findOne(new BasicDBObject().append(FongoDBCollection.ID_KEY,
           object.get(FongoDBCollection.ID_KEY)));
-      if (existing == null || !existing.containsField("value")) {
-        sb.append("$$$fongoOuts$$$[$$$fongoOuts$$$.length] = ").append(json).append(";\n");
+      if (existing == null) {
+        sb.append("$$$fongoOuts$$$[$$$fongoOuts$$$.length] = ").append(objectValue).append(";\n");
       } else {
         String id = JSON.serialize(object.get(FongoDBCollection.ID_KEY));
-        String objectValue = JSON.serialize(object);
+        String existingValue = JSON.serialize(existing);
         sb.append("$$$fongoId$$$ = ").append(id).append(";\n");
-        sb.append("$$$fongoValues$$$ = [ ").append(existing).append(", ").append(objectValue).append("];\n");
+        sb.append("$$$fongoValues$$$ = [ ").append(existingValue).append(", ").append(objectValue).append("];\n");
         sb.append("$$$fongoReduced$$$ = { _id : $$$fongoId$$$, value : reduce($$$fongoId$$$, $$$fongoValues$$$)};")
             .append(";\n");
         sb.append("$$$fongoOuts$$$[$$$fongoOuts$$$.length] = $$$fongoReduced$$$;\n");

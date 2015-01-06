@@ -211,12 +211,12 @@ public class FongoMapReduceOutputModesTest {
     users.insert(user3);
 
     String mapUsers = "function () {" +
-        "emit(this._id, this);" +
+        "emit(this._id, {value : this});" +
         "};";
     String mapUserLogins = "function () {" +
-        "emit(this._id, this);" +
+        "emit(this._id, {value : this});" +
         "};";
-    String reduce = "function (key, values) {" +
+    String reduce = "function (id, values) {" +
         "function ifnull(r, v, key) {\n" +
         "  if (v[key] != undefined) r[key] = v[key];\n" +
         "  return r;\n" +
@@ -227,7 +227,7 @@ public class FongoMapReduceOutputModesTest {
         "  }\n" +
         "  res = {};\n" +
         "  for (var i in values) {\n" +
-        "    res = ifnulls(res, values[i], ['_id', 'login', 'type', 'height']);\n" +
+        "    res = ifnulls(res, values[i].value, ['_id', 'login', 'type', 'height']);\n" +
         "  }\n" +
         "  return res;\n" +
         "}";
@@ -281,12 +281,12 @@ public class FongoMapReduceOutputModesTest {
     users.insert(user3);
 
     String mapUsers = "function () {" +
-        "emit(this._id, this);" +
+        "emit(this._id, {value : this});" +
         "};";
     String mapUserLogins = "function () {" +
-        "emit(this._id, this);" +
+        "emit(this._id, {value : this});" +
         "};";
-    String reduce = "function (key, values) {" +
+    String reduce = "function (id, values) {" +
         "function ifnull(r, v, key) {\n" +
         "  if (v[key] != undefined) r[key] = v[key];\n" +
         "  return r;\n" +
@@ -297,7 +297,7 @@ public class FongoMapReduceOutputModesTest {
         "  }\n" +
         "  res = {};\n" +
         "  for (var i in values) {\n" +
-        "    res = ifnulls(res, values[i], ['_id', 'login', 'type', 'height']);\n" +
+        "    res = ifnulls(res, values[i].value, ['_id', 'login', 'type', 'height']);\n" +
         "  }\n" +
         "  return res;\n" +
         "}";
