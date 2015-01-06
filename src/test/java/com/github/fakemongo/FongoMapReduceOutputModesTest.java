@@ -227,6 +227,7 @@ public class FongoMapReduceOutputModesTest {
         "  }\n" +
         "  res = {};\n" +
         "  for (var i in values) {\n" +
+        "    if (!('value' in values[i])) continue;" +
         "    res = ifnulls(res, values[i].value, ['_id', 'login', 'type', 'height']);\n" +
         "  }\n" +
         "  return res;\n" +
