@@ -1,18 +1,8 @@
 package com.github.fakemongo.impl;
 
-import com.github.fakemongo.FongoException;
-import com.github.fakemongo.impl.geo.GeoUtil;
-import com.github.fakemongo.impl.geo.LatLong;
-import com.mongodb.BasicDBList;
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBObject;
-import com.mongodb.DBRefBase;
-import com.mongodb.FongoDBCollection;
-import com.mongodb.LazyDBObject;
-import com.mongodb.QueryOperators;
-import com.mongodb.util.JSON;
-import com.vividsolutions.jts.geom.Geometry;
 import java.math.BigDecimal;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -26,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
+
 import org.bson.LazyBSONList;
 import org.bson.types.Binary;
 import org.bson.types.MaxKey;
@@ -35,6 +26,19 @@ import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.github.fakemongo.FongoException;
+import com.github.fakemongo.impl.geo.GeoUtil;
+import com.github.fakemongo.impl.geo.LatLong;
+import com.mongodb.BasicDBList;
+import com.mongodb.BasicDBObject;
+import com.mongodb.DBObject;
+import com.mongodb.DBRefBase;
+import com.mongodb.FongoDBCollection;
+import com.mongodb.LazyDBObject;
+import com.mongodb.QueryOperators;
+import com.mongodb.util.JSON;
+import com.vividsolutions.jts.geom.Geometry;
 
 @SuppressWarnings("javadoc")
 public class ExpressionParser {
@@ -896,6 +900,20 @@ public class ExpressionParser {
       if (cc2 instanceof byte[]) {
         cc2 = convertFrom((byte[]) cc2);
         checkTypes = false;
+      }
+      if (cc1 instanceof String) {
+        for (SimpleDateFormat df : new SimpleDateFormat [] {
+                new SimpleDateFormat( "yyyy-MM-dd'T'HH:mm:ssz" ),
+                new SimpleDateFormat( "yyyy-MM-dd'T'HH:mm:ss'Z'" ),
+                new SimpleDateFormat( "yyyy-MM-dd" )})
+        try {
+            Date d1 = df.parse((String) cc1);
+            cc1 = d1;
+            checkTypes = false;
+            break;
+        } catch (ParseException e) {
+            LOG.debug("Not parseable as an ISO8601 date (" + df.toPattern() + ")");
+        }
       }
 //      if (cc1 instanceof ObjectId && cc2 instanceof String && ObjectId.isValid((String) cc2)) {
 //        cc2 = ObjectId.massageToObjectId(cc2);
