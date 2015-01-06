@@ -1671,7 +1671,7 @@ public class FongoTest {
     assertEquals(collection.findOne(new BasicDBObject("_id", 1234)), expected);
   }
   
-  //PR#83
+  //PR#84
   @Test
   public void dateShouldBeComparedEvenWithAStringValue() {
 
