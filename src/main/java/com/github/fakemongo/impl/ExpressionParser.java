@@ -1,5 +1,17 @@
 package com.github.fakemongo.impl;
 
+import com.github.fakemongo.FongoException;
+import com.github.fakemongo.impl.geo.GeoUtil;
+import com.github.fakemongo.impl.geo.LatLong;
+import com.mongodb.BasicDBList;
+import com.mongodb.BasicDBObject;
+import com.mongodb.DBObject;
+import com.mongodb.DBRefBase;
+import com.mongodb.FongoDBCollection;
+import com.mongodb.LazyDBObject;
+import com.mongodb.QueryOperators;
+import com.mongodb.util.JSON;
+import com.vividsolutions.jts.geom.Geometry;
 import java.math.BigDecimal;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -27,18 +39,7 @@ import org.mozilla.javascript.Scriptable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.github.fakemongo.FongoException;
-import com.github.fakemongo.impl.geo.GeoUtil;
-import com.github.fakemongo.impl.geo.LatLong;
-import com.mongodb.BasicDBList;
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBObject;
-import com.mongodb.DBRefBase;
-import com.mongodb.FongoDBCollection;
-import com.mongodb.LazyDBObject;
-import com.mongodb.QueryOperators;
-import com.mongodb.util.JSON;
-import com.vividsolutions.jts.geom.Geometry;
+
 
 @SuppressWarnings("javadoc")
 public class ExpressionParser {
