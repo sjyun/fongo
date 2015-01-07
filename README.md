@@ -7,7 +7,6 @@ finds, updates, inserts, removes and other methods. The primary use is for light
 don't want to spin up a `mongod` process.
 
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.fakemongo/fongo/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.github.fakemongo/fongo/) ![License Apache2](https://go-shields.herokuapp.com/license-apache2-blue.png)
-[![Coverage Status](https://img.shields.io/coveralls/fakemongo/fongo.svg)](https://coveralls.io/r/fakemongo/fongo)
 
 ## Usage
 Add dependency to your project:
@@ -16,10 +15,12 @@ Add dependency to your project:
 <dependency>
   <groupId>com.github.fakemongo</groupId>
   <artifactId>fongo</artifactId>
-  <version>1.5.8</version>
+  <version>1.5.9</version>
   <scope>test</scope>
 </dependency>
 ```
+
+[Other dependency management](http://search.maven.org/#artifactdetails|com.github.fakemongo|fongo|1.5.9)
 
 *Alternatively: clone this repo and build the jar: `mvn package` then copy jar to your classpath*
 
