@@ -210,3 +210,4 @@ your name to the patch contributors below. Please maintain the same code formatt
 * [Riaz Ahmed](https://github.com/riyyaz)
 * [Martin W. Kirst](https://github.com/nitram509)
 * [LiBe](https://github.com/libetl)
+* [Vladimir Shakhov](https://github.com/bogdad)
