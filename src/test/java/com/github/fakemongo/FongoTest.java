@@ -28,8 +28,10 @@ import com.mongodb.util.JSON;
 
 import java.net.InetSocketAddress;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -1667,6 +1669,32 @@ public class FongoTest {
     
     collection.update(query, update);
     assertEquals(collection.findOne(new BasicDBObject("_id", 1234)), expected);
+  }
+  
+  //PR#84
+  @Test
+  public void dateShouldBeComparedEvenWithAStringValue() {
+
+    Calendar c1 = new GregorianCalendar();
+    c1.add(Calendar.DAY_OF_MONTH, 1);
+    Date oneDayLater = c1.getTime();
+    Calendar c2 = new GregorianCalendar();
+    c2.add(Calendar.DAY_OF_MONTH, 2);
+    Calendar c3 = new GregorianCalendar();
+    c3.add(Calendar.DAY_OF_MONTH, 3);
+    Date threeDaysLater = c3.getTime(); 
+    DBCollection collection = newCollection();
+    DBObject o1 = new BasicDBObject("_id", 1234).append("var1", "val1").append("created", 
+            oneDayLater);
+    DBObject o3 = new BasicDBObject("_id", 2345).append("var1", "val2").append("created", 
+            threeDaysLater);
+    collection.insert(o1);
+    collection.insert(o3);
+    
+    assertEquals(o1, collection.findOne(new BasicDBObject("created", new BasicDBObject ("$lt", 
+            c2.get(Calendar.YEAR) + "-" + (c2.get(Calendar.MONTH) + 1) + "-" + c2.get(Calendar.DAY_OF_MONTH)))));
+    assertEquals(o3, collection.findOne(new BasicDBObject("created", new BasicDBObject ("$gt", 
+            c2.get(Calendar.YEAR) + "-" + (c2.get(Calendar.MONTH) + 1) + "-" + c2.get(Calendar.DAY_OF_MONTH)))));
   }
   @Test
   public void shouldCompareObjectId() throws Exception {
