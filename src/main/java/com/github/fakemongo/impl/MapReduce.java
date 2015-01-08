@@ -259,10 +259,13 @@ public class MapReduce {
 
     // Create variables for exporting.
     sb.append("var $$$fongoEmits$$$ = new Object();\n");
-    sb.append("function emit(param1, param2) { if(typeof $$$fongoEmits$$$[param1] === 'undefined') { " +
-        "$$$fongoEmits$$$[param1] = new Array();" +
+    sb.append("function emit(param1, param2) {\n" +
+        "var toSource = param1.toSource();\n" +
+        "if(typeof $$$fongoEmits$$$[toSource] === 'undefined') {\n " +
+        "$$$fongoEmits$$$[toSource] = new Array();\n" +
         "}\n" +
-        "$$$fongoEmits$$$[param1][$$$fongoEmits$$$[param1].length] = param2;\n" +
+        "var val = {id: param1, value: param2};\n" +
+        "$$$fongoEmits$$$[toSource][$$$fongoEmits$$$[toSource].length] = val;\n" +
         "};\n");
     // Prepare map function.
     sb.append("var fongoMapFunction = ").append(map).append(";\n");
@@ -284,8 +287,10 @@ public class MapReduce {
     sb.setLength(0);
     sb.append("var reduce = ").append(reduce).append("\n");
     sb.append("var $$$fongoOuts$$$ = Array();\n" +
-        "for(i in $$$fongoEmits$$$) {\n" +
-        "$$$fongoOuts$$$[$$$fongoOuts$$$.length] = { _id : i, value : reduce(i, $$$fongoEmits$$$[i]) };\n" +
+        "for(var i in $$$fongoEmits$$$) {\n" +
+        "var elem = $$$fongoEmits$$$[i];\n" +
+        "values = []; id = null; for (var ii in elem) { values.push(elem[ii].value); id = elem[ii].id;}\n" +
+        "$$$fongoOuts$$$[$$$fongoOuts$$$.length] = { _id : id, value : reduce(id, values) };\n" +
         "}\n");
     result.add(sb.toString());
 
