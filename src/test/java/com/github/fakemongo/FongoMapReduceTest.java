@@ -43,6 +43,7 @@ public class FongoMapReduceTest {
     String reduce = "function(key, values){    var res = 0;    values.forEach(function(v){ res += 1});    return {count: res};  };";
     coll.mapReduce(map, reduce, "result", new BasicDBObject());
 
+
     List<DBObject> results = fongoRule.newCollection("result").find().toArray();
     assertEquals(fongoRule.parse("[{ \"_id\" : \"www.google.com\" , \"value\" : { \"count\" : 2.0}}, { \"_id\" : \"www.no-fucking-idea.com\" , \"value\" : { \"count\" : 3.0}}]"), results);
   }
