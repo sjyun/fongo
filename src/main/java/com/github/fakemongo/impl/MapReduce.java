@@ -293,6 +293,7 @@ public class MapReduce {
         "$$$fongoOuts$$$[$$$fongoOuts$$$.length] = { _id : id, value : reduce(id, values) };\n" +
         "}\n");
     result.add(sb.toString());
+
     return result;
   }
 
