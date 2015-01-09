@@ -66,6 +66,57 @@ public class FongoMapReduceTest {
     assertEquals(fongoRule.parse("[{\"_id\" : {url: \"www.google.com\"} , \"value\" : { \"count\" : 2.0}}, { \"_id\" : {url: \"www.no-fucking-idea.com\"} , \"value\" : { \"count\" : 3.0}}]"), results);
   }
 
+  @Test
+  public void testMapReduceJoinOneToMany() {
+    DBCollection urls = fongoRule.newCollection();
+    DBCollection dates = fongoRule.newCollection();
+
+    fongoRule.insertJSON(urls, "[{url: \"www.google.com\", date: \"1\", trash_data: \"5\" },\n" +
+        " {url: \"www.no-fucking-idea.com\", date: \"1\", trash_data: \"13\" },\n" +
+        " {url: \"www.google.com\", date: \"1\", trash_data: \"1\" },\n" +
+        " {url: \"www.no-fucking-idea.com\", date: \"2\", trash_data: \"256\" }]");
+    fongoRule.insertJSON(dates, "[{date: \"1\", dateval: \"10\"}, {date:\"2\", dateval: \"20\"}]");
+
+    String mapUrls = "function() {    emit({date: this.date}, {value : [{url:this.url, date:this.date}]});};";
+    String mapDates = "function() {  emit({date:this.date}, {value : [{dateval:this.dateval}]});};";
+    String reduce = "function(key, values){" +
+        "    var dateval = null;\n" +
+        "    for (var j in values) {\n" +
+        "        var valArr = values[j].value;\n" +
+        "        for (var jj in valArr) {\n" +
+        "            var value = valArr[jj];\n" +
+        "            if (value.dateval !== null) {\n" +
+        "                dateval = value.dateval;\n" +
+        "            }\n" +
+        "        }\n" +
+        "    }" +
+        "    var outValues = [];\n" +
+        "    for (var j in values) {\n" +
+        "        var valArr = values[j].value;\n" +
+        "        for (var jj in valArr) {\n" +
+        "            var orig = valArr[jj];\n" +
+        "            var copy = {};\n" +
+        "            for (var jjj in orig) {\n" +
+        "             copy[jjj] = orig[jjj];\n" +
+        "            }\n" +
+        "            copy[\"dateval\"] = dateval;\n" +
+        "            outValues.push(copy);\n" +
+        "        }\n" +
+        "    }\n" +
+        "    return {value:outValues};" +
+        "};";
+    urls.mapReduce(mapUrls, reduce, "result", MapReduceCommand.OutputType.REDUCE, new BasicDBObject());
+    dates.mapReduce(mapDates, reduce, "result", MapReduceCommand.OutputType.REDUCE, new BasicDBObject());
+    urls.find().toArray();
+    dates.find().toArray();
+    List<DBObject> results = fongoRule.newCollection("result").find().toArray();
+    assertEquals(fongoRule.parse("[{ \"_id\" : { \"date\" : \"1\"} , " +
+        "\"value\" : { \"value\" : [ { \"dateval\" : \"10\"} , { \"url\" : \"www.google.com\" , \"date\" : \"1\" , \"dateval\" : \"10\"} , " +
+        "{ \"url\" : \"www.no-fucking-idea.com\" , \"date\" : \"1\" , \"dateval\" : \"10\"} , " +
+        "{ \"url\" : \"www.google.com\" , \"date\" : \"1\" , \"dateval\" : \"10\"}]}}, { \"_id\" : { \"date\" : \"2\"} , " +
+        "\"value\" : { \"value\" : [ { } , { \"url\" : \"www.no-fucking-idea.com\" , \"date\" : \"2\"}]}}]"), results);
+  }
+
     // see http://no-fucking-idea.com/blog/2012/04/01/using-map-reduce-with-mongodb/
     @Test
     public void testMapReduceWithArray() {
