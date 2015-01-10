@@ -82,7 +82,7 @@ public class FongoMapReduceTest {
         " {date: \"2\", trash_data: \"256\" }]");
     fongoRule.insertJSON(dates, "[{date: \"1\", dateval: \"10\"}, {date:\"2\", dateval: \"20\"}]");
 
-    String mapTrash = "function() {    emit({date: this.date}, {value : [{trash_data:this.trash_data, date:this.date}]});};";
+    String mapTrash = "function() {    emit({date: this.date}, {value : [{dateval: null, trash_data:this.trash_data, date:this.date}]});};";
     String mapDates = "function() {  emit({date:this.date}, {value : [{dateval:this.dateval}]});};";
     String reduce = "function(key, values){" +
         "    var dateval = null;\n" +
@@ -90,7 +90,7 @@ public class FongoMapReduceTest {
         "        var valArr = values[j].value;\n" +
         "        for (var jj in valArr) {\n" +
         "            var value = valArr[jj];\n" +
-        "            if ('dateval' in value) {\n" +
+        "            if (value.dateval !== null) {\n" +
         "                dateval = value.dateval;\n" +
         "            }\n" +
         "        }\n" +
