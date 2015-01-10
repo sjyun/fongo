@@ -7,8 +7,12 @@ import com.mongodb.DBObject;
 import com.mongodb.MapReduceCommand;
 import com.mongodb.MapReduceOutput;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import static org.junit.Assert.assertEquals;
+import com.mongodb.util.JSON;
+import org.assertj.core.api.Assertions;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -68,16 +72,17 @@ public class FongoMapReduceTest {
 
   @Test
   public void testMapReduceJoinOneToMany() {
-    DBCollection urls = fongoRule.newCollection();
+    DBCollection trash = fongoRule.newCollection();
     DBCollection dates = fongoRule.newCollection();
 
-    fongoRule.insertJSON(urls, "[{url: \"www.google.com\", date: \"1\", trash_data: \"5\" },\n" +
-        " {url: \"www.no-fucking-idea.com\", date: \"1\", trash_data: \"13\" },\n" +
-        " {url: \"www.google.com\", date: \"1\", trash_data: \"1\" },\n" +
-        " {url: \"www.no-fucking-idea.com\", date: \"2\", trash_data: \"256\" }]");
+    fongoRule.insertJSON(trash, "[" +
+        " {date: \"1\", trash_data: \"13\" },\n" +
+        " {date: \"1\", trash_data: \"1\" },\n" +
+        " {date: \"2\", trash_data: \"100\" },\n" +
+        " {date: \"2\", trash_data: \"256\" }]");
     fongoRule.insertJSON(dates, "[{date: \"1\", dateval: \"10\"}, {date:\"2\", dateval: \"20\"}]");
 
-    String mapUrls = "function() {    emit({date: this.date}, {value : [{url:this.url, date:this.date}]});};";
+    String mapTrash = "function() {    emit({date: this.date}, {value : [{trash_data:this.trash_data, date:this.date}]});};";
     String mapDates = "function() {  emit({date:this.date}, {value : [{dateval:this.dateval}]});};";
     String reduce = "function(key, values){" +
         "    var dateval = null;\n" +
@@ -85,7 +90,7 @@ public class FongoMapReduceTest {
         "        var valArr = values[j].value;\n" +
         "        for (var jj in valArr) {\n" +
         "            var value = valArr[jj];\n" +
-        "            if (value.dateval !== null) {\n" +
+        "            if ('dateval' in value) {\n" +
         "                dateval = value.dateval;\n" +
         "            }\n" +
         "        }\n" +
@@ -99,22 +104,37 @@ public class FongoMapReduceTest {
         "            for (var jjj in orig) {\n" +
         "             copy[jjj] = orig[jjj];\n" +
         "            }\n" +
-        "            copy[\"dateval\"] = dateval;\n" +
+        "            if (dateval !== null) {\n" +
+        "                copy[\"dateval\"] = dateval;\n" +
+        "            }\n" +
         "            outValues.push(copy);\n" +
         "        }\n" +
         "    }\n" +
         "    return {value:outValues};" +
         "};";
-    urls.mapReduce(mapUrls, reduce, "result", MapReduceCommand.OutputType.REDUCE, new BasicDBObject());
+    trash.mapReduce(mapTrash, reduce, "result", MapReduceCommand.OutputType.REDUCE, new BasicDBObject());
     dates.mapReduce(mapDates, reduce, "result", MapReduceCommand.OutputType.REDUCE, new BasicDBObject());
-    urls.find().toArray();
-    dates.find().toArray();
     List<DBObject> results = fongoRule.newCollection("result").find().toArray();
-    assertEquals(fongoRule.parse("[{ \"_id\" : { \"date\" : \"1\"} , " +
-        "\"value\" : { \"value\" : [ { \"dateval\" : \"10\"} , { \"url\" : \"www.google.com\" , \"date\" : \"1\" , \"dateval\" : \"10\"} , " +
-        "{ \"url\" : \"www.no-fucking-idea.com\" , \"date\" : \"1\" , \"dateval\" : \"10\"} , " +
-        "{ \"url\" : \"www.google.com\" , \"date\" : \"1\" , \"dateval\" : \"10\"}]}}, { \"_id\" : { \"date\" : \"2\"} , " +
-        "\"value\" : { \"value\" : [ { } , { \"url\" : \"www.no-fucking-idea.com\" , \"date\" : \"2\"}]}}]"), results);
+    Map<String, DBObject> byId = new HashMap<String, DBObject>();
+    for (DBObject res : results) {
+      byId.put(JSON.serialize(res.get("_id")), res);
+    }
+    List<DBObject> expected = fongoRule.parse("[" +
+        "{\"_id\":{\"date\":\"1\"}, \"value\":" +
+        "{\"value\":[{\"dateval\":\"10\"}, {\"trash_data\":\"13\", \"date\":\"1\", \"dateval\":\"10\"}, " +
+        "{\"trash_data\":\"1\", \"date\":\"1\", \"dateval\":\"10\"}]}}, " +
+        "{\"_id\":{\"date\":\"2\"}, \"value\":" +
+        "{\"value\":[{\"dateval\":\"20\"}, {\"trash_data\":\"100\", \"date\":\"2\", \"dateval\":\"20\"}, " +
+        "{\"trash_data\":\"256\", \"date\":\"2\", \"dateval\":\"20\"}]}}]");
+    for (DBObject e : expected) {
+      List<DBObject> values = (List<DBObject>)(((DBObject) e.get("value")).get("value"));
+      DBObject id = (DBObject) e.get("_id");
+      DBObject actual = byId.get(JSON.serialize(id));
+      List<DBObject> actualValues = (List<DBObject>)(((DBObject) actual.get("value")).get("value"));
+      Assertions.assertThat(actualValues).containsAll(values);
+      Assertions.assertThat(actualValues.size()).isEqualTo(values.size());
+    }
+    Assertions.assertThat(expected.size()).isEqualTo(results.size());
   }
 
     // see http://no-fucking-idea.com/blog/2012/04/01/using-map-reduce-with-mongodb/
