@@ -3,8 +3,12 @@ package com.github.fakemongo.integration;
 import com.github.fakemongo.Fongo;
 import com.mongodb.Mongo;
 import java.io.Serializable;
-import java.util.*;
-
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.bson.types.ObjectId;
 import org.junit.Assert;
 import static org.junit.Assert.assertEquals;
@@ -134,24 +138,24 @@ public class SpringFongoTest {
         new ReferencedObject("d")), result);
   }
 
-    @Test
-   public void testMapLookup() throws Exception {
-        ApplicationContext ctx = new AnnotationConfigApplicationContext(MongoConfig.class);
-        SpringModelMapRepository springModelMapRepository = ctx.getBean(SpringModelMapRepository.class);
-        String serial = "serial1";
-        Date time = new Date();
-        Map<String, Object> springModelBarcode = new HashMap<String, Object>();
-        springModelBarcode.put("serial",serial);
-        springModelBarcode.put("time", time);
-        SpringModelMap map = new SpringModelMap(springModelBarcode);
-        springModelMapRepository.save(map);
-        MongoOperations mongoOperations = (MongoOperations) ctx.getBean("mongoTemplate");
-        Query query = Query.query(Criteria.where("barcode.serial").is(serial).and("barcode.time").is(time));
-        List<SpringModelMap> receipts = mongoOperations.find(query, SpringModelMap.class);
-        assertEquals(1, receipts.size());
-    }
+  @Test
+  public void testMapLookup() throws Exception {
+    ApplicationContext ctx = new AnnotationConfigApplicationContext(MongoConfig.class);
+    SpringModelMapRepository springModelMapRepository = ctx.getBean(SpringModelMapRepository.class);
+    String serial = "serial1";
+    Date time = new Date();
+    Map<String, Object> springModelBarcode = new HashMap<String, Object>();
+    springModelBarcode.put("serial", serial);
+    springModelBarcode.put("time", time);
+    SpringModelMap map = new SpringModelMap(springModelBarcode);
+    springModelMapRepository.save(map);
+    MongoOperations mongoOperations = (MongoOperations) ctx.getBean("mongoTemplate");
+    Query query = Query.query(Criteria.where("barcode.serial").is(serial).and("barcode.time").is(time));
+    List<SpringModelMap> receipts = mongoOperations.find(query, SpringModelMap.class);
+    assertEquals(1, receipts.size());
+  }
 
-    @Configuration
+  @Configuration
   @EnableMongoRepositories
   public static class MongoConfig extends AbstractMongoConfiguration {
 
