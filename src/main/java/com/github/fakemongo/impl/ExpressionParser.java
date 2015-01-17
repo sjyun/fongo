@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
-
 import org.bson.LazyBSONList;
 import org.bson.types.Binary;
 import org.bson.types.MaxKey;
@@ -38,7 +37,6 @@ import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 
 
 @SuppressWarnings("javadoc")
@@ -345,21 +343,21 @@ public class ExpressionParser {
     }
 
     boolean containsWithRegex(Set querySet, Object storedValue) {
-        if (querySet.contains(storedValue)) {
-            return true;
-        }
-        if (storedValue instanceof CharSequence) {
-            CharSequence s = (CharSequence)storedValue;
-            for (Object o : querySet) {
-                if (o instanceof Pattern) {
-                    Pattern p = (Pattern) o;
-                    if (p.matcher(s).find()) {
-                        return true;
-                    }
-                }
+      if (querySet.contains(storedValue)) {
+        return true;
+      }
+      if (storedValue instanceof CharSequence) {
+        CharSequence s = (CharSequence) storedValue;
+        for (Object o : querySet) {
+          if (o instanceof Pattern) {
+            Pattern p = (Pattern) o;
+            if (p.matcher(s).find()) {
+              return true;
             }
+          }
         }
-        return false;
+      }
+      return false;
     }
   }
 
@@ -473,10 +471,10 @@ public class ExpressionParser {
       },
       new ConditionalOperatorFilterFactory(EQ) {
         @Override
-	boolean singleCompare(Object queryValue, Object storedValue) {
+        boolean singleCompare(Object queryValue, Object storedValue) {
           Integer result = compareObjects(queryValue, storedValue, true);
           return result != null && result.intValue() == 0;
-	}
+        }
       },
       new BasicCommandFilterFactory(NE) {
         @Override
@@ -552,10 +550,22 @@ public class ExpressionParser {
             return false;
           }
 
-          Filter filter = buildFilter(query);
-          for (Object object : storedList) {
-            if (filter.apply((DBObject) object)) {
-              return true;
+          if (query.keySet().iterator().next().startsWith("$")) {
+            // Simple expression, like $elemMatch: { $gte: 80, $lt: 85 }
+            // We must iterate on each element and test with the query.
+            BasicDBObject dbObject = new BasicDBObject("$$$$fongo$$$$", query);
+            Filter filter = buildFilter(dbObject);
+            for (Object object : storedList) {
+              if (filter.apply(new BasicDBObject("$$$$fongo$$$$", object))) {
+                return true;
+              }
+            }
+          } else {
+            Filter filter = buildFilter(query);
+            for (Object object : storedList) {
+              if (filter.apply((DBObject) object)) {
+                return true;
+              }
             }
           }
 
@@ -903,18 +913,18 @@ public class ExpressionParser {
         checkTypes = false;
       }
       if (cc1 instanceof String && cc2 instanceof Date) {
-        for (SimpleDateFormat df : new SimpleDateFormat [] {
-                new SimpleDateFormat( "yyyy-MM-dd'T'HH:mm:ssz" ),
-                new SimpleDateFormat( "yyyy-MM-dd'T'HH:mm:ss'Z'" ),
-                new SimpleDateFormat( "yyyy-MM-dd" )})
-        try {
+        for (SimpleDateFormat df : new SimpleDateFormat[]{
+            new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssz"),
+            new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'"),
+            new SimpleDateFormat("yyyy-MM-dd")})
+          try {
             Date d1 = df.parse((String) cc1);
             cc1 = d1;
             checkTypes = false;
             break;
-        } catch (ParseException e) {
+          } catch (ParseException e) {
             LOG.debug("Not parseable as an ISO8601 date (" + df.toPattern() + ")");
-        }
+          }
       }
 //      if (cc1 instanceof ObjectId && cc2 instanceof String && ObjectId.isValid((String) cc2)) {
 //        cc2 = ObjectId.massageToObjectId(cc2);

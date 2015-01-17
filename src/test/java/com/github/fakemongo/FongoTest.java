@@ -363,6 +363,34 @@ public class FongoTest {
     ), cursor.toArray());
   }
 
+  // See http://docs.mongodb.org/manual/reference/operator/query/elemMatch/
+  @Test
+  public void should_elemMatch_from_manual_works() {
+    DBCollection collection = newCollection();
+
+    collection.insert((DBObject) JSON.parse("{ _id: 1, results: [ 82, 85, 88 ] }"));
+    collection.insert((DBObject) JSON.parse("{ _id: 2, results: [ 75, 88, 89 ] }"));
+
+    DBCursor cursor = collection.find((DBObject) JSON.parse("{ results: { $elemMatch: { $gte: 80, $lt: 85 } } }"));
+    assertEquals(Arrays.asList((DBObject) JSON.parse("{ \"_id\" : 1, \"results\" : [ 82, 85, 88 ] }")
+    ), cursor.toArray());
+  }
+
+  // See http://docs.mongodb.org/manual/reference/operator/query/elemMatch/
+  @Test
+  public void should_elemMatch_array_of_embedded_documents() {
+    DBCollection collection = newCollection();
+
+    collection.insert((DBObject) JSON.parse("{ _id: 1, results: [ { product: \"abc\", score: 10 }, { product: \"xyz\", score: 5 } ] }"));
+    collection.insert((DBObject) JSON.parse("{ _id: 2, results: [ { product: \"abc\", score: 8 }, { product: \"xyz\", score: 7 } ] }"));
+    collection.insert((DBObject) JSON.parse("{ _id: 3, results: [ { product: \"abc\", score: 7 }, { product: \"xyz\", score: 8 } ] }"));
+
+
+    DBCursor cursor = collection.find((DBObject) JSON.parse("{ results: { $elemMatch: { product: \"xyz\", score: { $gte: 8 } } } }"));
+    assertEquals(Arrays.asList((DBObject) JSON.parse("{ \"_id\" : 3, \"results\" : [ { \"product\" : \"abc\", \"score\" : 7 }, { \"product\" : \"xyz\", \"score\" : 8 } ] }")
+    ), cursor.toArray());
+  }
+
   // See http://docs.mongodb.org/manual/reference/command/text/
   @Test
   public void testCommandTextSearch() {
