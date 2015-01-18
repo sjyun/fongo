@@ -882,7 +882,7 @@ public class FongoAggregateProjectTest {
   public void should_$year_give_the_year_of_the_date() {
     // Given
     DBCollection collection = fongoRule.newCollection();
-    Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT"), Locale.ENGLISH);
+    Calendar calendar = getCalendarInstance();
     calendar.set(Calendar.YEAR, 2014);
     collection.insert(new BasicDBObject("date_created", calendar.getTime()).append("_id", 1));
 
@@ -897,7 +897,7 @@ public class FongoAggregateProjectTest {
   public void should_$month_give_the_month_of_the_date() {
     // Given
     DBCollection collection = fongoRule.newCollection();
-    Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT"), Locale.ENGLISH);
+    Calendar calendar = getCalendarInstance();
     calendar.set(Calendar.YEAR, 2014);
     calendar.set(Calendar.MONTH, 11);
     collection.insert(new BasicDBObject("date_created", calendar.getTime()).append("_id", 1));
@@ -913,7 +913,7 @@ public class FongoAggregateProjectTest {
   public void should_$dayOfYear_give_the_dayOfYear_of_the_date() {
     // Given
     DBCollection collection = fongoRule.newCollection();
-    Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT"), Locale.ENGLISH);
+    Calendar calendar = getCalendarInstance();
     calendar.set(Calendar.YEAR, 2014);
     calendar.set(Calendar.DAY_OF_YEAR, 110);
     collection.insert(new BasicDBObject("date_created", calendar.getTime()).append("_id", 1));
@@ -929,7 +929,7 @@ public class FongoAggregateProjectTest {
   public void should_$dayOfMonth_give_the_dayOfMonth_of_the_date() {
     // Given
     DBCollection collection = fongoRule.newCollection();
-    Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT"), Locale.ENGLISH);
+    Calendar calendar = getCalendarInstance();
     calendar.set(Calendar.YEAR, 2014);
     calendar.set(Calendar.DAY_OF_YEAR, 110);
     collection.insert(new BasicDBObject("date_created", calendar.getTime()).append("_id", 1));
@@ -945,7 +945,7 @@ public class FongoAggregateProjectTest {
   public void should_$dayOfWeek_give_the_dayOfWeek_of_the_date() {
     // Given
     DBCollection collection = fongoRule.newCollection();
-    Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT"), Locale.ENGLISH);
+    Calendar calendar = getCalendarInstance();
     calendar.set(Calendar.YEAR, 2014);
     calendar.set(Calendar.DAY_OF_YEAR, 110);
     collection.insert(new BasicDBObject("date_created", calendar.getTime()).append("_id", 1));
@@ -962,7 +962,7 @@ public class FongoAggregateProjectTest {
   public void should_$week_give_the_week_of_the_date() {
     // Given
     DBCollection collection = fongoRule.newCollection();
-    Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT"), Locale.US);
+    Calendar calendar = getCalendarInstance();
     calendar.setTimeInMillis(1400000000000L);
     collection.insert(new BasicDBObject("date_created", calendar.getTime()).append("_id", 1));
 
@@ -977,7 +977,7 @@ public class FongoAggregateProjectTest {
   public void should_$hour_give_the_hour_of_the_date() {
     // Given
     DBCollection collection = fongoRule.newCollection();
-    Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT"), Locale.US);
+    Calendar calendar = getCalendarInstance();
     calendar.setTimeInMillis(1400000000000L);
     collection.insert(new BasicDBObject("date_created", calendar.getTime()).append("_id", 1));
 
@@ -992,7 +992,7 @@ public class FongoAggregateProjectTest {
   public void should_$minute_give_the_minute_of_the_date() {
     // Given
     DBCollection collection = fongoRule.newCollection();
-    Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT"), Locale.ENGLISH);
+    Calendar calendar = getCalendarInstance();
     calendar.set(Calendar.YEAR, 2014);
     calendar.set(Calendar.DAY_OF_YEAR, 110);
     calendar.set(Calendar.HOUR, 5);
@@ -1012,7 +1012,7 @@ public class FongoAggregateProjectTest {
   public void should_$second_give_the_second_of_the_date() {
     // Given
     DBCollection collection = fongoRule.newCollection();
-    Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT"), Locale.ENGLISH);
+    Calendar calendar = getCalendarInstance();
     calendar.set(Calendar.YEAR, 2014);
     calendar.set(Calendar.DAY_OF_YEAR, 110);
     calendar.set(Calendar.HOUR, 5);
@@ -1032,7 +1032,7 @@ public class FongoAggregateProjectTest {
   public void should_$millisecond_give_the_millisecond_of_the_date() {
     // Given
     DBCollection collection = fongoRule.newCollection();
-    Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT"), Locale.ENGLISH);
+    Calendar calendar = getCalendarInstance();
     calendar.set(Calendar.YEAR, 2014);
     calendar.set(Calendar.DAY_OF_YEAR, 110);
     calendar.set(Calendar.HOUR, 5);
@@ -1061,5 +1061,9 @@ public class FongoAggregateProjectTest {
     collection.insert(new BasicDBObject("myId", "p0"));
     collection.insert(new BasicDBObject("myId", "p4"));
     return collection;
+  }
+
+  private Calendar getCalendarInstance() {
+    return Calendar.getInstance(TimeZone.getTimeZone("GMT"), Locale.ENGLISH);
   }
 }
