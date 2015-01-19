@@ -24,7 +24,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.config.AbstractMongoConfiguration;
 import org.springframework.data.mongodb.core.MongoOperations;
-import org.springframework.data.mongodb.core.geo.Point;
+import org.springframework.data.geo.Point;
 import org.springframework.data.mongodb.core.index.GeoSpatialIndexed;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -50,7 +50,7 @@ public class SpringFongoTest {
     mongoOperations.save(mainObject);
 
     MainObject foundObject = mongoOperations.findOne(
-        new Query(Criteria.where("referencedObject.$id").is(ObjectId.massageToObjectId(referencedObject.getId()))),
+        new Query(Criteria.where("referencedObject.$id").is(new ObjectId(referencedObject.getId()))),
         MainObject.class);
 
     assertNotNull("should have found an object", foundObject);
@@ -71,7 +71,7 @@ public class SpringFongoTest {
 
     // Then
     assertEquals(object, mongoOperations.findOne(
-        new Query(Criteria.where("id").is(ObjectId.massageToObjectId(object.getId()))),
+        new Query(Criteria.where("id").is(new ObjectId(object.getId()))),
         GeoSpatialIndexedWrapper.class));
     assertEquals(object, mongoOperations.findOne(
         new Query(Criteria.where("geo").is(object.getGeo())),
@@ -213,9 +213,8 @@ public class SpringFongoTest {
 
       ReferencedObject that = (ReferencedObject) o;
 
-      if (id != null ? !id.equals(that.id) : that.id != null) return false;
+      return !(id != null ? !id.equals(that.id) : that.id != null);
 
-      return true;
     }
 
     @Override
@@ -280,10 +279,8 @@ public class SpringFongoTest {
 
       GeoSpatialIndexedWrapper that = (GeoSpatialIndexedWrapper) o;
 
-      if (!id.equals(that.id)) return false;
-      if (!Arrays.equals(geo, that.geo)) return false;
+      return id.equals(that.id) && Arrays.equals(geo, that.geo);
 
-      return true;
     }
 
     @Override
