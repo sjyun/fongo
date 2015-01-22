@@ -359,7 +359,7 @@ public class FongoDBCollection extends DBCollection {
     BasicDBObject rec = new BasicDBObject();
     rec.append("v", 1);
     rec.append("key", keys);
-    rec.append("ns", this.getDB().getName() + "." + this.getName());
+    rec.append("ns", nsName());
     if (options != null && options.containsField("name")) {
       rec.append("name", options.get("name"));
     } else {
@@ -1008,7 +1008,7 @@ public class FongoDBCollection extends DBCollection {
 
   protected synchronized void _dropIndex(String name) throws MongoException {
     DBCollection indexColl = fongoDb.getCollection("system.indexes");
-    indexColl.remove(new BasicDBObject("name", name));
+    indexColl.remove(new BasicDBObject("name", name).append("ns", nsName()));
     ListIterator<IndexAbstract> iterator = indexes.listIterator();
     while (iterator.hasNext()) {
       IndexAbstract index = iterator.next();
@@ -1017,6 +1017,10 @@ public class FongoDBCollection extends DBCollection {
         break;
       }
     }
+  }
+
+  private String nsName() {
+    return this.getDB().getName() + "." + this.getName();
   }
 
   protected synchronized void _dropIndexes() {

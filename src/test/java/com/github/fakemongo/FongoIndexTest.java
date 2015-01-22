@@ -752,6 +752,38 @@ public class FongoIndexTest {
     collection.insert(new BasicDBObject("date", new BasicDBList()));
   }
 
+  @Test
+  public void should_not_dropIndex_interfer_between_collection() {
+    // Given
+    DBCollection collection1 = fongoRule.newCollection();
+    DBCollection collection2 = fongoRule.newCollection();
+    collection1.createIndex(new BasicDBObject("date", 1));
+    collection2.createIndex(new BasicDBObject("date", 1));
+
+    // When
+    collection1.dropIndex(new BasicDBObject("date", 1));
+
+    // Then
+    Assertions.assertThat(collection1.getIndexInfo()).hasSize(1);
+    Assertions.assertThat(collection2.getIndexInfo()).hasSize(2);
+  }
+
+  @Test
+  public void should_not_dropIndexes_interfer_between_collection() {
+    // Given
+    DBCollection collection1 = fongoRule.newCollection();
+    DBCollection collection2 = fongoRule.newCollection();
+    collection1.createIndex(new BasicDBObject("date", 1));
+    collection2.createIndex(new BasicDBObject("date", 1));
+
+    // When
+    collection1.dropIndexes();
+
+    // Then
+    Assertions.assertThat(collection1.getIndexInfo()).hasSize(1);
+    Assertions.assertThat(collection2.getIndexInfo()).hasSize(2);
+  }
+
   static IndexAbstract getIndex(DBCollection collection, String name) {
     FongoDBCollection fongoDBCollection = (FongoDBCollection) collection;
 
