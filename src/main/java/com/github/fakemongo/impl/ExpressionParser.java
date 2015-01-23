@@ -189,6 +189,7 @@ public class ExpressionParser {
     if (ref != null) {
       for (String key : ref.keySet()) {
         Object expression = ref.get(key);
+
         andFilter.addFilter(buildExpressionFilter(key, expression));
       }
     }
@@ -819,12 +820,10 @@ public class ExpressionParser {
         } else {
           for (Object storedValue : storedOption) {
             if (storedValue instanceof List) {
-              if (expression instanceof List) {
-                if (storedValue.equals(expression)) {
-                  return true;
-                }
+              if (expression instanceof Collection) {
+                return storedValue.equals(expression) || contains((List) storedValue, (Collection) expression);
               }
-              if (((List) storedValue).contains(expression)) {
+              if (contains((List) storedValue, expression)) {
                 return true;
               }
             } else {
@@ -976,6 +975,24 @@ public class ExpressionParser {
 
   private Comparable<String> convertFrom(byte[] array) {
     return new String(array);
+  }
+
+  public boolean contains(Collection source, Object element) {
+    for (Object objectSource : source) {
+      if (compareObjects(objectSource, element) == 0) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  public boolean contains(Collection source, Collection elements) {
+    for (Object element : elements) {
+      if (!contains(source, element)) {
+        return false;
+      }
+    }
+    return true;
   }
 
   public int compareLists(List queryList, List storedList) {
