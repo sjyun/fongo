@@ -4,17 +4,17 @@ import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 import com.mongodb.FongoDBCollection;
+import com.mongodb.LazyDBList;
 import com.mongodb.gridfs.GridFSFile;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.bson.LazyBSONObject;
-import org.bson.LazyDBList;
 import org.bson.types.Binary;
 
 public final class Util {
@@ -161,6 +161,9 @@ public final class Util {
     if (source instanceof Binary) {
       return ((Binary) source).getData().clone();
     }
+    if (source instanceof Date) {
+      return new Date(((Date) source).getTime());
+    }
 //    if(source instanceof Cloneable) {
 //      return ((Cloneable) source).clone();
 //    }
@@ -184,11 +187,18 @@ public final class Util {
       return clone;
     }
 
-    if (source instanceof LazyDBList) {
+    if (source instanceof org.bson.LazyDBList) {
       BasicDBList clone = new BasicDBList();
-      Iterator it = ((LazyDBList) source).iterator();
-      while (it.hasNext()) {
-        Object o = it.next();
+      for (Object o : ((org.bson.LazyDBList) source)) {
+        if (o instanceof DBObject) {
+          clone.add(Util.clone((DBObject) o));
+        } else {
+          clone.add(o);
+        }
+      }
+    } else if (source instanceof LazyDBList) {
+      BasicDBList clone = new BasicDBList();
+      for (Object o : ((LazyDBList) source)) {
         if (o instanceof DBObject) {
           clone.add(Util.clone((DBObject) o));
         } else {

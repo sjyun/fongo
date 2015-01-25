@@ -886,7 +886,7 @@ public class ExpressionParser {
     Class<?> clazz1 = c1 == null ? Null.class : c1.getClass();
     Class<?> clazz2 = c2 == null ? Null.class : c2.getClass();
     // Not comparable for MinKey/MaxKey
-    if (!clazz1.equals(clazz2) || !(cc1 instanceof Comparable)) {
+    if (!clazz1.isAssignableFrom(clazz2) || !(cc1 instanceof Comparable)) {
       boolean checkTypes = true;
       if (cc1 instanceof Number) {
         if (cc2 instanceof Number) {
@@ -917,8 +917,7 @@ public class ExpressionParser {
             new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'"),
             new SimpleDateFormat("yyyy-MM-dd")})
           try {
-            Date d1 = df.parse((String) cc1);
-            cc1 = d1;
+            cc1 = df.parse((String) cc1);
             checkTypes = false;
             break;
           } catch (ParseException e) {

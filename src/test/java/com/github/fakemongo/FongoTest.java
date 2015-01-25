@@ -1,7 +1,6 @@
 package com.github.fakemongo;
 
 import ch.qos.logback.classic.Level;
-
 import com.github.fakemongo.impl.ExpressionParser;
 import com.github.fakemongo.impl.Util;
 import com.github.fakemongo.junit.FongoRule;
@@ -25,8 +24,9 @@ import com.mongodb.ServerAddress;
 import com.mongodb.WriteConcern;
 import com.mongodb.WriteResult;
 import com.mongodb.util.JSON;
-
 import java.net.InetSocketAddress;
+import java.sql.Time;
+import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
@@ -39,11 +39,8 @@ import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
-
 import org.assertj.core.api.Assertions;
-
 import static org.assertj.core.api.Assertions.assertThat;
-
 import org.assertj.core.util.Lists;
 import org.bson.BSON;
 import org.bson.Transformer;
@@ -51,7 +48,6 @@ import org.bson.types.Binary;
 import org.bson.types.MaxKey;
 import org.bson.types.MinKey;
 import org.bson.types.ObjectId;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -59,7 +55,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
@@ -1671,7 +1666,7 @@ public class FongoTest {
     assertEquals(Arrays.asList(
         new BasicDBObject("_id", 2).append("a", 2)), objects);
   }
-  
+
   //PR#82
   @Test
   public void testAddOrReplaceElementMustWorkWithDollarOperator() {
@@ -1682,23 +1677,23 @@ public class FongoTest {
     BasicDBList list1 = new BasicDBList();
     list1.add(new BasicDBObject("_id", random1).append("var3", "val31"));
     list1.add(new BasicDBObject("_id", random2).append("var3", "val32"));
-    collection.insert(new BasicDBObject("_id", 1234).append("var1", "val1").append("parentObject", 
-            new BasicDBObject("var2", "val21").append("subObject", list1)));
-    
+    collection.insert(new BasicDBObject("_id", 1234).append("var1", "val1").append("parentObject",
+        new BasicDBObject("var2", "val21").append("subObject", list1)));
+
     DBObject query = new BasicDBObject("_id", 1234).append("parentObject.subObject._id", random1);
-    DBObject update = new BasicDBObject("$set", new BasicDBObject ("parentObject.subObject.$", 
-            new BasicDBObject ("_id", random1).append("var3", "val33")));
+    DBObject update = new BasicDBObject("$set", new BasicDBObject("parentObject.subObject.$",
+        new BasicDBObject("_id", random1).append("var3", "val33")));
 
     BasicDBList list2 = new BasicDBList();
     list2.add(new BasicDBObject("_id", random1).append("var3", "val33"));
     list2.add(new BasicDBObject("_id", random2).append("var3", "val32"));
-    DBObject expected = new BasicDBObject("_id", 1234).append("var1", "val1").append("parentObject", 
-            new BasicDBObject("var2", "val21").append("subObject", list2));
-    
+    DBObject expected = new BasicDBObject("_id", 1234).append("var1", "val1").append("parentObject",
+        new BasicDBObject("var2", "val21").append("subObject", list2));
+
     collection.update(query, update);
     assertEquals(collection.findOne(new BasicDBObject("_id", 1234)), expected);
   }
-  
+
   //PR#84
   @Test
   public void dateShouldBeComparedEvenWithAStringValue() {
@@ -1710,20 +1705,21 @@ public class FongoTest {
     c2.add(Calendar.DAY_OF_MONTH, 2);
     Calendar c3 = new GregorianCalendar();
     c3.add(Calendar.DAY_OF_MONTH, 3);
-    Date threeDaysLater = c3.getTime(); 
+    Date threeDaysLater = c3.getTime();
     DBCollection collection = newCollection();
-    DBObject o1 = new BasicDBObject("_id", 1234).append("var1", "val1").append("created", 
-            oneDayLater);
-    DBObject o3 = new BasicDBObject("_id", 2345).append("var1", "val2").append("created", 
-            threeDaysLater);
+    DBObject o1 = new BasicDBObject("_id", 1234).append("var1", "val1").append("created",
+        oneDayLater);
+    DBObject o3 = new BasicDBObject("_id", 2345).append("var1", "val2").append("created",
+        threeDaysLater);
     collection.insert(o1);
     collection.insert(o3);
-    
-    assertEquals(o1, collection.findOne(new BasicDBObject("created", new BasicDBObject ("$lt", 
-            c2.get(Calendar.YEAR) + "-" + (c2.get(Calendar.MONTH) + 1) + "-" + c2.get(Calendar.DAY_OF_MONTH)))));
-    assertEquals(o3, collection.findOne(new BasicDBObject("created", new BasicDBObject ("$gt", 
-            c2.get(Calendar.YEAR) + "-" + (c2.get(Calendar.MONTH) + 1) + "-" + c2.get(Calendar.DAY_OF_MONTH)))));
+
+    assertEquals(o1, collection.findOne(new BasicDBObject("created", new BasicDBObject("$lt",
+        c2.get(Calendar.YEAR) + "-" + (c2.get(Calendar.MONTH) + 1) + "-" + c2.get(Calendar.DAY_OF_MONTH)))));
+    assertEquals(o3, collection.findOne(new BasicDBObject("created", new BasicDBObject("$gt",
+        c2.get(Calendar.YEAR) + "-" + (c2.get(Calendar.MONTH) + 1) + "-" + c2.get(Calendar.DAY_OF_MONTH)))));
   }
+
   @Test
   public void shouldCompareObjectId() throws Exception {
     // Given
@@ -2858,6 +2854,22 @@ public class FongoTest {
 
     // Then
     Assertions.assertThat(dbObjects).isEqualTo(Arrays.asList(new BasicDBObject("_id", 1).append("array", Arrays.asList(4, 5, 6, 7, 8))));
+  }
+
+  @Test
+  public void should_mixed_data_works_together() {
+    // Given
+    DBCollection collection = newCollection();
+    final long now = 1444444444444L;
+    collection.insert(new BasicDBObject("_id", 1).append("date", new Timestamp(now)));
+    collection.insert(new BasicDBObject("_id", 2).append("date", new Date(now)));
+    collection.insert(new BasicDBObject("_id", 3).append("date", new Time(now)));
+
+    // When
+    List<DBObject> dbObjects = collection.find(new BasicDBObject("date", new Time(now))).sort(new BasicDBObject("_id", 1)).toArray();
+
+    // Then
+    Assertions.assertThat(dbObjects).isEqualTo(Arrays.asList(new BasicDBObject("_id", 1).append("date", new Date(now)), new BasicDBObject("_id", 2).append("date", new Date(now)), new BasicDBObject("_id", 3).append("date", new Date(now))));
   }
 
   static class Seq {

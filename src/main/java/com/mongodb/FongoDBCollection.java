@@ -188,7 +188,7 @@ public class FongoDBCollection extends DBCollection {
     } else if (replacementValue instanceof Binary) {
       replacementValue = ((Binary) replacementValue).getData();
     }
-    return replacementValue;
+    return Util.clone(replacementValue);
   }
 
 
