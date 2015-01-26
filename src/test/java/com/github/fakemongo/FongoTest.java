@@ -38,6 +38,8 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
 import org.assertj.core.api.Assertions;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -55,7 +57,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -2157,7 +2158,7 @@ public class FongoTest {
 
   // See http://docs.mongodb.org/manual/reference/operator/query/elemMatch/
   @Test
-  @Ignore
+//  @Ignore
   public void query_elemMatch() {
     // Given
     DBCollection collection = newCollection();
@@ -2200,9 +2201,14 @@ public class FongoTest {
         + "{ students: { $elemMatch: { school: 102 } } }")).toArray();
 
     // Then
-    assertEquals(fongoRule.parseList("[{ \"_id\" : 1, \"students\" : [ { \"name\" : \"john\", \"school\" : 102, \"age\" : 10 } ] },\n" +
-        "{ \"_id\" : 3 },\n" +
-        "{ \"_id\" : 4, \"students\" : [ { \"name\" : \"barney\", \"school\" : 102, \"age\" : 7 } ] }]"), result);
+    assertEquals(fongoRule.parseList("[{ \"_id\" : 1 , \"zipcode\" : 63109 , \"students\" : " +
+        "[ { \"name\" : \"john\" , \"school\" : 102 , \"age\" : 10} , { \"name\" : \"jess\" , \"school\" : 102 , \"age\" : 11} , " +
+        "{ \"name\" : \"jeff\" , \"school\" : 108 , \"age\" : 15}]}, " +
+        "{ \"_id\" : 3 , \"zipcode\" : 63109 , \"students\" : " +
+        "[ { \"name\" : \"ajax\" , \"school\" : 100 , \"age\" : 7} , " +
+        "{ \"name\" : \"achilles\" , \"school\" : 100 , \"age\" : 8}]}, " +
+        "{ \"_id\" : 4 , \"zipcode\" : 63109 , \"students\" : " +
+        "[ { \"name\" : \"barney\" , \"school\" : 102 , \"age\" : 7}]}]"), result);
   }
 
   @Test
@@ -2857,7 +2863,7 @@ public class FongoTest {
   }
 
   @Test
-  public void should_mixed_data_works_together() {
+  public void should_mixed_data_date_works_together() {
     // Given
     DBCollection collection = newCollection();
     final long now = 1444444444444L;
@@ -2870,6 +2876,81 @@ public class FongoTest {
 
     // Then
     Assertions.assertThat(dbObjects).isEqualTo(Arrays.asList(new BasicDBObject("_id", 1).append("date", new Date(now)), new BasicDBObject("_id", 2).append("date", new Date(now)), new BasicDBObject("_id", 3).append("date", new Date(now))));
+  }
+
+  @Test
+  public void should_mixed_data_string_works_together() {
+    // Given
+    DBCollection collection = newCollection();
+    collection.insert(new BasicDBObject("_id", 1).append("value", 'c'));
+    collection.insert(new BasicDBObject("_id", 2).append("value", Character.valueOf('c')));
+    collection.insert(new BasicDBObject("_id", 3).append("value", "c"));
+
+    // When
+    List<DBObject> dbObjects = collection.find(new BasicDBObject("value", "c")).sort(new BasicDBObject("_id", 1)).toArray();
+
+    // Then
+    Assertions.assertThat(dbObjects).isEqualTo(Arrays.asList(new BasicDBObject("_id", 1).append("value", "c"), new BasicDBObject("_id", 2).append("value", "c"), new BasicDBObject("_id", 3).append("value", "c")));
+  }
+
+  @Test
+  public void should_mixed_data_integer_works_together() {
+    // Given
+    DBCollection collection = newCollection();
+    collection.insert(new BasicDBObject("_id", 1).append("value", Integer.valueOf(100)));
+    collection.insert(new BasicDBObject("_id", 2).append("value", new AtomicInteger(100)));
+    collection.insert(new BasicDBObject("_id", 3).append("value", Byte.valueOf((byte) 100)));
+    collection.insert(new BasicDBObject("_id", 4).append("value", Short.valueOf((short) 100)));
+    collection.insert(new BasicDBObject("_id", 5).append("value", Long.valueOf(100)));
+    collection.insert(new BasicDBObject("_id", 6).append("value", Float.valueOf(100)));
+    collection.insert(new BasicDBObject("_id", 7).append("value", Double.valueOf(100)));
+    collection.insert(new BasicDBObject("_id", 8).append("value", new AtomicLong(100)));
+
+    // When
+    List<DBObject> dbObjects = collection.find(new BasicDBObject("value", 100)).sort(new BasicDBObject("_id", 1)).toArray();
+
+    // Then
+    Assertions.assertThat(dbObjects).isEqualTo(Arrays.asList(new BasicDBObject("_id", 1).append("value", 100), new BasicDBObject("_id", 2).append("value", 100), new BasicDBObject("_id", 3).append("value", 100), new BasicDBObject("_id", 4).append("value", 100), new BasicDBObject("_id", 5).append("value", 100L), new BasicDBObject("_id", 6).append("value", 100D), new BasicDBObject("_id", 7).append("value", 100D), new BasicDBObject("_id", 8).append("value", 100L)));
+  }
+
+  @Test
+  public void should_mixed_data_double_works_together() {
+    // Given
+    DBCollection collection = newCollection();
+    collection.insert(new BasicDBObject("_id", 1).append("value", Integer.valueOf(100)));
+    collection.insert(new BasicDBObject("_id", 2).append("value", new AtomicInteger(100)));
+    collection.insert(new BasicDBObject("_id", 3).append("value", Byte.valueOf((byte) 100)));
+    collection.insert(new BasicDBObject("_id", 4).append("value", Short.valueOf((short) 100)));
+    collection.insert(new BasicDBObject("_id", 5).append("value", Long.valueOf(100)));
+    collection.insert(new BasicDBObject("_id", 6).append("value", Float.valueOf(100)));
+    collection.insert(new BasicDBObject("_id", 7).append("value", Double.valueOf(100)));
+    collection.insert(new BasicDBObject("_id", 8).append("value", new AtomicLong(100)));
+
+    // When
+    List<DBObject> dbObjects = collection.find(new BasicDBObject("value", 100F)).sort(new BasicDBObject("_id", 1)).toArray();
+
+    // Then
+    Assertions.assertThat(dbObjects).isEqualTo(Arrays.asList(new BasicDBObject("_id", 1).append("value", 100), new BasicDBObject("_id", 2).append("value", 100), new BasicDBObject("_id", 3).append("value", 100), new BasicDBObject("_id", 4).append("value", 100), new BasicDBObject("_id", 5).append("value", 100L), new BasicDBObject("_id", 6).append("value", 100D), new BasicDBObject("_id", 7).append("value", 100D), new BasicDBObject("_id", 8).append("value", 100L)));
+  }
+
+  @Test
+  public void should_mixed_data_long_works_together() {
+    // Given
+    DBCollection collection = newCollection();
+    collection.insert(new BasicDBObject("_id", 1).append("value", Integer.valueOf(100)));
+    collection.insert(new BasicDBObject("_id", 2).append("value", new AtomicInteger(100)));
+    collection.insert(new BasicDBObject("_id", 3).append("value", Byte.valueOf((byte) 100)));
+    collection.insert(new BasicDBObject("_id", 4).append("value", Short.valueOf((short) 100)));
+    collection.insert(new BasicDBObject("_id", 5).append("value", Long.valueOf(100)));
+    collection.insert(new BasicDBObject("_id", 6).append("value", Float.valueOf(100)));
+    collection.insert(new BasicDBObject("_id", 7).append("value", Double.valueOf(100)));
+    collection.insert(new BasicDBObject("_id", 8).append("value", new AtomicLong(100)));
+
+    // When
+    List<DBObject> dbObjects = collection.find(new BasicDBObject("value", 100L)).sort(new BasicDBObject("_id", 1)).toArray();
+
+    // Then
+    Assertions.assertThat(dbObjects).isEqualTo(Arrays.asList(new BasicDBObject("_id", 1).append("value", 100), new BasicDBObject("_id", 2).append("value", 100), new BasicDBObject("_id", 3).append("value", 100), new BasicDBObject("_id", 4).append("value", 100), new BasicDBObject("_id", 5).append("value", 100L), new BasicDBObject("_id", 6).append("value", 100D), new BasicDBObject("_id", 7).append("value", 100D), new BasicDBObject("_id", 8).append("value", 100L)));
   }
 
   static class Seq {

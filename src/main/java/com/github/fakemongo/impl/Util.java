@@ -14,6 +14,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import org.bson.BSON;
 import org.bson.LazyBSONObject;
 import org.bson.types.Binary;
 
@@ -154,7 +157,12 @@ public final class Util {
     }
   }
 
+  /**
+   * @see org.bson.BasicBSONEncoder#_putObjectField()
+   */
   public static Object clone(Object source) {
+    source = BSON.applyEncodingHooks(source);
+
     if (source instanceof DBObject) {
       return clone((DBObject) source);
     }
@@ -164,6 +172,28 @@ public final class Util {
     if (source instanceof Date) {
       return new Date(((Date) source).getTime());
     }
+    if (source instanceof Character) {
+      return source.toString();
+    }
+    if (source instanceof Number) {
+      Number n = (Number) source;
+      if (n instanceof Integer ||
+          n instanceof Short ||
+          n instanceof Byte ||
+          n instanceof AtomicInteger) {
+        return n.intValue();
+      } else if (n instanceof Long || n instanceof AtomicLong) {
+        return n.longValue();
+      } else if (n instanceof Float || n instanceof Double) {
+        return n.doubleValue();
+      } else {
+        throw new IllegalArgumentException("can't serialize " + n.getClass());
+      }
+    }
+    if (source instanceof byte[]) {
+      return new Binary((byte[]) source);
+    }
+//    }
 //    if(source instanceof Cloneable) {
 //      return ((Cloneable) source).clone();
 //    }
