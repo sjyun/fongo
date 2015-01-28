@@ -1,7 +1,6 @@
 package com.github.fakemongo;
 
 import ch.qos.logback.classic.Level;
-import com.github.fakemongo.Fongo;
 import com.github.fakemongo.impl.ExpressionParser;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
@@ -74,7 +73,7 @@ public class PerfTest {
     for (int i = 0; i < 1; i++) {
       DB db = fongo.getDB("db");
       DBCollection collection = db.getCollection("coll");
-      collection.ensureIndex(new BasicDBObject("n", 1));
+      collection.createIndex(new BasicDBObject("n", 1));
       for (int k = 0; k < size; k++) {
         collection.insert(new BasicDBObject("_id", k).append("n", new BasicDBObject("a", 1)));
         collection.findOne(new BasicDBObject("_id", k));
@@ -88,7 +87,7 @@ public class PerfTest {
     for (int i = 0; i < 1; i++) {
       DB db = fongo.getDB("db");
       DBCollection collection = db.getCollection("coll");
-      collection.ensureIndex(new BasicDBObject("n", 1));
+      collection.createIndex(new BasicDBObject("n", 1));
       for (int k = 0; k < size; k++) {
         collection.insert(new BasicDBObject("_id", k).append("n", k % 100));
         collection.findOne(new BasicDBObject("n.a", k % 100));
