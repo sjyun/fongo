@@ -24,7 +24,7 @@ import org.junit.rules.RuleChain;
 
 public class JongoGeoTest {
 
-  public final FongoRule fongoRule = new FongoRule(true);
+  public final FongoRule fongoRule = new FongoRule(!true);
 
   public final ExpectedException exception = ExpectedException.none();
 
@@ -53,14 +53,13 @@ public class JongoGeoTest {
     this.jongo = new Jongo(fongoRule.getDB());
     this.collection = jongo.getCollection("test").withWriteConcern(WriteConcern.UNACKNOWLEDGED);
     InputStream inputStream = JongoGeoTest.class.getResourceAsStream("/correspondance-code-insee-code-postal.geojson");
-    FeatureCollection featureCollection =
-        new ObjectMapper().readValue(inputStream, FeatureCollection.class);
-    this.collection.insert(FluentIterable.from(featureCollection.getFeatures()).transform(new Function<Feature, JongoGeo>() {
+    this.collection.insert(FluentIterable.from(new ObjectMapper().readValue(inputStream, FeatureCollection.class).getFeatures()).transform(new Function<Feature, JongoGeo>() {
       @Override
       public JongoGeo apply(Feature input) {
         return new JongoGeo(input.getGeometry(), input.getProperties());
       }
     }).toArray(JongoGeo.class));
+    inputStream.close();
   }
 
   @Test

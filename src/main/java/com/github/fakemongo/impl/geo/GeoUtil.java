@@ -7,15 +7,19 @@ import com.github.fakemongo.impl.Util;
 import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
+import com.mongodb.util.JSON;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Envelope;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.operation.distance.DistanceOp;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import org.geojson.GeoJsonObject;
+import org.geojson.Point;
+import org.geojson.Polygon;
 
 public final class GeoUtil {
 
@@ -164,14 +168,30 @@ public final class GeoUtil {
 
   public static LatLong getLatLong(Object value) {
     LatLong latLong = null;
-    if (value instanceof BasicDBList) {
-      BasicDBList list = (BasicDBList) value;
+    if (value instanceof List) {
+      List list = (List) value;
       if (list.size() == 2) {
         latLong = new LatLong(((Number) list.get(1)).doubleValue(), ((Number) list.get(0)).doubleValue());
       }
     } else if (value instanceof DBObject) {
       DBObject dbObject = (DBObject) value;
-      if (dbObject.containsField("lng") && dbObject.containsField("lat")) {
+      if (dbObject.containsField("type")) {
+        // GeoJSON
+        try {
+          GeoJsonObject object = new ObjectMapper().readValue(JSON.serialize(value), GeoJsonObject.class);
+          if (object instanceof Point) {
+            Point point = (Point) object;
+            latLong = new LatLong(point.getCoordinates().getLatitude(), point.getCoordinates().getLongitude());
+          } else if (object instanceof Polygon) {
+            Polygon point = (Polygon) object;
+            latLong = new LatLong(point.getCoordinates().get(0).get(0).getLatitude(), point.getCoordinates().get(0).get(0).getLongitude());
+          } else {
+            throw new IllegalArgumentException("type " + object + " not correctly handle in Fongo");
+          }
+        } catch (IOException e) {
+          e.printStackTrace();
+        }
+      } else if (dbObject.containsField("lng") && dbObject.containsField("lat")) {
         latLong = new LatLong(((Number) dbObject.get("lat")).doubleValue(), ((Number) dbObject.get("lng")).doubleValue());
       } else if (dbObject.containsField("x") && dbObject.containsField("y")) {
         latLong = new LatLong(((Number) dbObject.get("x")).doubleValue(), ((Number) dbObject.get("y")).doubleValue());
