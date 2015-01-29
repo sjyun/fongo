@@ -88,4 +88,20 @@ public class JongoGeoTest {
     Assertions.assertThat(jongoGeo).isNotNull();
     Assertions.assertThat(jongoGeo.properties.get("nom_region")).isEqualTo("BASSE-NORMANDIE");
   }
+
+  @Test
+  public void should_save_geojson_and_retrieve_it_in_limit_of_two_zone() throws IOException, InterruptedException {
+    // Given
+    this.collection.ensureIndex("{geoJsonObject:'2dsphere'}");
+
+    // When
+    final JongoGeo jongoGeo = this.collection.findOne("{geoJsonObject:{$near:{$geometry:{type:'Point', coordinates:[#,#]}}}}",
+        0.082676086940117,
+        48.971015023255745).as(JongoGeo.class);
+
+    // Then
+    Assertions.assertThat(jongoGeo).isNotNull();
+    Assertions.assertThat(jongoGeo.properties.get("nom_region")).isEqualTo("BASSE-NORMANDIE");
+    Assertions.assertThat(jongoGeo.properties.get("insee_com")).isEqualTo("14580");
+  }
 }

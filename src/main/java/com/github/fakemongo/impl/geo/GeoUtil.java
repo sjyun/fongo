@@ -18,10 +18,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import org.geojson.GeoJsonObject;
+import org.geojson.LngLatAlt;
 import org.geojson.Point;
 import org.geojson.Polygon;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class GeoUtil {
+  private static final Logger LOG = LoggerFactory.getLogger(GeoUtil.class);
 
   public static final double EARTH_RADIUS = 6374892.5; // common way : 6378100D;
 
@@ -46,6 +50,7 @@ public final class GeoUtil {
   public static class GeoDBObject extends BasicDBObject {
     private final String geoHash;
     private final LatLong latLong;
+    private final Geometry geometry;
 
     public GeoDBObject(DBObject object, String indexKey) {
       List<LatLong> latLongs = GeoUtil.latLon(Util.split(indexKey), object);
@@ -53,6 +58,7 @@ public final class GeoUtil {
 //      this.latLong = new LatLong((Double) list.get(1), (Double) list.get(0));
       this.latLong = latLongs.get(0);
       this.geoHash = GeoUtil.encodeGeoHash(this.getLatLong());
+      this.geometry = GeoUtil.getGeometry((DBObject) Util.extractField(object, indexKey));
       this.putAll(object);
     }
 
@@ -76,9 +82,7 @@ public final class GeoUtil {
 
       GeoDBObject that = (GeoDBObject) o;
 
-      if (!getGeoHash().equals(that.getGeoHash())) return false;
-
-      return true;
+      return getGeoHash().equals(that.getGeoHash());
     }
 
     @Override
@@ -222,14 +226,41 @@ public final class GeoUtil {
       return createPolygon(coordinates);
       // TODO
     } else if (dbObject.containsField("$geometry")) {
-//      GeoJsonObject geoJsonObject = new ObjectMapper().readValue(dbObject, GeoJsonObject.class);
-
       String type = (String) dbObject.get("type");
       BasicDBList coordinates = (BasicDBList) dbObject.get("$coordinates");
       throw new IllegalArgumentException("$geometry not implemented in fongo");
       // TODO
+    } else if (dbObject.containsField("type")) {
+      try {
+        GeoJsonObject geoJsonObject = new ObjectMapper().readValue(JSON.serialize(dbObject), GeoJsonObject.class);
+        if (geoJsonObject instanceof Point) {
+          Point point = (Point) geoJsonObject;
+          return GEOMETRY_FACTORY.createPoint(toCoordinate(point.getCoordinates()));
+        } else if (geoJsonObject instanceof Polygon) {
+          Polygon polygon = (Polygon) geoJsonObject;
+          return GEOMETRY_FACTORY.createPolygon(toCoordinates(polygon.getCoordinates()));
+        }
+      } catch (IOException e) {
+        LOG.warn("cannot handle " + JSON.serialize(dbObject));
+      }
     }
+    if (true)
+      throw new IllegalArgumentException("can't handle " + JSON.serialize(dbObject));
     return null;
+  }
+
+  private static Coordinate[] toCoordinates(List<List<LngLatAlt>> lngLatAlts) {
+    List<Coordinate> coordinates = new ArrayList<Coordinate>();
+    for (List<LngLatAlt> lineStrings : lngLatAlts) {
+      for (LngLatAlt lngLatAlt : lineStrings) {
+        coordinates.add(toCoordinate(lngLatAlt));
+      }
+    }
+    return coordinates.toArray(new Coordinate[0]);
+  }
+
+  private static Coordinate toCoordinate(LngLatAlt lngLatAlt) {
+    return new Coordinate(lngLatAlt.getLatitude(), lngLatAlt.getLongitude(), lngLatAlt.getAltitude());
   }
 
   private static Geometry createBox(BasicDBList coordinates) {

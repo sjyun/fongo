@@ -41,8 +41,6 @@ public class GeoIndex extends IndexAbstract<GeoUtil.GeoDBObject> {
   /**
    * Create the key for the hashmap.
    *
-   * @param object
-   * @return
    */
   @Override
   protected GeoUtil.GeoDBObject getKeyFor(DBObject object) {
