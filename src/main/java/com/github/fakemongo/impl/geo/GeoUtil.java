@@ -1,5 +1,6 @@
 package com.github.fakemongo.impl.geo;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.davidmoten.geo.GeoHash;
 import com.github.fakemongo.impl.ExpressionParser;
 import com.github.fakemongo.impl.Util;
@@ -14,6 +15,7 @@ import com.vividsolutions.jts.operation.distance.DistanceOp;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import org.geojson.GeoJsonObject;
 
 public final class GeoUtil {
 
@@ -200,6 +202,8 @@ public final class GeoUtil {
       return createPolygon(coordinates);
       // TODO
     } else if (dbObject.containsField("$geometry")) {
+//      GeoJsonObject geoJsonObject = new ObjectMapper().readValue(dbObject, GeoJsonObject.class);
+
       String type = (String) dbObject.get("type");
       BasicDBList coordinates = (BasicDBList) dbObject.get("$coordinates");
       throw new IllegalArgumentException("$geometry not implemented in fongo");
