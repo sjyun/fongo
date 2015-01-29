@@ -358,7 +358,7 @@ public class FongoGeoTest {
     );
   }
 
-  private static DBObject roundDis(DBObject objectList) {
+  public static DBObject roundDis(DBObject objectList) {
     for (final DBObject o : (List<DBObject>) objectList) {
       o.put("dis", round((Double) o.get("dis")));
     }
