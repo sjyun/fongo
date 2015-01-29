@@ -541,7 +541,7 @@ public class FongoAggregateTest {
 
     // Aggregate
     AggregationOutput output = collection.aggregate(Arrays.asList(group, new BasicDBObject("$sort", new BasicDBObject("_id", 1))));
-    System.out.println(output);
+
     // Assert
     assertTrue(output.getCommandResult().ok());
     assertTrue(output.getCommandResult().containsField("result"));
@@ -565,7 +565,6 @@ public class FongoAggregateTest {
 
     // Aggregate
     AggregationOutput output = collection.aggregate(Arrays.asList(group, new BasicDBObject("$sort", new BasicDBObject("_id", 1))));
-    System.out.println("resultat : " + output);
 
     // Assert
     assertTrue(output.getCommandResult().ok());
@@ -589,7 +588,6 @@ public class FongoAggregateTest {
     // Aggregate
     AggregationOutput output = collection.aggregate(Arrays.asList(group, new BasicDBObject("$sort", new BasicDBObject("_id", 1))));
 
-    System.out.println("resultat : " + output);
     // Assert
     assertTrue(output.getCommandResult().ok());
     assertTrue(output.getCommandResult().containsField("result"));

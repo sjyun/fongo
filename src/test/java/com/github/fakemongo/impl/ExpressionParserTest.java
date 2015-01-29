@@ -589,7 +589,6 @@ public class ExpressionParserTest {
   @Test
   public void testRegexOperator() {
     DBObject query = new BasicDBObject("a", new BasicDBObject("$regex", "^foo"));
-    System.out.println(query);
 
     List<DBObject> results = doFilter(
         query,
@@ -882,7 +881,7 @@ public class ExpressionParserTest {
         .append("$gte", new BasicDBObject("u", 1).append("v", new ObjectId("000000000000000000000000")))
         .append("$lte", new BasicDBObject("u", 2).append("v", new ObjectId("000000000000000000000000")))
         .push("c").append("$gt", 0).pop().pop().get();
-    System.out.println("Doing query " + query);
+
     BasicDBObject rec1 = new BasicDBObject("_id", new BasicDBObject("u", 1).append("v", new ObjectId())).append("c", 1);
     BasicDBObject rec2 = new BasicDBObject("_id", new BasicDBObject("u", 1).append("v", new ObjectId())).append("c", 1);
     List<DBObject> results = doFilter(
@@ -890,6 +889,7 @@ public class ExpressionParserTest {
         rec1,
         rec2
     );
+
     assertEquals(Arrays.<DBObject>asList(
         rec1,
         rec2

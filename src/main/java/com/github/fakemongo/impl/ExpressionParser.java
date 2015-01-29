@@ -11,7 +11,9 @@ import com.mongodb.FongoDBCollection;
 import com.mongodb.LazyDBObject;
 import com.mongodb.QueryOperators;
 import com.mongodb.util.JSON;
+import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Geometry;
+import com.vividsolutions.jts.operation.distance.DistanceOp;
 import java.math.BigDecimal;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -376,14 +378,15 @@ public class ExpressionParser {
     public Filter createFilter(final List<String> path, DBObject refExpression) {
       LOG.debug("path:{}, refExp:{}", path, refExpression);
       Number maxDistance = typecast(MAX_DISTANCE, refExpression.get(MAX_DISTANCE), Number.class);
-      final List<LatLong> coordinates;
+      final Geometry geometry;
       if (refExpression.get(command) instanceof BasicDBList) {
-        coordinates = GeoUtil.latLon(Collections.singletonList(command), refExpression);// typecast(command, refExpression.get(command), List.class);
+        final List<LatLong> coordinates = GeoUtil.latLon(Collections.singletonList(command), refExpression);// typecast(command, refExpression.get(command), List.class);
+        geometry = GeoUtil.createGeometryPoint(GeoUtil.toCoordinate(coordinates.get(0)));
       } else {
         DBObject dbObject = typecast(command, refExpression.get(command), DBObject.class);
-        coordinates = GeoUtil.latLon(Arrays.asList("$geometry", "coordinates"), dbObject);
+        geometry = GeoUtil.toGeometry(((DBObject) Util.extractField(dbObject, "$geometry")));
       }
-      return createNearFilter(path, coordinates, maxDistance, spherical);
+      return createNearFilter(path, maxDistance, geometry, spherical);
     }
   }
 
@@ -397,7 +400,7 @@ public class ExpressionParser {
     @Override
     public Filter createFilter(final List<String> path, DBObject refExpression) {
       LOG.info("geoWithin path:{}, refExp:{}", path, refExpression);
-      Geometry geometry = GeoUtil.getGeometry(typecast("$geoWithin", refExpression.get("$geoWithin"), DBObject.class));
+      Geometry geometry = GeoUtil.toGeometry(typecast("$geoWithin", refExpression.get("$geoWithin"), DBObject.class));
       return createGeowithinFilter(path, geometry);
     }
   }
@@ -765,7 +768,8 @@ public class ExpressionParser {
 
   private Filter buildExpressionFilter(final List<String> path, Object expression) {
     if (OR.equals(path.get(0))) {
-      @SuppressWarnings("unchecked") Collection<DBObject> queryList = typecast(path + " operator", expression, Collection.class);
+      @SuppressWarnings(
+          "unchecked") Collection<DBObject> queryList = typecast(path + " operator", expression, Collection.class);
       OrFilter orFilter = new OrFilter();
       for (DBObject query : queryList) {
         orFilter.addFilter(buildFilter(query));
@@ -932,9 +936,9 @@ public class ExpressionParser {
 //        cc1 = ObjectId.massageToObjectId(cc2);
 //        checkTypes = false;
 //      }
-      LatLong ll1 = GeoUtil.getLatLong(cc1);
+      LatLong ll1 = GeoUtil.latLong(cc1);
       if (ll1 != null) {
-        LatLong ll2 = GeoUtil.getLatLong(cc2);
+        LatLong ll2 = GeoUtil.latLong(cc2);
         if (ll2 != null) {
           cc1 = ll1;
           cc2 = ll2;
@@ -1090,28 +1094,17 @@ public class ExpressionParser {
   }
 
   // Take care of : https://groups.google.com/forum/?fromgroups=#!topic/mongomapper/MfRDh2vtCFg
-  public Filter createNearFilter(final List<String> path, final List<LatLong> coordinates, final Number maxDistance, final boolean sphere) {
+  public Filter createNearFilter(final List<String> path, final Number maxDistance, final Geometry geometry, final boolean sphere) {
     return new Filter() {
-      final LatLong coordinate = coordinates.get(0); // TODO(twillouer) try to get all coordinates.
-
       @Override
       public boolean apply(DBObject o) {
-        boolean result = false;
+        final Geometry objectGeometry = GeoUtil.toGeometry((DBObject) Util.extractField(o, path));
 
-        List<LatLong> storedOption = GeoUtil.latLon(path, o);
-        if (!storedOption.isEmpty()) {
-          for (LatLong point : storedOption) {
+        final Coordinate[] coordinates = DistanceOp.nearestPoints(geometry, objectGeometry);
 
-            double distance = GeoUtil.distanceInRadians(point, coordinate, sphere);
-            LOG.debug("distance : {}", distance);
-            result = maxDistance == null || distance < maxDistance.doubleValue();
-            o.put(FongoDBCollection.FONGO_SPECIAL_ORDER_BY, distance);
-            if (result) {
-              break;
-            }
-          }
-        }
-        return result;
+        double distance = GeoUtil.distanceInRadians(GeoUtil.toLatLong(coordinates[0]), GeoUtil.toLatLong(coordinates[1]), sphere);
+        o.put(FongoDBCollection.FONGO_SPECIAL_ORDER_BY, distance);
+        return maxDistance == null || distance < maxDistance.doubleValue();
       }
     };
   }

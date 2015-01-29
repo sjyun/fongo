@@ -51,6 +51,25 @@ public final class Util {
     }
     return value;
   }
+  /**
+   * Can extract field from an object.
+   * Handle "field1.field2" in { field1 : {field2 : value2 } }
+   *
+   * @return null if not found.
+   */
+  public static <T> T extractField(DBObject object, List<String> paths) {
+    if (object == null) {
+      return null; // NPE ?
+    }
+    DBObject value = object;
+    for (String path: paths) {
+      value = (DBObject) value.get(path);
+      if (value == null) {
+        break;
+      }
+    }
+    return (T) value;
+  }
 
   /**
    * Say "true" if field is in this object.

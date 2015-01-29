@@ -949,7 +949,6 @@ public class FongoAggregateProjectTest {
     calendar.set(Calendar.YEAR, 2014);
     calendar.set(Calendar.DAY_OF_YEAR, 110);
     collection.insert(new BasicDBObject("date_created", calendar.getTime()).append("_id", 1));
-    System.out.println(calendar);
 
     // When
     AggregationOutput output = collection.aggregate(fongoRule.parseList("[{ $project: { day: { $dayOfWeek: \"$date_created\" } } }]"));

@@ -58,7 +58,7 @@ public final class GeoUtil {
 //      this.latLong = new LatLong((Double) list.get(1), (Double) list.get(0));
       this.latLong = latLongs.get(0);
       this.geoHash = GeoUtil.encodeGeoHash(this.getLatLong());
-      this.geometry = GeoUtil.getGeometry((DBObject) Util.extractField(object, indexKey));
+      this.geometry = GeoUtil.toGeometry(Util.extractField(object, indexKey));
       this.putAll(object);
     }
 
@@ -96,7 +96,11 @@ public final class GeoUtil {
 
   public static boolean geowithin(LatLong p1, Geometry geometry) {
     Coordinate coordinate = new Coordinate(p1.getLon(), p1.getLat());
-    return DistanceOp.isWithinDistance(GEOMETRY_FACTORY.createPoint(coordinate), geometry, 0D);
+    return DistanceOp.isWithinDistance(createGeometryPoint(coordinate), geometry, 0D);
+  }
+
+  public static com.vividsolutions.jts.geom.Point createGeometryPoint(Coordinate coordinate) {
+    return GEOMETRY_FACTORY.createPoint(coordinate);
   }
 
   public static double distanceInRadians(LatLong p1, LatLong p2, boolean spherical) {
@@ -162,7 +166,7 @@ public final class GeoUtil {
       objects = expressionParser.getEmbeddedValues(path, object);
     }
     for (Object value : objects) {
-      LatLong latLong = getLatLong(value);
+      LatLong latLong = latLong(value);
       if (latLong != null) {
         result.add(latLong);
       }
@@ -170,7 +174,7 @@ public final class GeoUtil {
     return result;
   }
 
-  public static LatLong getLatLong(Object value) {
+  public static LatLong latLong(Object value) {
     LatLong latLong = null;
     if (value instanceof List) {
       List list = (List) value;
@@ -193,7 +197,7 @@ public final class GeoUtil {
             throw new IllegalArgumentException("type " + object + " not correctly handle in Fongo");
           }
         } catch (IOException e) {
-          e.printStackTrace();
+          LOG.warn("don't kown how to handle " + value);
         }
       } else if (dbObject.containsField("lng") && dbObject.containsField("lat")) {
         latLong = new LatLong(((Number) dbObject.get("lat")).doubleValue(), ((Number) dbObject.get("lng")).doubleValue());
@@ -204,14 +208,21 @@ public final class GeoUtil {
       }
     } else if (value instanceof double[]) {
       double[] array = (double[]) value;
-      if (array.length == 2) {
+      if (array.length >= 2) {
         latLong = new LatLong(((Number) array[0]).doubleValue(), ((Number) array[1]).doubleValue());
       }
     }
     return latLong;
   }
 
-  public static Geometry getGeometry(DBObject dbObject) {
+  public static Geometry toGeometry(Object object) {
+    if (object instanceof DBObject) {
+      return toGeometry((DBObject) object);
+    }
+    return createGeometryPoint(toCoordinate(latLong(object)));
+  }
+
+  public static Geometry toGeometry(DBObject dbObject) {
     if (dbObject.containsField("$box")) {
       BasicDBList coordinates = (BasicDBList) dbObject.get("$box");
       return createBox(coordinates);
@@ -235,13 +246,18 @@ public final class GeoUtil {
         GeoJsonObject geoJsonObject = new ObjectMapper().readValue(JSON.serialize(dbObject), GeoJsonObject.class);
         if (geoJsonObject instanceof Point) {
           Point point = (Point) geoJsonObject;
-          return GEOMETRY_FACTORY.createPoint(toCoordinate(point.getCoordinates()));
+          return createGeometryPoint(toCoordinate(point.getCoordinates()));
         } else if (geoJsonObject instanceof Polygon) {
           Polygon polygon = (Polygon) geoJsonObject;
           return GEOMETRY_FACTORY.createPolygon(toCoordinates(polygon.getCoordinates()));
         }
       } catch (IOException e) {
         LOG.warn("cannot handle " + JSON.serialize(dbObject));
+      }
+    } else {
+      LatLong latLong = latLong(dbObject);
+      if (latLong != null) {
+        return createGeometryPoint(toCoordinate(latLong));
       }
     }
     if (true)
@@ -259,9 +275,19 @@ public final class GeoUtil {
     return coordinates.toArray(new Coordinate[0]);
   }
 
-  private static Coordinate toCoordinate(LngLatAlt lngLatAlt) {
+  public static Coordinate toCoordinate(LatLong lngLatAlt) {
+    return new Coordinate(lngLatAlt.getLat(), lngLatAlt.getLon());
+  }
+
+  public static Coordinate toCoordinate(LngLatAlt lngLatAlt) {
     return new Coordinate(lngLatAlt.getLatitude(), lngLatAlt.getLongitude(), lngLatAlt.getAltitude());
   }
+
+
+  public static LatLong toLatLong(Coordinate coordinate) {
+    return new LatLong(coordinate.x, coordinate.y);
+  }
+
 
   private static Geometry createBox(BasicDBList coordinates) {
     Coordinate[] t = parseCoordinates(coordinates);
@@ -284,7 +310,7 @@ public final class GeoUtil {
   private static Coordinate[] parseCoordinates(BasicDBList coordinates) {
     Coordinate[] ret = new Coordinate[coordinates.size()];
     for (int i = 0, length = coordinates.size(); i < length; i++) {
-      LatLong latLong = getLatLong(coordinates.get(i));
+      LatLong latLong = latLong(coordinates.get(i));
       ret[i] = new Coordinate(latLong.getLon(), latLong.getLat());
     }
 

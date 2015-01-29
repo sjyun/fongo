@@ -2315,7 +2315,7 @@ public class FongoTest {
         .aggregate(fongoRule.parseList("[{ $project: { bla: {$divide: [4,2]} } }]"));
 
     // Then
-    System.out.println(Lists.newArrayList(result.results())); // { "_id" : { "$oid" : "5368e0f3cf5a47d5a22d7b75"}}
+//    System.out.println(Lists.newArrayList(result.results())); // { "_id" : { "$oid" : "5368e0f3cf5a47d5a22d7b75"}}
     Assertions.assertThat(result.results()).isEqualTo(fongoRule.parseList("[{ \"_id\" : 1 , \"bla\" : 2.0}]"));
   }
 
@@ -2597,7 +2597,6 @@ public class FongoTest {
     );
 
     DBObject obj = collection.findOne();
-    System.out.println(obj);
     // { "_id" : { "$oid" : "53bd59cd7c2e6dc6f98160e0"} , "insertedAttr1" : "insertedValue1" , "data" : { "insertedAttr2" : "insertedValue2" , "updatedAttr2" : "updatedValue2"} , "updatedAttr1" : "updatedValue1"}
     Assertions.assertThat(obj.get("insertedAttr1")).isEqualTo("insertedValue1");
     Assertions.assertThat(obj.get("updatedAttr1")).isEqualTo("updatedValue1");
@@ -2635,7 +2634,6 @@ public class FongoTest {
     );
 
     DBObject obj = collection.findOne();
-    System.out.println(obj);
     // { "_id" : { "$oid" : "53bd59cd7c2e6dc6f98160e0"} , "insertedAttr1" : "insertedValue1" , "data" : { "insertedAttr2" : "insertedValue2" , "updatedAttr2" : "updatedValue2"} , "updatedAttr1" : "updatedValue1"}
     Assertions.assertThat(obj.get("insertedAttr1")).isNull();
     Assertions.assertThat(obj.get("updatedAttr1")).isEqualTo("updatedValue1");
