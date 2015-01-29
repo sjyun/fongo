@@ -343,6 +343,7 @@ public class FongoGeoTest {
     collection.insert(new BasicDBObject("_id", 11).append("loc", new BasicDBObject("longitude", 1).append("latitude", 39)));
     collection.insert(new BasicDBObject("_id", 12).append("loc", new BasicDBObject("longitude", -1).append("latitude", 41)));
     collection.insert(new BasicDBObject("_id", 13).append("loc", new BasicDBObject("longitude", -1).append("latitude", 39)));
+    collection.insert(new BasicDBObject("_id", 14).append("helloWorld", new BasicDBObject("longitude", -1).append("latitude", 39)));
     collection.createIndex(new BasicDBObject("loc", "2d"));
 
     List<DBObject> objects = collection.find(new BasicDBObject("loc", new BasicDBObject("$geoWithin", new BasicDBObject("$polygon", Util.list(Util.list(0, 41), Util.list(1, 40), Util.list(0, 39), Util.list(-1, 40)))))).toArray();

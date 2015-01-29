@@ -7,7 +7,6 @@ import com.github.fakemongo.impl.Tuple2;
 import com.github.fakemongo.impl.UpdateEngine;
 import com.github.fakemongo.impl.Util;
 import com.github.fakemongo.impl.geo.GeoUtil;
-import com.github.fakemongo.impl.geo.LatLong;
 import com.github.fakemongo.impl.index.GeoIndex;
 import com.github.fakemongo.impl.index.IndexAbstract;
 import com.github.fakemongo.impl.index.IndexFactory;
@@ -1151,7 +1150,7 @@ public class FongoDBCollection extends DBCollection {
     //noinspection ConstantConditions
     LOG.info("geoNear() near:{}, query:{}, limit:{}, maxDistance:{}, spherical:{}, use index:{}", near, query, limit, maxDistance, spherical, matchingIndex.getName());
 
-//    List<LatLong> latLongs = GeoUtil.latLon(Collections.<String>emptyList(), near);
+//    List<LatLong> latLongs = GeoUtil.coordinate(Collections.<String>emptyList(), near);
     Geometry geometry = GeoUtil.toGeometry(near);
     return ((GeoIndex) matchingIndex).geoNear(query == null ? new BasicDBObject() : query, geometry, limit == null ? 100 : limit.intValue(), spherical);
   }

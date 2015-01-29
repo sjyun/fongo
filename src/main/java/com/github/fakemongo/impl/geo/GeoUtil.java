@@ -34,18 +34,18 @@ public final class GeoUtil {
   }
 
   public static class GeoDBObject extends BasicDBObject {
-    private final LatLong latLong;
+    private final Coordinate coordinate;
     private final Geometry geometry;
 
     public GeoDBObject(DBObject object, String indexKey) {
-      List<LatLong> latLongs = GeoUtil.latLon(Util.split(indexKey), object);
-      this.latLong = latLongs.get(0);
+      List<Coordinate> latLongs = GeoUtil.coordinate(Util.split(indexKey), object);
+      this.coordinate = latLongs.get(0);
       this.geometry = GeoUtil.toGeometry(Util.extractField(object, indexKey));
       this.putAll(object);
     }
 
-    public LatLong getLatLong() {
-      return latLong;
+    public Coordinate getCoordinate() {
+      return coordinate;
     }
 
     public Geometry getGeometry() {
@@ -71,14 +71,13 @@ public final class GeoUtil {
     public String toString() {
       return "GeoDBObject{" +
           "geometry='" + geometry + '\'' +
-          ", latLong=" + getLatLong() +
+          ", coordinate=" + getCoordinate() +
           '}';
     }
   }
 
-  public static boolean geowithin(LatLong p1, Geometry geometry) {
-    Coordinate coordinate = new Coordinate(p1.getLon(), p1.getLat());
-    return DistanceOp.isWithinDistance(createGeometryPoint(coordinate), geometry, 0D);
+  public static boolean geowithin(Geometry p1, Geometry geometry) {
+    return DistanceOp.isWithinDistance(p1, geometry, 0D);
   }
 
   public static com.vividsolutions.jts.geom.Point createGeometryPoint(Coordinate coordinate) {
@@ -139,9 +138,9 @@ public final class GeoUtil {
    * - [lon, lat]
    * - {lat:lat, lng:lon}
    */
-  public static List<LatLong> latLon(List<String> path, DBObject object) {
+  public static List<Coordinate> coordinate(List<String> path, DBObject object) {
     ExpressionParser expressionParser = new ExpressionParser();
-    List<LatLong> result = new ArrayList<LatLong>();
+    List<Coordinate> result = new ArrayList<Coordinate>();
 
     List objects;
     if (path.isEmpty()) {
@@ -150,20 +149,20 @@ public final class GeoUtil {
       objects = expressionParser.getEmbeddedValues(path, object);
     }
     for (Object value : objects) {
-      LatLong latLong = latLong(value);
-      if (latLong != null) {
-        result.add(latLong);
+      Coordinate coordinate = coordinate(value);
+      if (coordinate != null) {
+        result.add(coordinate);
       }
     }
     return result;
   }
 
-  public static LatLong latLong(Object value) {
-    LatLong latLong = null;
+  public static Coordinate coordinate(Object value) {
+    Coordinate coordinate = null;
     if (value instanceof List) {
       List list = (List) value;
       if (list.size() == 2) {
-        latLong = new LatLong(((Number) list.get(1)).doubleValue(), ((Number) list.get(0)).doubleValue());
+        coordinate = new Coordinate(((Number) list.get(1)).doubleValue(), ((Number) list.get(0)).doubleValue());
       }
     } else if (value instanceof DBObject) {
       DBObject dbObject = (DBObject) value;
@@ -173,10 +172,10 @@ public final class GeoUtil {
           GeoJsonObject object = new ObjectMapper().readValue(JSON.serialize(value), GeoJsonObject.class);
           if (object instanceof Point) {
             Point point = (Point) object;
-            latLong = new LatLong(point.getCoordinates().getLatitude(), point.getCoordinates().getLongitude());
+            coordinate = new Coordinate(point.getCoordinates().getLatitude(), point.getCoordinates().getLongitude());
           } else if (object instanceof Polygon) {
             Polygon point = (Polygon) object;
-            latLong = new LatLong(point.getCoordinates().get(0).get(0).getLatitude(), point.getCoordinates().get(0).get(0).getLongitude());
+            coordinate = new Coordinate(point.getCoordinates().get(0).get(0).getLatitude(), point.getCoordinates().get(0).get(0).getLongitude());
           } else {
             throw new IllegalArgumentException("type " + object + " not correctly handle in Fongo");
           }
@@ -184,26 +183,26 @@ public final class GeoUtil {
           LOG.warn("don't kown how to handle " + value);
         }
       } else if (dbObject.containsField("lng") && dbObject.containsField("lat")) {
-        latLong = new LatLong(((Number) dbObject.get("lat")).doubleValue(), ((Number) dbObject.get("lng")).doubleValue());
+        coordinate = new Coordinate(((Number) dbObject.get("lat")).doubleValue(), ((Number) dbObject.get("lng")).doubleValue());
       } else if (dbObject.containsField("x") && dbObject.containsField("y")) {
-        latLong = new LatLong(((Number) dbObject.get("x")).doubleValue(), ((Number) dbObject.get("y")).doubleValue());
+        coordinate = new Coordinate(((Number) dbObject.get("x")).doubleValue(), ((Number) dbObject.get("y")).doubleValue());
       } else if (dbObject.containsField("latitude") && dbObject.containsField("longitude")) {
-        latLong = new LatLong(((Number) dbObject.get("latitude")).doubleValue(), ((Number) dbObject.get("longitude")).doubleValue());
+        coordinate = new Coordinate(((Number) dbObject.get("latitude")).doubleValue(), ((Number) dbObject.get("longitude")).doubleValue());
       }
     } else if (value instanceof double[]) {
       double[] array = (double[]) value;
       if (array.length >= 2) {
-        latLong = new LatLong(((Number) array[0]).doubleValue(), ((Number) array[1]).doubleValue());
+        coordinate = new Coordinate(((Number) array[0]).doubleValue(), ((Number) array[1]).doubleValue());
       }
     }
-    return latLong;
+    return coordinate;
   }
 
   public static Geometry toGeometry(Object object) {
     if (object instanceof DBObject) {
       return toGeometry((DBObject) object);
     }
-    return createGeometryPoint(toCoordinate(latLong(object)));
+    return createGeometryPoint(coordinate(object));
   }
 
   public static Geometry toGeometry(DBObject dbObject) {
@@ -219,7 +218,6 @@ public final class GeoUtil {
     } else if (dbObject.containsField("$polygon")) {
       BasicDBList coordinates = (BasicDBList) dbObject.get("$polygon");
       return createPolygon(coordinates);
-      // TODO
     } else if (dbObject.containsField("$geometry")) {
       String type = (String) dbObject.get("type");
       BasicDBList coordinates = (BasicDBList) dbObject.get("$coordinates");
@@ -239,9 +237,9 @@ public final class GeoUtil {
         LOG.warn("cannot handle " + JSON.serialize(dbObject));
       }
     } else {
-      LatLong latLong = latLong(dbObject);
-      if (latLong != null) {
-        return createGeometryPoint(toCoordinate(latLong));
+      Coordinate coordinate = coordinate(dbObject);
+      if (coordinate != null) {
+        return createGeometryPoint(coordinate);
       }
     }
 //    if (true)
@@ -257,10 +255,6 @@ public final class GeoUtil {
       }
     }
     return coordinates.toArray(new Coordinate[0]);
-  }
-
-  public static Coordinate toCoordinate(LatLong lngLatAlt) {
-    return new Coordinate(lngLatAlt.getLat(), lngLatAlt.getLon());
   }
 
   public static Coordinate toCoordinate(LngLatAlt lngLatAlt) {
@@ -288,8 +282,7 @@ public final class GeoUtil {
   private static Coordinate[] parseCoordinates(BasicDBList coordinates) {
     Coordinate[] ret = new Coordinate[coordinates.size()];
     for (int i = 0, length = coordinates.size(); i < length; i++) {
-      LatLong latLong = latLong(coordinates.get(i));
-      ret[i] = new Coordinate(latLong.getLon(), latLong.getLat());
+      ret[i] = coordinate(coordinates.get(i));
     }
 
     return ret;

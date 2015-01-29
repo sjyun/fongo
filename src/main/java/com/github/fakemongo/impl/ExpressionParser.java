@@ -2,7 +2,6 @@ package com.github.fakemongo.impl;
 
 import com.github.fakemongo.FongoException;
 import com.github.fakemongo.impl.geo.GeoUtil;
-import com.github.fakemongo.impl.geo.LatLong;
 import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
@@ -13,7 +12,6 @@ import com.mongodb.QueryOperators;
 import com.mongodb.util.JSON;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Geometry;
-import com.vividsolutions.jts.operation.distance.DistanceOp;
 import java.math.BigDecimal;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -380,8 +378,8 @@ public class ExpressionParser {
       Number maxDistance = typecast(MAX_DISTANCE, refExpression.get(MAX_DISTANCE), Number.class);
       final Geometry geometry;
       if (refExpression.get(command) instanceof BasicDBList) {
-        final List<LatLong> coordinates = GeoUtil.latLon(Collections.singletonList(command), refExpression);// typecast(command, refExpression.get(command), List.class);
-        geometry = GeoUtil.createGeometryPoint(GeoUtil.toCoordinate(coordinates.get(0)));
+        final List<Coordinate> coordinates = GeoUtil.coordinate(Collections.singletonList(command), refExpression);// typecast(command, refExpression.get(command), List.class);
+        geometry = GeoUtil.createGeometryPoint(coordinates.get(0));
       } else {
         DBObject dbObject = typecast(command, refExpression.get(command), DBObject.class);
         geometry = GeoUtil.toGeometry(((DBObject) Util.extractField(dbObject, "$geometry")));
@@ -399,7 +397,7 @@ public class ExpressionParser {
     // http://docs.mongodb.org/manual/reference/operator/query/geoWithin/
     @Override
     public Filter createFilter(final List<String> path, DBObject refExpression) {
-      LOG.info("geoWithin path:{}, refExp:{}", path, refExpression);
+      LOG.debug("geoWithin path:{}, refExp:{}", path, refExpression);
       Geometry geometry = GeoUtil.toGeometry(typecast("$geoWithin", refExpression.get("$geoWithin"), DBObject.class));
       return createGeowithinFilter(path, geometry);
     }
@@ -919,7 +917,7 @@ public class ExpressionParser {
         for (SimpleDateFormat df : new SimpleDateFormat[]{
             new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZZ"),
             new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZZ"),
-            new SimpleDateFormat("yyyy-MM-dd")})
+            new SimpleDateFormat("yyyy-MM-dd")}) {
           try {
             cc1 = df.parse((String) cc1);
             checkTypes = false;
@@ -927,6 +925,7 @@ public class ExpressionParser {
           } catch (ParseException e) {
             LOG.debug("Not parseable as an ISO8601 date (" + df.toPattern() + ")");
           }
+        }
       }
 //      if (cc1 instanceof ObjectId && cc2 instanceof String && ObjectId.isValid((String) cc2)) {
 //        cc2 = ObjectId.massageToObjectId(cc2);
@@ -936,9 +935,9 @@ public class ExpressionParser {
 //        cc1 = ObjectId.massageToObjectId(cc2);
 //        checkTypes = false;
 //      }
-      LatLong ll1 = GeoUtil.latLong(cc1);
+      Coordinate ll1 = GeoUtil.coordinate(cc1);
       if (ll1 != null) {
-        LatLong ll2 = GeoUtil.latLong(cc2);
+        Coordinate ll2 = GeoUtil.coordinate(cc2);
         if (ll2 != null) {
           cc1 = ll1;
           cc2 = ll2;
@@ -1112,19 +1111,20 @@ public class ExpressionParser {
 
       @Override
       public boolean apply(DBObject o) {
-        boolean result = false;
 
-        List<LatLong> storedOption = GeoUtil.latLon(path, o);
-        if (!storedOption.isEmpty()) {
-          for (LatLong point : storedOption) {
-            result = GeoUtil.geowithin(point, geometry);
-            LOG.debug("geowithin : {}", result);
-            if (result) {
-              break;
-            }
-          }
-        }
-        return result;
+        Geometry local = GeoUtil.toGeometry(Util.extractField(o, path));
+        return GeoUtil.geowithin(geometry, local);
+
+
+//        List<LatLong> storedOption = GeoUtil.coordinate(path, o);
+//        if (!storedOption.isEmpty()) {
+//          for (LatLong point : storedOption) {
+//            if (result) {
+//              break;
+//            }
+//          }
+//        }
+//        return result;
       }
     };
   }
