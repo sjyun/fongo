@@ -12,6 +12,7 @@ import com.github.fakemongo.impl.index.GeoIndex;
 import com.github.fakemongo.impl.index.IndexAbstract;
 import com.github.fakemongo.impl.index.IndexFactory;
 import com.github.fakemongo.impl.text.TextSearch;
+import com.vividsolutions.jts.geom.Geometry;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1150,8 +1151,9 @@ public class FongoDBCollection extends DBCollection {
     //noinspection ConstantConditions
     LOG.info("geoNear() near:{}, query:{}, limit:{}, maxDistance:{}, spherical:{}, use index:{}", near, query, limit, maxDistance, spherical, matchingIndex.getName());
 
-    List<LatLong> latLongs = GeoUtil.latLon(Collections.<String>emptyList(), near);
-    return ((GeoIndex) matchingIndex).geoNear(query == null ? new BasicDBObject() : query, latLongs, limit == null ? 100 : limit.intValue(), spherical);
+//    List<LatLong> latLongs = GeoUtil.latLon(Collections.<String>emptyList(), near);
+    Geometry geometry = GeoUtil.toGeometry(near);
+    return ((GeoIndex) matchingIndex).geoNear(query == null ? new BasicDBObject() : query, geometry, limit == null ? 100 : limit.intValue(), spherical);
   }
 
   //Text search Emulation see http://docs.mongodb.org/manual/tutorial/search-for-text/ for mongo

@@ -1100,9 +1100,7 @@ public class ExpressionParser {
       public boolean apply(DBObject o) {
         final Geometry objectGeometry = GeoUtil.toGeometry((DBObject) Util.extractField(o, path));
 
-        final Coordinate[] coordinates = DistanceOp.nearestPoints(geometry, objectGeometry);
-
-        double distance = GeoUtil.distanceInRadians(GeoUtil.toLatLong(coordinates[0]), GeoUtil.toLatLong(coordinates[1]), sphere);
+        double distance = GeoUtil.distanceInRadians(geometry, objectGeometry, sphere);
         o.put(FongoDBCollection.FONGO_SPECIAL_ORDER_BY, distance);
         return maxDistance == null || distance < maxDistance.doubleValue();
       }

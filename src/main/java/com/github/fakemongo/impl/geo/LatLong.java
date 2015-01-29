@@ -3,14 +3,21 @@ package com.github.fakemongo.impl.geo;
 /**
  * Encapsulate external library if we need to remove her.
  */
-public class LatLong extends com.github.davidmoten.geo.LatLong implements Comparable<LatLong> {
+public class LatLong implements Comparable<LatLong> {
+  private final double lat;
+  private final double lon;
 
   public LatLong(double lat, double lon) {
-    super(lat, lon);
+    this.lat = lat;
+    this.lon = lon;
   }
 
-  public LatLong(com.github.davidmoten.geo.LatLong latLong) {
-    super(latLong.getLat(), latLong.getLon());
+  public double getLat() {
+    return this.lat;
+  }
+
+  public double getLon() {
+    return this.lon;
   }
 
   @Override
@@ -20,5 +27,9 @@ public class LatLong extends com.github.davidmoten.geo.LatLong implements Compar
       return Double.compare(this.getLon(), o.getLon());
     }
     return cLat;
+  }
+
+  public String toString() {
+    return "LatLong [lat=" + this.lat + ", lon=" + this.lon + "]";
   }
 }

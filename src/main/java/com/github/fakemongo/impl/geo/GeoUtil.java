@@ -1,7 +1,6 @@
 package com.github.fakemongo.impl.geo;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.davidmoten.geo.GeoHash;
 import com.github.fakemongo.impl.ExpressionParser;
 import com.github.fakemongo.impl.Util;
 import com.mongodb.BasicDBList;
@@ -29,50 +28,33 @@ public final class GeoUtil {
 
   public static final double EARTH_RADIUS = 6374892.5; // common way : 6378100D;
 
-  //  Precision, Distance of Adjacent Cell in Meters
-  //      1,     5003530
-  //      2,     625441
-  //      3,     123264
-  //      4,     19545
-  //      5,     3803
-  //      6,     610
-  //      7,     118
-  //      8,     19
-  //      9,     3.71
-  //      10,    0.6
-  public static final int SIZE_GEOHASH = 5; // Size of the geohash. 12 = more accurate.
-
   private static final GeometryFactory GEOMETRY_FACTORY = new GeometryFactory();
 
   private GeoUtil() {
   }
 
   public static class GeoDBObject extends BasicDBObject {
-    private final String geoHash;
     private final LatLong latLong;
     private final Geometry geometry;
 
     public GeoDBObject(DBObject object, String indexKey) {
       List<LatLong> latLongs = GeoUtil.latLon(Util.split(indexKey), object);
-//      BasicDBList list = (BasicDBList) object.get(indexKey);
-//      this.latLong = new LatLong((Double) list.get(1), (Double) list.get(0));
       this.latLong = latLongs.get(0);
-      this.geoHash = GeoUtil.encodeGeoHash(this.getLatLong());
       this.geometry = GeoUtil.toGeometry(Util.extractField(object, indexKey));
       this.putAll(object);
-    }
-
-    public String getGeoHash() {
-      return geoHash;
     }
 
     public LatLong getLatLong() {
       return latLong;
     }
 
+    public Geometry getGeometry() {
+      return geometry;
+    }
+
     @Override
     public int hashCode() {
-      return getGeoHash().hashCode();
+      return geometry.hashCode();
     }
 
     @Override
@@ -82,13 +64,13 @@ public final class GeoUtil {
 
       GeoDBObject that = (GeoDBObject) o;
 
-      return getGeoHash().equals(that.getGeoHash());
+      return geometry.equals(that.geometry);
     }
 
     @Override
     public String toString() {
       return "GeoDBObject{" +
-          "geoHash='" + getGeoHash() + '\'' +
+          "geometry='" + geometry + '\'' +
           ", latLong=" + getLatLong() +
           '}';
     }
@@ -103,7 +85,13 @@ public final class GeoUtil {
     return GEOMETRY_FACTORY.createPoint(coordinate);
   }
 
-  public static double distanceInRadians(LatLong p1, LatLong p2, boolean spherical) {
+  public static double distanceInRadians(Geometry p1, Geometry p2, boolean spherical) {
+    final Coordinate[] coordinates = DistanceOp.nearestPoints(p1, p2);
+
+    return GeoUtil.distanceInRadians(coordinates[0], coordinates[1], spherical);
+  }
+
+  public static double distanceInRadians(Coordinate p1, Coordinate p2, boolean spherical) {
     double distance;
     if (spherical) {
       distance = distanceSpherical(p1, p2);
@@ -114,9 +102,9 @@ public final class GeoUtil {
   }
 
   // Take me a day before I see this : https://github.com/mongodb/mongo/blob/ba239918c950c254056bf589a943a5e88fd4144c/src/mongo/db/geo/shapes.cpp
-  public static double distance2d(LatLong p1, LatLong p2) {
-    double a = p1.getLat() - p2.getLat();
-    double b = p1.getLon() - p2.getLon();
+  public static double distance2d(Coordinate p1, Coordinate p2) {
+    double a = p1.x - p2.x;
+    double b = p1.y - p2.y;
 
     // Avoid numerical error if possible...
     if (a == 0) return Math.abs(b);
@@ -125,11 +113,11 @@ public final class GeoUtil {
     return Math.sqrt((a * a) + (b * b));
   }
 
-  public static double distanceSpherical(LatLong p1, LatLong p2) {
-    double p1lat = Math.toRadians(p1.getLat()); // e
-    double p1long = Math.toRadians(p1.getLon());    // f
-    double p2lat = Math.toRadians(p2.getLat());         // g
-    double p2long = Math.toRadians(p2.getLon());             // h
+  public static double distanceSpherical(Coordinate p1, Coordinate p2) {
+    double p1lat = Math.toRadians(p1.x); // e
+    double p1long = Math.toRadians(p1.y);    // f
+    double p2lat = Math.toRadians(p2.x);         // g
+    double p2long = Math.toRadians(p2.y);             // h
 
     double sinx1 = Math.sin(p1lat), cosx1 = Math.cos(p1lat);
     double siny1 = Math.sin(p1long), cosy1 = Math.cos(p1long);
@@ -150,10 +138,6 @@ public final class GeoUtil {
    * Object can be:
    * - [lon, lat]
    * - {lat:lat, lng:lon}
-   *
-   * @param path
-   * @param object
-   * @return
    */
   public static List<LatLong> latLon(List<String> path, DBObject object) {
     ExpressionParser expressionParser = new ExpressionParser();
@@ -260,8 +244,8 @@ public final class GeoUtil {
         return createGeometryPoint(toCoordinate(latLong));
       }
     }
-    if (true)
-      throw new IllegalArgumentException("can't handle " + JSON.serialize(dbObject));
+//    if (true)
+//      throw new IllegalArgumentException("can't handle " + JSON.serialize(dbObject));
     return null;
   }
 
@@ -282,12 +266,6 @@ public final class GeoUtil {
   public static Coordinate toCoordinate(LngLatAlt lngLatAlt) {
     return new Coordinate(lngLatAlt.getLatitude(), lngLatAlt.getLongitude(), lngLatAlt.getAltitude());
   }
-
-
-  public static LatLong toLatLong(Coordinate coordinate) {
-    return new LatLong(coordinate.x, coordinate.y);
-  }
-
 
   private static Geometry createBox(BasicDBList coordinates) {
     Coordinate[] t = parseCoordinates(coordinates);
@@ -316,38 +294,4 @@ public final class GeoUtil {
 
     return ret;
   }
-
-  public static String encodeGeoHash(LatLong latLong) {
-    return encodeGeoHash(latLong, SIZE_GEOHASH);
-  }
-
-  public static String encodeGeoHash(LatLong latLong, int sizeHash) {
-    return GeoHash.encodeHash(latLong, sizeHash); // The more, the merrier.
-  }
-
-  public static LatLong decodeGeoHash(String geoHash) {
-    return new LatLong(GeoHash.decodeHash(geoHash));
-  }
-
-  public static List<String> neightbours(String geoHash) {
-    List<String> results = new ArrayList<String>();
-    try {
-      results.add(GeoHash.left(geoHash));
-    } catch (Exception e) {
-    }
-    try {
-      results.add(GeoHash.right(geoHash));
-    } catch (Exception e) {
-    }
-    try {
-      results.add(GeoHash.top(geoHash));
-    } catch (Exception e) {
-    }
-    try {
-      results.add(GeoHash.bottom(geoHash));
-    } catch (Exception e) {
-    }
-    return results;
-  }
-
 }
