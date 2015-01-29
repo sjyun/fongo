@@ -74,6 +74,22 @@ public class FongoGeoTest {
         new BasicDBObject("dis", 34.21306681664185).append("obj", new BasicDBObject("_id", 1).append("loc", Util.list(73.97D, 40.72D))),
         new BasicDBObject("dis", 37.94641254453445).append("obj", new BasicDBObject("_id", 2).append("loc", Util.list(2.265D, 48.791D))))), roundDis(results));
   }
+  @Test
+  public void should_geonear_work_fine_with_spherical() throws Exception {
+    DBCollection collection = fongoRule.newCollection();
+    collection.insert(new BasicDBObject("_id", 1).append("loc", Util.list(-73.97D, 40.72D)));
+    collection.insert(new BasicDBObject("_id", 2).append("loc", Util.list(2.265D, 48.791D)));
+    collection.createIndex(new BasicDBObject("loc", "2dsphere"));
+
+    // geoNear
+    CommandResult commandResult = collection.getDB().command(new BasicDBObject("geoNear", collection.getName()).append("near", Util.list(2.265D, 48.791D)).append("spherical", true));
+    commandResult.throwOnError();
+
+    DBObject results = (DBObject) commandResult.get("results");
+    assertEquals(roundDis(Util.list(
+        new BasicDBObject("dis", 0.0).append("obj", new BasicDBObject("_id", 2).append("loc", Util.list(2.265D, 48.791D))),
+        new BasicDBObject("dis", 0.915257).append("obj", new BasicDBObject("_id", 1).append("loc", Util.list(-73.97 , 40.72))))), roundDis(results));
+  }
 
   @Test
   public void testDistChangeAtLat() throws Exception {
