@@ -917,8 +917,8 @@ public class ExpressionParser {
       }
       if (cc1 instanceof String && cc2 instanceof Date) {
         for (SimpleDateFormat df : new SimpleDateFormat[]{
-            new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssz"),
-            new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'"),
+            new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZZ"),
+            new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZZ"),
             new SimpleDateFormat("yyyy-MM-dd")})
           try {
             cc1 = df.parse((String) cc1);
