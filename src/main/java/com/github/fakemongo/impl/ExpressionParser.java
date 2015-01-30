@@ -73,6 +73,12 @@ public class ExpressionParser {
   // TODO : http://docs.mongodb.org/manual/reference/operator/geoWithin/#op._S_geoWithin
   // TODO : http://docs.mongodb.org/manual/reference/operator/geoIntersects/
 
+  private static final SimpleDateFormat[] DATE_FORMATS = new SimpleDateFormat[]{
+      new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZZ"),
+      new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZZ"),
+      new SimpleDateFormat("yyyy-MM-dd")};
+
+
   private static class Null {
   }
 
@@ -914,12 +920,9 @@ public class ExpressionParser {
         checkTypes = false;
       }
       if (cc1 instanceof String && cc2 instanceof Date) {
-        for (SimpleDateFormat df : new SimpleDateFormat[]{
-            new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZZ"),
-            new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZZ"),
-            new SimpleDateFormat("yyyy-MM-dd")}) {
+        for (SimpleDateFormat df : DATE_FORMATS) {
           try {
-            cc1 = df.parse((String) cc1);
+            cc1 = ((SimpleDateFormat) df.clone()).parse((String) cc1);
             checkTypes = false;
             break;
           } catch (ParseException e) {
