@@ -11,6 +11,7 @@ import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Envelope;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryFactory;
+import com.vividsolutions.jts.geom.LinearRing;
 import com.vividsolutions.jts.operation.distance.DistanceOp;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -27,6 +28,10 @@ public final class GeoUtil {
   private static final Logger LOG = LoggerFactory.getLogger(GeoUtil.class);
 
   public static final double EARTH_RADIUS = 6374892.5; // common way : 6378100D;
+  /**
+   * Length (in meters) of one degree.
+   */
+  public static final double METERS_PER_DEGREE = 111185.0;
 
   private static final GeometryFactory GEOMETRY_FACTORY = new GeometryFactory();
 
@@ -210,19 +215,17 @@ public final class GeoUtil {
       BasicDBList coordinates = (BasicDBList) dbObject.get("$box");
       return createBox(coordinates);
     } else if (dbObject.containsField("$center")) {
-      throw new IllegalArgumentException("$center not implemented in fongo");
-      // TODO
+      BasicDBList coordinates = (BasicDBList) dbObject.get("$center");
+      return createCircle(coordinates, false);
     } else if (dbObject.containsField("$centerSphere")) {
-      throw new IllegalArgumentException("$centerSphere not implemented in fongo");
-      // TODO
+      BasicDBList coordinates = (BasicDBList) dbObject.get("$centerSphere");
+      return createCircle(coordinates, true);
     } else if (dbObject.containsField("$polygon")) {
       BasicDBList coordinates = (BasicDBList) dbObject.get("$polygon");
       return createPolygon(coordinates);
     } else if (dbObject.containsField("$geometry")) {
-      String type = (String) dbObject.get("type");
-      BasicDBList coordinates = (BasicDBList) dbObject.get("$coordinates");
-      throw new IllegalArgumentException("$geometry not implemented in fongo");
-      // TODO
+      // TODO : must check
+      return toGeometry((DBObject) dbObject.get("$geometry"));
     } else if (dbObject.containsField("type")) {
       try {
         GeoJsonObject geoJsonObject = new ObjectMapper().readValue(JSON.serialize(dbObject), GeoJsonObject.class);
@@ -263,8 +266,88 @@ public final class GeoUtil {
 
   private static Geometry createBox(BasicDBList coordinates) {
     Coordinate[] t = parseCoordinates(coordinates);
-
     return GEOMETRY_FACTORY.toGeometry(new Envelope(t[0], t[1]));
+  }
+
+  private static Geometry createCircle(final BasicDBList coordinates, final boolean spherical) {
+    Coordinate[] t = parseCoordinates(coordinates);
+
+    double radius = ((Number) coordinates.get(1)).doubleValue();
+    if (spherical) {
+      radius *= EARTH_RADIUS;
+    } else {
+      radius *= METERS_PER_DEGREE;
+    }
+
+    return createCircle(t[0].x, t[0].y, radius);
+  }
+
+  public static Geometry createCircle(final double x, final double y, final double radius) {
+    final int sides = 32;
+    final Coordinate coords[] = new Coordinate[sides + 1];
+    for (int i = 0; i < sides; i++) {
+      final double angle = 360.0 * i / sides;
+      coords[i] = destVincenty(x, y, angle, radius);
+    }
+    coords[sides] = coords[0];
+
+    final LinearRing ring = GEOMETRY_FACTORY.createLinearRing(coords);
+    return GEOMETRY_FACTORY.createPolygon(ring, null);
+  }
+
+  private static Coordinate destVincenty(final double longitude, final double latitude, final double angle,
+                                         final double distanceInMeters) {
+    // WGS-84 ellipsiod
+    final double semiMajorAxis = 6378137;
+    final double b = 6356752.3142;
+    final double inverseFlattening = 1 / 298.257223563;
+    final double alpha1 = Math.toRadians(angle);
+    final double sinAlpha1 = Math.sin(alpha1);
+    final double cosAlpha1 = Math.cos(alpha1);
+
+    final double tanU1 = (1 - inverseFlattening) * Math.tan(Math.toRadians(latitude));
+    final double cosU1 = 1 / Math.sqrt(1 + tanU1 * tanU1), sinU1 = tanU1 * cosU1;
+    final double sigma1 = Math.atan2(tanU1, cosAlpha1);
+    final double sinAlpha = cosU1 * sinAlpha1;
+    final double cosSqAlpha = 1 - sinAlpha * sinAlpha;
+    final double uSq = cosSqAlpha * (semiMajorAxis * semiMajorAxis - b * b) / (b * b);
+    final double aa = 1 + uSq / 16384 * (4096 + uSq * (-768 + uSq * (320 - 175 * uSq)));
+    final double ab = uSq / 1024 * (256 + uSq * (-128 + uSq * (74 - 47 * uSq)));
+
+    double sigma = distanceInMeters / (b * aa);
+    double sigmaP = 2 * Math.PI;
+    double sinSigma = 0;
+    double cosSigma = 0;
+    double cos2SigmaM = 0;
+    double deltaSigma = 0;
+    while (Math.abs(sigma - sigmaP) > 1e-12) {
+      cos2SigmaM = Math.cos(2 * sigma1 + sigma);
+      sinSigma = Math.sin(sigma);
+      cosSigma = Math.cos(sigma);
+      deltaSigma = ab
+          * sinSigma
+          * (cos2SigmaM + ab
+          / 4
+          * (cosSigma * (-1 + 2 * cos2SigmaM * cos2SigmaM) - ab / 6 * cos2SigmaM
+          * (-3 + 4 * sinSigma * sinSigma) * (-3 + 4 * cos2SigmaM * cos2SigmaM)));
+      sigmaP = sigma;
+      sigma = distanceInMeters / (b * aa) + deltaSigma;
+    }
+
+    final double tmp = sinU1 * sinSigma - cosU1 * cosSigma * cosAlpha1;
+    final double lat2 = Math.atan2(sinU1 * cosSigma + cosU1 * sinSigma * cosAlpha1,
+        (1 - inverseFlattening) * Math.sqrt(sinAlpha * sinAlpha + tmp * tmp));
+    final double lambda = Math.atan2(sinSigma * sinAlpha1, cosU1 * cosSigma - sinU1 * sinSigma * cosAlpha1);
+    final double c = inverseFlattening / 16 * cosSqAlpha * (4 + inverseFlattening * (4 - 3 * cosSqAlpha));
+    final double l = lambda - (1 - c) * inverseFlattening * sinAlpha
+        * (sigma + c * sinSigma * (cos2SigmaM + c * cosSigma * (-1 + 2 * cos2SigmaM * cos2SigmaM)));
+
+    return new Coordinate(round(longitude + Math.toDegrees(l)), round(Math.toDegrees(lat2)));
+  }
+
+  private static double round(double dis) {
+    double mul = 1000000D;
+    return Math.round(dis * mul) / mul;
   }
 
   private static Geometry createPolygon(BasicDBList coordinates) {

@@ -1113,18 +1113,7 @@ public class ExpressionParser {
       public boolean apply(DBObject o) {
 
         Geometry local = GeoUtil.toGeometry(Util.extractField(o, path));
-        return GeoUtil.geowithin(geometry, local);
-
-
-//        List<LatLong> storedOption = GeoUtil.coordinate(path, o);
-//        if (!storedOption.isEmpty()) {
-//          for (LatLong point : storedOption) {
-//            if (result) {
-//              break;
-//            }
-//          }
-//        }
-//        return result;
+        return GeoUtil.geowithin(local, geometry);
       }
     };
   }

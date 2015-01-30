@@ -19,7 +19,7 @@ import org.junit.rules.RuleChain;
 
 public class FongoGeoTest {
 
-  public final FongoRule fongoRule = new FongoRule(!true);
+  public final FongoRule fongoRule = new FongoRule(false);
 
   public final ExpectedException exception = ExpectedException.none();
 
@@ -74,6 +74,7 @@ public class FongoGeoTest {
         new BasicDBObject("dis", 34.21306681664185).append("obj", new BasicDBObject("_id", 1).append("loc", Util.list(73.97D, 40.72D))),
         new BasicDBObject("dis", 37.94641254453445).append("obj", new BasicDBObject("_id", 2).append("loc", Util.list(2.265D, 48.791D))))), roundDis(results));
   }
+
   @Test
   public void should_geonear_work_fine_with_spherical() throws Exception {
     DBCollection collection = fongoRule.newCollection();
@@ -88,7 +89,7 @@ public class FongoGeoTest {
     DBObject results = (DBObject) commandResult.get("results");
     assertEquals(roundDis(Util.list(
         new BasicDBObject("dis", 0.0).append("obj", new BasicDBObject("_id", 2).append("loc", Util.list(2.265D, 48.791D))),
-        new BasicDBObject("dis", 0.915257).append("obj", new BasicDBObject("_id", 1).append("loc", Util.list(-73.97 , 40.72))))), roundDis(results));
+        new BasicDBObject("dis", 0.915257).append("obj", new BasicDBObject("_id", 1).append("loc", Util.list(-73.97, 40.72))))), roundDis(results));
   }
 
   @Test
@@ -359,6 +360,66 @@ public class FongoGeoTest {
     );
   }
 
+  @Test
+  public void should_geowithin_with_center_return_results() {
+    DBCollection collection = fongoRule.newCollection();
+    // Inside
+    collection.insert(new BasicDBObject("_id", 1).append("loc", new BasicDBObject("longitude", 0).append("latitude", 40)));
+    collection.insert(new BasicDBObject("_id", 2).append("loc", new BasicDBObject("longitude", .5).append("latitude", 40)));
+    collection.insert(new BasicDBObject("_id", 3).append("loc", new BasicDBObject("longitude", 0).append("latitude", 40.5)));
+    collection.insert(new BasicDBObject("_id", 4).append("loc", new BasicDBObject("longitude", -.5).append("latitude", 40)));
+    collection.insert(new BasicDBObject("_id", 5).append("loc", new BasicDBObject("longitude", 0).append("latitude", 39.5)));
+    collection.insert(new BasicDBObject("_id", 6).append("loc", new BasicDBObject("longitude", 0).append("latitude", 41)));
+    collection.insert(new BasicDBObject("_id", 7).append("loc", new BasicDBObject("longitude", -1).append("latitude", 40)));
+    collection.insert(new BasicDBObject("_id", 8).append("loc", new BasicDBObject("longitude", 0).append("latitude", 39)));
+    collection.insert(new BasicDBObject("_id", 10).append("loc", new BasicDBObject("longitude", 1).append("latitude", 41)));
+    collection.insert(new BasicDBObject("_id", 11).append("loc", new BasicDBObject("longitude", 1).append("latitude", 39)));
+    collection.insert(new BasicDBObject("_id", 12).append("loc", new BasicDBObject("longitude", -1).append("latitude", 41)));
+    collection.insert(new BasicDBObject("_id", 13).append("loc", new BasicDBObject("longitude", -1).append("latitude", 39)));
+    collection.insert(new BasicDBObject("_id", 14).append("helloWorld", new BasicDBObject("longitude", -1).append("latitude", 39)));
+    collection.createIndex(new BasicDBObject("loc", "2d"));
+
+    List<DBObject> objects = collection.find(new BasicDBObject("loc", new BasicDBObject("$geoWithin", new BasicDBObject("$center", Util.list(Util.list(0, 41), 1))))).toArray();
+    Assertions.assertThat(objects).containsOnly(
+        (new BasicDBObject("_id", 1).append("loc", new BasicDBObject("longitude", 0).append("latitude", 40))),
+        (new BasicDBObject("_id", 3).append("loc", new BasicDBObject("longitude", 0).append("latitude", 40.5))),
+        (new BasicDBObject("_id", 6).append("loc", new BasicDBObject("longitude", 0).append("latitude", 41))),
+        (new BasicDBObject("_id", 10).append("loc", new BasicDBObject("longitude", 1).append("latitude", 41))),
+        (new BasicDBObject("_id", 12).append("loc", new BasicDBObject("longitude", -1).append("latitude", 41)))
+    );
+  }
+
+  @Test
+  public void should_geowithin_with_centerSphere_return_results() {
+    DBCollection collection = fongoRule.newCollection();
+    // Inside
+    collection.insert(new BasicDBObject("_id", 1).append("loc", new BasicDBObject("longitude", 0).append("latitude", 40)));
+    collection.insert(new BasicDBObject("_id", 2).append("loc", new BasicDBObject("longitude", .5).append("latitude", 40)));
+    collection.insert(new BasicDBObject("_id", 3).append("loc", new BasicDBObject("longitude", 0).append("latitude", 40.5)));
+    collection.insert(new BasicDBObject("_id", 4).append("loc", new BasicDBObject("longitude", -.5).append("latitude", 40)));
+    collection.insert(new BasicDBObject("_id", 5).append("loc", new BasicDBObject("longitude", 0).append("latitude", 39.5)));
+    collection.insert(new BasicDBObject("_id", 6).append("loc", new BasicDBObject("longitude", 0).append("latitude", 41)));
+    collection.insert(new BasicDBObject("_id", 7).append("loc", new BasicDBObject("longitude", -1).append("latitude", 40)));
+    collection.insert(new BasicDBObject("_id", 8).append("loc", new BasicDBObject("longitude", 0).append("latitude", 39)));
+    collection.insert(new BasicDBObject("_id", 10).append("loc", new BasicDBObject("longitude", 1).append("latitude", 41)));
+    collection.insert(new BasicDBObject("_id", 11).append("loc", new BasicDBObject("longitude", 1).append("latitude", 39)));
+    collection.insert(new BasicDBObject("_id", 12).append("loc", new BasicDBObject("longitude", -1).append("latitude", 41)));
+    collection.insert(new BasicDBObject("_id", 13).append("loc", new BasicDBObject("longitude", -1).append("latitude", 39)));
+    collection.insert(new BasicDBObject("_id", 14).append("helloWorld", new BasicDBObject("longitude", -1).append("latitude", 39)));
+    collection.createIndex(new BasicDBObject("loc", "2d"));
+
+    List<DBObject> objects = collection.find(new BasicDBObject("loc", new BasicDBObject("$geoWithin", new BasicDBObject("$centerSphere", Util.list(Util.list(0, 41), .02))))).toArray();
+    Assertions.assertThat(objects).containsOnly(
+        (new BasicDBObject("_id", 1).append("loc", new BasicDBObject("longitude", 0).append("latitude", 40))),
+        (new BasicDBObject("_id", 2).append("loc", new BasicDBObject("longitude", .5).append("latitude", 40))),
+        (new BasicDBObject("_id", 3).append("loc", new BasicDBObject("longitude", 0).append("latitude", 40.5))),
+        (new BasicDBObject("_id", 4).append("loc", new BasicDBObject("longitude", -.5).append("latitude", 40))),
+        (new BasicDBObject("_id", 6).append("loc", new BasicDBObject("longitude", 0).append("latitude", 41))),
+        (new BasicDBObject("_id", 10).append("loc", new BasicDBObject("longitude", 1).append("latitude", 41))),
+        (new BasicDBObject("_id", 12).append("loc", new BasicDBObject("longitude", -1).append("latitude", 41)))
+    );
+  }
+
   public static DBObject roundDis(DBObject objectList) {
     for (final DBObject o : (List<DBObject>) objectList) {
       o.put("dis", round((Double) o.get("dis")));
@@ -366,7 +427,7 @@ public class FongoGeoTest {
     return objectList;
   }
 
-  private static Double round(Double dis) {
+  private static double round(double dis) {
     double mul = 1000000D;
     return Math.round(dis * mul) / mul;
   }
