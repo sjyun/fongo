@@ -78,6 +78,10 @@ public class FongoRule extends ExternalResource {
     this(dbName, false, null);
   }
 
+  public boolean isRealMongo() {
+    return this.realMongo;
+  }
+
   @Override
   protected void before() throws UnknownHostException {
     if (realMongo) {
