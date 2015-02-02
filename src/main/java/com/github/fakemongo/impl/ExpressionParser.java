@@ -1009,15 +1009,35 @@ public class ExpressionParser {
       if (sizeDiff < 0 && storedList.get(queryList.size()) instanceof MinKey) {
         return 1; // Minkey is ALWAYS first, even if other is null
       }
+      if (sizeDiff < 0 && storedList.get(queryList.size()) instanceof MaxKey) {
+        return -1; // MaxKey is ALWAYS last, even if other is null
+      }
+      if (sizeDiff > 0 && queryList.get(storedList.size()) instanceof MaxKey) {
+        return 1; // MaxKey is ALWAYS last, even if other is null
+      }
+      // Special case : {x : null} and "no x" is equal.
+      boolean bothEmpty = isEmptyOrContainsOnlyNull(storedList) && isEmptyOrContainsOnlyNull(queryList);
+      if (bothEmpty) {
+        return 0;
+      }
       return sizeDiff;
     }
-    for (int i = 0; i < queryList.size(); i++) {
+    for (int i = 0, length = queryList.size(); i < length; i++) {
       Integer compareValue = compareObjects(queryList.get(i), storedList.get(i));
       if (compareValue != 0) {
         return compareValue;
       }
     }
     return 0;
+  }
+
+  private boolean isEmptyOrContainsOnlyNull(List list) {
+    for (Object obj : list) {
+      if (obj != null) {
+        return false;
+      }
+    }
+    return true;
   }
 
   private int compareDBObjects(DBObject db0, DBObject db1) {

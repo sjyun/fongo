@@ -118,6 +118,8 @@ public class FongoDBCollection extends DBCollection {
 
       putSizeCheck(cloned, concern);
     }
+//    Don't know why, but there is not more number of inserted results...
+//    return new WriteResult(insertResult(0), concern);
     return new WriteResult(insertResult(toInsert.size()), concern);
   }
 
@@ -204,6 +206,29 @@ public class FongoDBCollection extends DBCollection {
 
     q = filterLists(q);
     o = filterLists(o);
+
+    if (o == null) {
+      throw new IllegalArgumentException("update can not be null");
+    }
+
+    if (concern == null) {
+      throw new IllegalArgumentException("Write concern can not be null");
+    }
+
+    if (!o.keySet().isEmpty()) {
+      // if 1st key doesn't start with $, then object will be inserted as is, need to check it
+      String key = o.keySet().iterator().next();
+      if (!key.startsWith("$"))
+        _checkObject(o, false, false);
+    }
+
+    if (multi) {
+      try {
+        checkMultiUpdateDocument(o);
+      } catch (final IllegalArgumentException e) {
+        this.fongoDb.okErrorResult(9, e.getMessage()).throwOnError();
+      }
+    }
 
     if (LOG.isDebugEnabled()) {
       LOG.debug("update(" + q + ", " + o + ", " + upsert + ", " + multi + ")");
@@ -496,7 +521,7 @@ public class FongoDBCollection extends DBCollection {
       }
     }
 
-    if (!Util.isProjectionEmpty(fields)) {
+    if (!Util.isDBObjectEmpty(fields)) {
       results = applyProjections(results, fields);
     }
 
@@ -643,7 +668,10 @@ public class FongoDBCollection extends DBCollection {
    */
   public static DBObject applyProjections(DBObject result, DBObject projectionObject) {
     LOG.debug("applying projections {}", projectionObject);
-    if (Util.isProjectionEmpty(projectionObject)) {
+    if (Util.isDBObjectEmpty(projectionObject)) {
+      if (Util.isDBObjectEmpty(result)) {
+        return null;
+      }
       return Util.cloneIdFirst(result);
     }
 
@@ -990,13 +1018,10 @@ public class FongoDBCollection extends DBCollection {
         case UPDATE: {
           ModifyRequest r = (ModifyRequest) request;
           // See com.mongodb.DBCollectionImpl.Run.executeUpdates()
-          for (String key : r.getUpdateDocument().keySet()) {
-            if (!key.startsWith("$")) {
-              throw new IllegalArgumentException("Update document keys must start with $: " + key);
-            }
-          }
+          final DBObject updateDocument = r.getUpdateDocument();
+          checkMultiUpdateDocument(updateDocument);
 
-          wr = update(r.getQuery(), r.getUpdateDocument(), r.isUpsert(), r.isMulti(), writeConcern, encoder);
+          wr   = update(r.getQuery(), updateDocument, r.isUpsert(), r.isMulti(), writeConcern, encoder);
           matchedCount += wr.getN();
           if (wr.isUpdateOfExisting()) {
             upserts.add(new BulkWriteUpsert(idx, wr.getUpsertedId()));
@@ -1025,6 +1050,14 @@ public class FongoDBCollection extends DBCollection {
       idx++;
     }
     return new AcknowledgedBulkWriteResult(insertedCount, matchedCount, removedCount, modifiedCount, upserts);
+  }
+
+  private void checkMultiUpdateDocument(DBObject updateDocument) throws IllegalArgumentException {
+    for (String key : updateDocument.keySet()) {
+      if (!key.startsWith("$")) {
+        throw new IllegalArgumentException("Update document keys must start with $: " + key);
+      }
+    }
   }
 
   @Override

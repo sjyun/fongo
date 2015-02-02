@@ -6,6 +6,7 @@ import com.github.fakemongo.impl.MapReduce;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -289,6 +290,29 @@ public class FongoDB extends DB {
     return notOkErrorResult(null, "no such cmd: " + command);
   }
 
+  /**
+   * Returns a set containing the names of all collections in this database.
+   *
+   * @return the names of collections in this database
+   * @throws com.mongodb.MongoException
+   * @mongodb.driver.manual reference/method/db.getCollectionNames/ getCollectionNames()
+   */
+//  @Override
+  public Set<String> getCollectionNames() {
+    List<String> collectionNames = new ArrayList<String>();
+    Iterator<DBObject> collections = getCollection("system.namespaces")
+        .find(new BasicDBObject(), null, 0, 0, 0, getOptions(), ReadPreference.primary(), null);
+    for (; collections.hasNext(); ) {
+      String collectionName = collections.next().get("name").toString();
+      if (!collectionName.contains("$")) {
+        collectionNames.add(collectionName.substring(getName().length() + 1));
+      }
+    }
+
+    Collections.sort(collectionNames);
+    return new LinkedHashSet<String>(collectionNames);
+  }
+
   public CommandResult okResult() {
     CommandResult result = new CommandResult(fongo.getServerAddress());
     result.put("ok", 1.0);
@@ -311,7 +335,7 @@ public class FongoDB extends DB {
 
   public CommandResult notOkErrorResult(String err, String errmsg) {
     CommandResult result = new CommandResult(fongo.getServerAddress());
-    result.put("ok", 0.0);
+    result.put("ok", 0);
     if (err != null) {
       result.put("err", err);
     }

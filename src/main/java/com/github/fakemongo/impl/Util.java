@@ -341,9 +341,9 @@ public final class Util {
   }
 
   /**
-   * @return true if the projection should not be applied at all
+   * @return true if the dbObject is empty.
    */
-  public static boolean isProjectionEmpty(DBObject projection) {
+  public static boolean isDBObjectEmpty(DBObject projection) {
     return projection == null || projection.keySet().isEmpty();
   }
 }
