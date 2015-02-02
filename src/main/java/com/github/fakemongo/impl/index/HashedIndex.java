@@ -37,7 +37,7 @@ public class HashedIndex extends IndexAbstract<DBObject> {
   @Override
   public List<List<Object>> addOrUpdate(DBObject object, DBObject oldObject) {
     if (object.get(this.geoIndex) instanceof List) {
-      throw new MongoException(16244, "Error: hashed indexes do not currently support array values");
+      throw new MongoException(16766, "Error: hashed indexes do not currently support array values");
     }
     return super.addOrUpdate(object, oldObject);
   }

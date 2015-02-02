@@ -38,7 +38,7 @@ public abstract class IndexAbstract<T extends DBObject> {
     for (Object value : keys.toMap().values()) {
       if (!(value instanceof String) && !(value instanceof Number)) {
         //com.mongodb.WriteConcernException: { "serverUsed" : "/127.0.0.1:27017" , "err" : "bad index key pattern { a: { n: 1 } }" , "code" : 10098 , "n" : 0 , "connectionId" : 543 , "ok" : 1.0}
-        throw new MongoException(10098, "bad index key pattern : " + keys);
+        throw new MongoException(67, "bad index key pattern : " + keys);
       }
     }
   }

@@ -5,12 +5,12 @@ import com.github.fakemongo.impl.index.IndexAbstract;
 import com.github.fakemongo.junit.FongoRule;
 import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
+import com.mongodb.CommandFailureException;
 import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
 import com.mongodb.FongoDBCollection;
 import com.mongodb.MongoException;
-import com.mongodb.WriteConcernException;
 import java.util.Arrays;
 import java.util.List;
 import org.assertj.core.api.Assertions;
@@ -18,6 +18,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeFalse;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
@@ -99,6 +100,7 @@ public class FongoIndexTest {
 
   @Test
   public void testDropIndexOnSameFieldInversedOrder() {
+    assumeFalse(fongoRule.isRealMongo());
     DBCollection collection = fongoRule.newCollection("coll");
     collection.createIndex(new BasicDBObject("n", 1));
     collection.createIndex(new BasicDBObject("n", -1));
@@ -226,7 +228,7 @@ public class FongoIndexTest {
       collection.update(new BasicDBObject("n", 2), new BasicDBObject("n", 1));
       fail("Must send MongoException");
     } catch (MongoException me) {
-      assertEquals(11001, me.getCode());
+      assertEquals(11000, me.getCode());
     }
 
     assertEquals(1, collection.count(new BasicDBObject("n", 2)));
@@ -249,7 +251,7 @@ public class FongoIndexTest {
       collection.update(new BasicDBObject("n", 2), new BasicDBObject("n", 1));
       fail("Must send MongoException");
     } catch (MongoException me) {
-      assertEquals(11001, me.getCode());
+      assertEquals(11000, me.getCode());
     }
 
     assertEquals(1, collection.count(new BasicDBObject("n", 2)));
@@ -268,7 +270,8 @@ public class FongoIndexTest {
     try {
       collection.insert(new BasicDBObject("date", 1));
     } catch (MongoException me) {
-      assertEquals(11001, me.getCode()); // TODO diff from mongo, need 11000
+      me.printStackTrace();
+      assertEquals(11000, me.getCode()); // TODO diff from mongo, need 11000
     }
   }
 
@@ -297,6 +300,7 @@ public class FongoIndexTest {
 
   @Test
   public void indexesMustBeUsedForFind() {
+    assumeFalse(fongoRule.isRealMongo());
     DBCollection collection = fongoRule.newCollection();
 
     collection.createIndex(new BasicDBObject("firstname", 1).append("lastname", 1));
@@ -370,7 +374,7 @@ public class FongoIndexTest {
       collection.update(new BasicDBObject("_id", 2), new BasicDBObject("date", 1));
       fail("should throw MongoException");
     } catch (MongoException me) {
-      assertEquals(11001, me.getCode());
+      assertEquals(11000, me.getCode());
     }
 
     // Verify object is NOT modify
@@ -392,7 +396,7 @@ public class FongoIndexTest {
       collection.update(new BasicDBObject("date", 2), new BasicDBObject("date", 1));
       fail("should throw MongoException");
     } catch (MongoException me) {
-      assertEquals(11001, me.getCode());
+      assertEquals(11000, me.getCode());
     }
 
     // Verify object is NOT modify
@@ -467,6 +471,7 @@ public class FongoIndexTest {
   // Add or remove a field in an object must populate the index.
   @Test
   public void updateAndAddFieldMustAddIntoIndex() {
+    assumeFalse(fongoRule.isRealMongo());
     DBCollection collection = fongoRule.newCollection();
 
     collection.createIndex(new BasicDBObject("date", 1));
@@ -484,6 +489,7 @@ public class FongoIndexTest {
   // Add or remove a field in an object must populate the index.
   @Test
   public void updateAndRemoveFieldMustAddIntoIndex() {
+    assumeFalse(fongoRule.isRealMongo());
     DBCollection collection = fongoRule.newCollection();
 
     collection.createIndex(new BasicDBObject("date", 1));
@@ -500,6 +506,7 @@ public class FongoIndexTest {
 
   @Test
   public void indexesMustBeUsedForFindWithInFilter() {
+    assumeFalse(fongoRule.isRealMongo());
     DBCollection collection = fongoRule.newCollection();
 
     collection.createIndex(new BasicDBObject("date", 1));
@@ -557,6 +564,7 @@ public class FongoIndexTest {
 
   @Test
   public void test2dIndex() {
+    assumeFalse(fongoRule.isRealMongo());
     DBCollection collection = fongoRule.newCollection();
     collection.insert(new BasicDBObject("_id", 1).append("loc", Util.list(-73.97D, 40.72D)));
     collection.insert(new BasicDBObject("_id", 2).append("loc", Util.list(2.265D, 48.791D)));
@@ -566,10 +574,10 @@ public class FongoIndexTest {
     assertTrue(index.isGeoIndex());
   }
 
-  @Test(expected = WriteConcernException.class)
+  @Test(expected = CommandFailureException.class)
   public void test2dIndexNotFirst() {
     DBCollection collection = fongoRule.newCollection();
-// com.mongodb.WriteConcernException: { "serverUsed" : "localhost/127.0.0.1:27017" , "err" : "2d has to be first in index" , "code" : 13023 , "n" : 0 , "connectionId" : 272 , "ok" : 1.0}
+// com.mongodb.CommandFailureException: { "serverUsed" : "127.0.0.1:27017" , "createdCollectionAutomatically" : false , "numIndexesBefore" : 1 , "errmsg" : "exception: 2d has to be first in index" , "code" : 16801 , "ok" : 0.0}
 
     collection.insert(new BasicDBObject("_id", 1).append("loc", Util.list(-73.97D, 40.72D)));
     collection.insert(new BasicDBObject("_id", 2).append("loc", Util.list(2.265D, 48.791D)));
@@ -578,6 +586,7 @@ public class FongoIndexTest {
 
   @Test
   public void test2dsphereIndex() {
+    assumeFalse(fongoRule.isRealMongo());
     DBCollection collection = fongoRule.newCollection();
     collection.insert(new BasicDBObject("_id", 1).append("loc", Util.list(-73.97D, 40.72D)));
     collection.insert(new BasicDBObject("_id", 2).append("loc", Util.list(2.265D, 48.791D)));
@@ -589,11 +598,12 @@ public class FongoIndexTest {
 
   /**
    * 2dsphere indexes are not required to be first in compound indexes.
-   * 
+   *
    * @see <a href="https://github.com/fakemongo/fongo/issues/65">Issue 65</a>
    */
   @Test
   public void test2dsphereNotFirst() {
+    assumeFalse(fongoRule.isRealMongo());
     DBCollection collection = fongoRule.newCollection();
 
     collection.insert(new BasicDBObject("_id", 1).append("name", "a").append("loc", Util.list(-73.97D, 40.72D)));
@@ -606,6 +616,7 @@ public class FongoIndexTest {
 
   @Test
   public void testUpdateMustModifyAllIndexes() throws Exception {
+    assumeFalse(fongoRule.isRealMongo());
     DBCollection collection = fongoRule.newCollection();
     collection.insert(new BasicDBObject("date", 1).append("name", "jon").append("_id", 1));
     collection.createIndex(new BasicDBObject("date", 1));
@@ -653,7 +664,7 @@ public class FongoIndexTest {
 
   @Test
   public void testStrangeIndexThrowException() throws Exception {
-    ExpectedMongoException.expectCode(exception, 10098, MongoException.class);
+    ExpectedMongoException.expectCode(exception, 67, CommandFailureException.class);
     DBCollection collection = fongoRule.newCollection();
     collection.createIndex(new BasicDBObject("a", new BasicDBObject("n", 1)));
   }
@@ -661,6 +672,7 @@ public class FongoIndexTest {
   // Creating an index after inserting into a collection must add records only if necessary
   @Test
   public void testCreateIndexLater() throws Exception {
+    assumeFalse(fongoRule.isRealMongo());
     DBCollection collection = fongoRule.newCollection();
     collection.insert(new BasicDBObject("_id", 1).append("a", 1));
     collection.insert(new BasicDBObject("_id", 2));
@@ -673,6 +685,7 @@ public class FongoIndexTest {
   // Creating an index before inserting into a collection must add records only if necessary
   @Test
   public void testCreateIndexBefore() throws Exception {
+    assumeFalse(fongoRule.isRealMongo());
     DBCollection collection = fongoRule.newCollection();
     collection.createIndex(new BasicDBObject("a", 1));
     collection.insert(new BasicDBObject("_id", 1).append("a", 1));
@@ -684,6 +697,7 @@ public class FongoIndexTest {
 
   @Test
   public void testRemoveMulti() throws Exception {
+    assumeFalse(fongoRule.isRealMongo());
     DBCollection collection = fongoRule.newCollection();
     collection.createIndex(new BasicDBObject("a", 1));
     collection.insert(new BasicDBObject("_id", 1).append("a", 1));
@@ -738,7 +752,7 @@ public class FongoIndexTest {
 
   @Test
   public void should_not_handled_hashed_index_on_array_before() throws Exception {
-    ExpectedMongoException.expectCode(exception, 16244, MongoException.class);
+    ExpectedMongoException.expectCode(exception, 16766, CommandFailureException.class);
     DBCollection collection = fongoRule.newCollection();
     collection.insert(new BasicDBObject("date", new BasicDBList()));
     collection.createIndex(new BasicDBObject("date", "hashed"));
@@ -746,7 +760,8 @@ public class FongoIndexTest {
 
   @Test
   public void should_not_handled_hashed_index_on_array_after() throws Exception {
-    ExpectedMongoException.expectCode(exception, 16244, MongoException.class);
+//    ExpectedMongoException.expectCode(exception, 16766, WriteConcernException.class);
+    ExpectedMongoException.expectCode(exception, 16766, MongoException.class);
     DBCollection collection = fongoRule.newCollection();
     collection.createIndex(new BasicDBObject("date", "hashed"));
     collection.insert(new BasicDBObject("date", new BasicDBList()));

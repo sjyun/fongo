@@ -26,9 +26,6 @@ import org.slf4j.LoggerFactory;
 public class GeoIndex extends IndexAbstract<GeoUtil.GeoDBObject> {
   private static final Logger LOG = LoggerFactory.getLogger(GeoIndex.class);
 
-  // EXPERIMENTAL SET TO FALSE : did not work well...
-  private static final boolean BRUTE_FORCE = true;
-
   GeoIndex(String name, DBObject keys, boolean unique, String geoIndex) {
     super(name, keys, unique, new LinkedHashMap<GeoUtil.GeoDBObject, List<GeoUtil.GeoDBObject>>(), geoIndex);
     //TreeMap<GeoUtil.GeoDBObject, List<GeoUtil.GeoDBObject>>(new GeoUtil.GeoComparator(geoIndex)), geoIndex);

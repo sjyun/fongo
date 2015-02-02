@@ -57,6 +57,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -66,7 +67,7 @@ import org.slf4j.LoggerFactory;
 
 public class FongoTest {
 
-  public final FongoRule fongoRule = new FongoRule(false);
+  public final FongoRule fongoRule = new FongoRule(!false);
 
   public final ExpectedException exception = ExpectedException.none();
 
@@ -85,20 +86,21 @@ public class FongoTest {
 
   @Test
   public void testGetCollection() {
-    Fongo fongo = newFongo();
-    DB db = fongo.getDB("db");
+    DB db = fongoRule.getDB();
     DBCollection collection = db.getCollection("coll");
     assertNotNull(collection);
     assertSame("getCollection should be idempotent", collection, db.getCollection("coll"));
     assertSame("getCollection should be idempotent", collection, db.getCollectionFromString("coll"));
-    assertEquals(newHashSet("coll", "system.indexes", "system.users"), db.getCollectionNames());
+    assertEquals(newHashSet(), db.getCollectionNames());
+    collection.insert(new BasicDBObject("_id", 1));
+    assertEquals(newHashSet("coll", "system.indexes"), db.getCollectionNames());
   }
 
   @Test
   public void testCreateCollection() {
     DB db = fongoRule.getDB("db");
     db.createCollection("coll", null);
-    assertEquals(new HashSet<String>(Arrays.asList("coll", "system.indexes", "system.users")), db.getCollectionNames());
+    assertEquals(new HashSet<String>(), db.getCollectionNames());
   }
 
   @Test
@@ -403,7 +405,7 @@ public class FongoTest {
     textSearchCommand.put("search", "aaa -eee");
 
     DBObject textSearchResult = collection.getDB()
-        .command(new BasicDBObject(collection.getName(), new BasicDBObject("text", textSearchCommand)));
+        .command(new BasicDBObject("text", textSearchCommand).append("db", collection.getName()));
     ServerAddress serverAddress = new ServerAddress(new InetSocketAddress(ServerAddress.defaultHost(), ServerAddress.defaultPort()));
     String host = serverAddress.getHost() + ":" + serverAddress.getPort();
     DBObject expected = new BasicDBObject("serverUsed", host).append("ok", 1.0);
@@ -420,6 +422,32 @@ public class FongoTest {
     Assertions.assertThat(textSearchResult).isEqualTo(expected);
     assertEquals("aaa bbb",
         ((DBObject) ((DBObject) ((List) textSearchResult.get("results")).get(0)).get("obj")).get("textField"));
+  }
+
+  // See http://docs.mongodb.org/manual/reference/command/text/
+  @Test
+  public void testCommandTextSearchShouldNotWork() {
+    DBCollection collection = newCollection();
+    collection.insert((DBObject) JSON.parse("{ _id:1, textField: \"aaa bbb\" }"));
+    collection.insert((DBObject) JSON.parse("{ _id:2, textField: \"ccc ddd\" }"));
+    collection.insert((DBObject) JSON.parse("{ _id:3, textField: \"eee fff\" }"));
+    collection.insert((DBObject) JSON.parse("{ _id:4, textField: \"aaa eee\" }"));
+
+    collection.createIndex(new BasicDBObject("textField", "text"));
+
+    DBObject textSearchCommand = new BasicDBObject();
+//		textSearchCommand.put("text", Interest.COLLECTION);
+    textSearchCommand.put("search", "aaa -eee");
+
+    DBObject textSearchResult = collection.getDB()
+        .command(new BasicDBObject(collection.getName(), new BasicDBObject("text", textSearchCommand)));
+    DBObject expected = new BasicDBObject("ok", 0.0).append("errmsg", "no such cmd: db").append("code", 59).append("bad cmd", new BasicDBObject("db", new BasicDBObject("text", new BasicDBObject("search", "aaa -eee"))));
+//    expected.put("results", JSON.parse("[ "
+//            + "{ \"score\" : 0.75 , "
+//            + "\"obj\" : { \"_id\" : 1 , \"textField\" : \"aaa bbb\"}}]"
+//    ));
+    textSearchResult.removeField("serverUsed");
+    Assertions.assertThat(textSearchResult).isEqualTo(expected);
   }
 
   @Test
@@ -543,11 +571,10 @@ public class FongoTest {
 
     DBCursor cursor = collection.find(new BasicDBObject("_id",
         new BasicDBObject("$in", Arrays.asList(3, 2, 1)))).sort(new BasicDBObject("wrongField", 1));
-    assertEquals(Arrays.asList(
+    Assertions.assertThat(cursor.toArray()).containsOnly(
         new BasicDBObject("_id", 1),
         new BasicDBObject("_id", 2),
-        new BasicDBObject("_id", 3)
-    ), cursor.toArray());
+        new BasicDBObject("_id", 3));
   }
 
   /**
@@ -737,13 +764,17 @@ public class FongoTest {
   @Test
   public void testUpsertWithIdIn() {
     DBCollection collection = newCollection();
-    DBObject query = new BasicDBObjectBuilder().push("_id").append("$in", Arrays.asList(1)).pop().get();
+    final ObjectId objectId = ObjectId.get();
+    DBObject query = new BasicDBObjectBuilder().push("_id").append("$in", Arrays.asList(objectId)).pop().get();
     DBObject update = new BasicDBObjectBuilder()
         .push("$push").push("n").append("_id", 2).append("u", 3).pop().pop()
         .push("$inc").append("c", 4).pop().get();
-    DBObject expected = new BasicDBObjectBuilder().append("_id", 1).append("n", Arrays.asList(new BasicDBObject("_id", 2).append("u", 3))).append("c", 4).get();
+    DBObject expected = new BasicDBObjectBuilder().append("n", Arrays.asList(new BasicDBObject("_id", 2).append("u", 3))).append("c", 4).get();
     collection.update(query, update, true, false);
-    assertEquals(expected, collection.findOne());
+    final DBObject result = collection.findOne();
+    Assertions.assertThat(result.get("_id")).isNotEqualTo(objectId);
+    result.removeField("_id");
+    assertEquals(expected, result);
   }
 
   @Test
@@ -868,6 +899,7 @@ public class FongoTest {
 
   @Test
   public void testAuthentication() {
+    Assume.assumeFalse(fongoRule.isRealMongo());
     DB fongoDB = fongoRule.getDB("testDB");
     assertFalse(fongoDB.isAuthenticated());
     // Once authenticated, fongoDB should be available to answer yes, whatever the credentials were. 
@@ -991,7 +1023,7 @@ public class FongoTest {
     DBObject result = collection.findAndModify(new BasicDBObject("_id", 1),
         null, null, false, new BasicDBObject("$inc", new BasicDBObject("a", 1)), false, true);
 
-    assertEquals(new BasicDBObject(), result);
+    assertEquals(null, result);
     assertEquals(new BasicDBObject("_id", 1).append("a", 1), collection.findOne());
   }
 
@@ -1155,8 +1187,10 @@ public class FongoTest {
   @Test
   public void testInsertReturnModifiedDocumentCount() {
     DBCollection collection = newCollection();
-    WriteResult result = collection.insert(new BasicDBObject("_id", new BasicDBObject("n", 1)));
-    assertEquals(1, result.getN());
+    WriteResult result = collection.insert(new BasicDBObject("_id", new BasicDBObject("n", 1)), WriteConcern.ACKNOWLEDGED);
+    assertEquals(null, result.getUpsertedId());
+    Assertions.assertThat(result.isUpdateOfExisting()).isFalse();
+    assertEquals(0, result.getN());
   }
 
   @Test
@@ -1241,10 +1275,9 @@ public class FongoTest {
 
   @Test
   public void testDropCollectionsFromGetCollectionNames() {
-    Fongo fongo = newFongo();
-    DB db = fongo.getDB("db");
-    db.getCollection("coll1");
-    db.getCollection("coll2");
+    DB db = fongoRule.getDB();
+    db.getCollection("coll1").insert(new BasicDBObject());
+    db.getCollection("coll2").insert(new BasicDBObject());
     int dropCount = 0;
     for (String name : db.getCollectionNames()) {
       if (!name.startsWith("system.")) {
@@ -1257,20 +1290,25 @@ public class FongoTest {
 
   @Test
   public void testDropCollectionsPermitReuseOfDBCollection() throws Exception {
-    DB db = newFongo().getDB("db");
+    DB db = fongoRule.getDB();
     int startingCollectionSize = db.getCollectionNames().size();
     DBCollection coll1 = db.getCollection("coll1");
     DBCollection coll2 = db.getCollection("coll2");
-    assertEquals(startingCollectionSize + 2, db.getCollectionNames().size());
+    Assertions.assertThat(db.getCollectionNames()).hasSize(startingCollectionSize);
+    coll1.insert(new BasicDBObject("hello", "world"));
+    coll2.insert(new BasicDBObject("hello", "world"));
+    // <["coll1", "coll2", "system.indexes"]>
+    Assertions.assertThat(db.getCollectionNames()).hasSize(startingCollectionSize + 3);
 
     // when
     coll1.drop();
     coll2.drop();
-    assertEquals(startingCollectionSize + 0, db.getCollectionNames().size());
+    //<["system.indexes"]>
+    Assertions.assertThat(db.getCollectionNames()).hasSize(startingCollectionSize + 1);
 
     // Insert a value must create the collection.
     coll1.insert(new BasicDBObject("_id", 1));
-    assertEquals(startingCollectionSize + 1, db.getCollectionNames().size());
+    Assertions.assertThat(db.getCollectionNames()).hasSize(startingCollectionSize + 2);
   }
 
   @Test
@@ -1516,14 +1554,14 @@ public class FongoTest {
     assertEquals(1, result.size());
   }
 
-  // Don't know why, but request by _id only return document even if skip is set
+  // NOT ANYMORE : Don't know why, but request by _id only return document even if skip is set
   @Test
   public void testFindSkip1yId() throws Exception {
     DBCollection collection = newCollection();
     collection.insert(new BasicDBObject("_id", "jon").append("name", "hoff"));
     List<DBObject> result = collection.find(new BasicDBObject("_id", "jon")).skip(1).toArray();
     assertNotNull(result);
-    assertEquals(1, result.size());
+    assertEquals(0, result.size());
   }
 
   @Test
@@ -1715,10 +1753,16 @@ public class FongoTest {
     collection.insert(o1);
     collection.insert(o3);
 
-    assertEquals(o1, collection.findOne(new BasicDBObject("created", new BasicDBObject("$lt",
-        c2.get(Calendar.YEAR) + "-" + (c2.get(Calendar.MONTH) + 1) + "-" + c2.get(Calendar.DAY_OF_MONTH)))));
-    assertEquals(o3, collection.findOne(new BasicDBObject("created", new BasicDBObject("$gt",
-        c2.get(Calendar.YEAR) + "-" + (c2.get(Calendar.MONTH) + 1) + "-" + c2.get(Calendar.DAY_OF_MONTH)))));
+    Assertions.assertThat(collection.findOne(new BasicDBObject("created", new BasicDBObject("$lt",
+        c2.get(Calendar.YEAR) + "-" + (c2.get(Calendar.MONTH) + 1) + "-" + c2.get(Calendar.DAY_OF_MONTH))))).isNull();
+    Assertions.assertThat(collection.findOne(new BasicDBObject("created", new BasicDBObject("$gt",
+        c2.get(Calendar.YEAR) + "-" + (c2.get(Calendar.MONTH) + 1) + "-" + c2.get(Calendar.DAY_OF_MONTH))))).isNull();
+
+    // http://stackoverflow.com/questions/19819870/date-query-with-isodate-in-mongodb-doesnt-seem-to-work
+    // http://docs.mongodb.org/manual/reference/mongodb-extended-json/
+    // 2012-01-01T15:00:00.000Z
+    Assertions.assertThat(collection.findOne(new BasicDBObject("created", new BasicDBObject("$gt",
+        c2.get(Calendar.YEAR) + "-" + (c2.get(Calendar.MONTH) + 1) + "-" + c2.get(Calendar.DAY_OF_MONTH))))).isNull();
   }
 
   @Test
@@ -1828,15 +1872,15 @@ public class FongoTest {
     // Object ?
     objects = collection.find(new BasicDBObject("date", new BasicDBObject("$type", 3))).toArray();
     assertEquals(Arrays.asList(
-        new BasicDBObject("_id", 1).append("date", 1),
-        new BasicDBObject("_id", 2).append("date", 2D),
-        new BasicDBObject("_id", 3).append("date", "3"),
-        new BasicDBObject("_id", id).append("date", true),
-        new BasicDBObject("_id", 6).append("date", 6L),
-        new BasicDBObject("_id", 7).append("date", Util.list(1, 2, 3)),
-        new BasicDBObject("_id", 8).append("date", Util.list(1D, 2L, "3", 4)),
-        new BasicDBObject("_id", 9).append("date", Util.list(Util.list(1D, 2L, "3", 4))),
-        new BasicDBObject("_id", 10).append("date", 2F),
+//        new BasicDBObject("_id", 1).append("date", 1),
+//        new BasicDBObject("_id", 2).append("date", 2D),
+//        new BasicDBObject("_id", 3).append("date", "3"),
+//        new BasicDBObject("_id", id).append("date", true),
+//        new BasicDBObject("_id", 6).append("date", 6L),
+//        new BasicDBObject("_id", 7).append("date", Util.list(1, 2, 3)),
+//        new BasicDBObject("_id", 8).append("date", Util.list(1D, 2L, "3", 4)),
+//        new BasicDBObject("_id", 9).append("date", Util.list(Util.list(1D, 2L, "3", 4))),
+//        new BasicDBObject("_id", 10).append("date", 2F),
         new BasicDBObject("_id", 11).append("date", new BasicDBObject("x", 1))), objects);
   }
 
@@ -1878,6 +1922,23 @@ public class FongoTest {
 
   @Test
   public void testSortingNull() throws Exception {
+    { // Given
+      DBCollection collection = newCollection();
+      collection.insert(new BasicDBObject("_id", 4).append("x", null));
+      collection.insert(new BasicDBObject("_id", 5));
+
+      // When
+      List<DBObject> objects = collection.find().sort(new BasicDBObject("x", 1)).toArray();
+
+      // Then
+      assertEquals(Arrays.asList(
+          new BasicDBObject("_id", 4).append("x", null),
+          new BasicDBObject("_id", 5)
+      ), objects);
+      collection.drop();
+    }
+
+
     // Given
     DBCollection collection = newCollection();
     collection.insert(new BasicDBObject("_id", 1).append("x", new MinKey()));
@@ -1892,8 +1953,8 @@ public class FongoTest {
     // Then
     assertEquals(Arrays.asList(
         new BasicDBObject("_id", 1).append("x", new MinKey()),
-        new BasicDBObject("_id", 5),
         new BasicDBObject("_id", 4).append("x", null),
+        new BasicDBObject("_id", 5),
         new BasicDBObject("_id", 3).append("x", 3),
         new BasicDBObject("_id", 2).append("x", new MaxKey())
     ), objects);
@@ -2442,29 +2503,83 @@ public class FongoTest {
   }
 
   @Test
+  public void test_multi_update_should_not_works_in_multi_with_no_$() {
+    // Given
+    DBCollection collection = newCollection();
+    collection.insert(new BasicDBObject("_id", 100).append("hi", 1));
+
+    // When
+    ExpectedMongoException.expectWriteConcernException(exception, 9);
+    collection.update(new BasicDBObject("fongo", "sucks"), new BasicDBObject("not", "upserted"), false, true);
+  }
+
+  @Test
+  public void test_bulk_update_must_start_with_id() {
+    // Given
+    DBCollection collection = newCollection();
+    collection.insert(new BasicDBObject("_id", 100).append("hi", 1));
+
+    // When
+    BulkWriteOperation bulkWriteOperation = collection.initializeOrderedBulkOperation();
+    bulkWriteOperation.find(new BasicDBObject("find", "me")).upsert().update(new BasicDBObject("_id", 1).append("foo", "bar").append("find", "me"));
+    bulkWriteOperation.find(new BasicDBObject("cantFind", "me")).update(new BasicDBObject("not", "upserted"));
+    bulkWriteOperation.find(new BasicDBObject("_id", 100)).update(new BasicDBObject("hi", 2));
+
+    exception.expect(IllegalArgumentException.class);
+    bulkWriteOperation.execute();
+  }
+
+  @Test
+  public void test_bulk_update_throw_a_no_operation() {
+    // Given
+    DBCollection collection = newCollection();
+    collection.insert(new BasicDBObject("_id", 100).append("hi", 1));
+
+    // When
+    exception.expect(IllegalStateException.class);
+    exception.expectMessage("no operations");
+    BulkWriteOperation bulkWriteOperation = collection.initializeOrderedBulkOperation();
+    bulkWriteOperation.execute();
+  }
+
+  @Test
+  public void test_bulk_update_must_start_with_$() {
+    // Given
+    DBCollection collection = newCollection();
+    collection.insert(new BasicDBObject("_id", 100).append("hi", 1));
+
+    // When
+    BulkWriteOperation bulkWriteOperation = collection.initializeOrderedBulkOperation();
+    bulkWriteOperation.find(new BasicDBObject("_id", 100)).update(new BasicDBObject("hi", 2));
+    exception.expect(IllegalArgumentException.class);
+    exception.expectMessage("Update document keys must start with $: hi");
+    bulkWriteOperation.execute();
+  }
+
+  @Test
   public void test_bulk_update() {
     // Given
     DBCollection collection = newCollection();
     collection.insert(new BasicDBObject("_id", 100).append("hi", 1));
 
     // When
-    collection.update(new BasicDBObject("fongo", "sucks"), new BasicDBObject("not", "upserted"), false, true);
+    collection.update(new BasicDBObject("fongo", "sucks"), new BasicDBObject("$set", new BasicDBObject("not", "upserted")), false, true);
 
     BulkWriteOperation bulkWriteOperation = collection.initializeOrderedBulkOperation();
-    bulkWriteOperation.find(new BasicDBObject("find", "me")).upsert().update(new BasicDBObject("_id", 1).append("foo", "bar").append("find", "me"));
-    bulkWriteOperation.find(new BasicDBObject("cantFind", "me")).update(new BasicDBObject("not", "upserted"));
-    bulkWriteOperation.find(new BasicDBObject("_id", 100)).update(new BasicDBObject("hi", 2));
+    bulkWriteOperation.find(new BasicDBObject("_id", "200")).upsert().update(new BasicDBObject("$set", new BasicDBObject("foo", "bar").append("find", "me")));
+    bulkWriteOperation.find(new BasicDBObject("cantFind", "me")).update(new BasicDBObject("$set", new BasicDBObject("not", "upserted")));
+    bulkWriteOperation.find(new BasicDBObject("_id", 100)).update(new BasicDBObject("$set", new BasicDBObject("hi", 2)));
     BulkWriteResult bulkResult = bulkWriteOperation.execute();
 
     // Then
-    //assertEquals(1, bulkResult.getModifiedCount()); // 1 modified
-    //assertEquals(1, bulkResult.getUpserts().size()); // 1 upsert
+    assertEquals(1, bulkResult.getModifiedCount()); // 1 modified
+    assertEquals(1, bulkResult.getUpserts().size()); // 1 upsert
     assertEquals(0, bulkResult.getInsertedCount()); // 0 inserted
     assertEquals(0, bulkResult.getRemovedCount()); // 0 removed
 
     DBObject result;
-    result = collection.findOne(new BasicDBObject("find", "me"));
-    assertEquals(new BasicDBObject("_id", 1).append("find", "me").append("foo", "bar"), result);
+    result = collection.findOne(new BasicDBObject("_id", "200"));
+    assertEquals(new BasicDBObject("_id", "200").append("find", "me").append("foo", "bar"), result);
     result = collection.findOne(new BasicDBObject("cantFind", "me"));
     assertNull(result);
     result = collection.findOne(new BasicDBObject("_id", 100));

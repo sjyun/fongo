@@ -191,7 +191,7 @@ public class TextSearch {
     }
   }
 
-  private DBObject BuildResponce(BasicDBList results) {
+  private DBObject buildResponce(BasicDBList results) {
     BasicDBObject res = new BasicDBObject("language", "english");
     res.put("results", results);
     //It's fake data just for fields match
@@ -242,7 +242,7 @@ public class TextSearch {
     //sorting results by score
     BasicDBList res = sortByScoreAndLimit(results, this.limit);
 
-    return BuildResponce(res);
+    return buildResponce(res);
   }
 
 }

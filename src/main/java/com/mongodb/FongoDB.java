@@ -6,7 +6,7 @@ import com.github.fakemongo.impl.MapReduce;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -21,8 +21,10 @@ import org.slf4j.LoggerFactory;
  */
 public class FongoDB extends DB {
   private final static Logger LOG = LoggerFactory.getLogger(FongoDB.class);
+  public static final String SYSTEM_NAMESPACES = "system.namespaces";
 
   private final Map<String, FongoDBCollection> collMap = Collections.synchronizedMap(new HashMap<String, FongoDBCollection>());
+  private final Set<String> namespaceDeclarated = Collections.synchronizedSet(new LinkedHashSet<String>());
   private final Fongo fongo;
 
   private MongoCredential mongoCredential;
@@ -32,6 +34,7 @@ public class FongoDB extends DB {
     this.fongo = fongo;
     doGetCollection("system.users");
     doGetCollection("system.indexes");
+    doGetCollection(SYSTEM_NAMESPACES);
   }
 
   @Override
@@ -88,10 +91,22 @@ public class FongoDB extends DB {
     return coll.text(search, limit, project);
   }
 
-  @Override
-  public Set<String> getCollectionNames() throws MongoException {
-    return new HashSet<String>(collMap.keySet());
-  }
+//  @Override
+//  public Set<String> getCollectionNames() throws MongoException {
+//    Set<String> names = new HashSet<String>();
+//    for (FongoDBCollection fongoDBCollection : collMap.values()) {
+//      int expectedCount = 0;
+//      if (fongoDBCollection.getName().startsWith("system.indexes")) {
+//        expectedCount = 1;
+//      }
+//
+//      if (fongoDBCollection.count() > expectedCount) {
+//        names.add(fongoDBCollection.getName());
+//      }
+//    }
+//
+//    return names;
+//  }
 
   @Override
   public void cleanCursors(boolean force) throws MongoException {
@@ -152,7 +167,7 @@ public class FongoDB extends DB {
     } else if (cmd.containsField("fsync")) {
       return okResult();
     } else if (cmd.containsField("drop")) {
-      this.collMap.remove(cmd.get("drop").toString());
+      this.getCollection(cmd.get("drop").toString()).drop();
       return okResult();
     } else if (cmd.containsField("create")) {
       String collectionName = (String) cmd.get("create");
@@ -181,7 +196,8 @@ public class FongoDB extends DB {
       CommandResult okResult = okResult();
       return okResult;
     } else if (cmd.containsField("aggregate")) {
-      @SuppressWarnings("unchecked") List<DBObject> result = doAggregateCollection((String) cmd.get("aggregate"), (List<DBObject>) cmd.get("pipeline"));
+      @SuppressWarnings(
+          "unchecked") List<DBObject> result = doAggregateCollection((String) cmd.get("aggregate"), (List<DBObject>) cmd.get("pipeline"));
       if (result == null) {
         return notOkErrorResult("can't aggregate");
       }
@@ -279,6 +295,16 @@ public class FongoDB extends DB {
     return result;
   }
 
+  public CommandResult okErrorResult(int code, String err) {
+    CommandResult result = new CommandResult(fongo.getServerAddress());
+    result.put("ok", 1.0);
+    result.put("code", code);
+    if (err != null) {
+      result.put("err", err);
+    }
+    return result;
+  }
+
   public CommandResult notOkErrorResult(String err) {
     return notOkErrorResult(err, null);
   }
@@ -311,6 +337,7 @@ public class FongoDB extends DB {
     CommandResult result = okResult();
     result.put("err", err);
     result.put("code", code);
+    result.put("ok", false);
     return result;
   }
 
@@ -319,12 +346,23 @@ public class FongoDB extends DB {
     return "FongoDB." + this.getName();
   }
 
-  public void removeCollection(FongoDBCollection collection) {
-    collMap.remove(collection.getName());
+  public synchronized void removeCollection(FongoDBCollection collection) {
+    this.collMap.remove(collection.getName());
+    this.getCollection(SYSTEM_NAMESPACES).remove(new BasicDBObject("name", collection.getFullName()));
+    this.namespaceDeclarated.remove(collection.getFullName());
   }
 
-  public void addCollection(FongoDBCollection collection) {
-    collMap.put(collection.getName(), collection);
+  public synchronized void addCollection(FongoDBCollection collection) {
+    this.collMap.put(collection.getName(), collection);
+    if (!collection.getName().startsWith("system.")) {
+      if (!this.namespaceDeclarated.contains(collection.getFullName())) {
+        this.getCollection(SYSTEM_NAMESPACES).insert(new BasicDBObject("name", collection.getFullName()));
+        if (this.namespaceDeclarated.size() == 0) {
+          this.getCollection(SYSTEM_NAMESPACES).insert(new BasicDBObject("name", collection.getDB().getName() + ".system.indexes"));
+        }
+        this.namespaceDeclarated.add(collection.getFullName());
+      }
+    }
   }
 
   private CommandResult runFindAndModify(DBObject cmd, String key) {
