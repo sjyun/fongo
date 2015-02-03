@@ -27,6 +27,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.regex.Pattern;
 import org.bson.LazyBSONList;
 import org.bson.types.Binary;
@@ -43,40 +44,42 @@ import org.slf4j.LoggerFactory;
 public class ExpressionParser {
   private static final Logger LOG = LoggerFactory.getLogger(ExpressionParser.class);
 
-  public final static String LT = "$lt";
-  public final static String EQ = "$eq";
-  public final static String LTE = "$lte";
-  public final static String GT = "$gt";
-  public final static String GTE = "$gte";
-  public final static String NE = "$ne";
-  public final static String ALL = "$all";
-  public final static String EXISTS = "$exists";
-  public final static String MOD = "$mod";
-  public final static String IN = "$in";
-  public final static String NIN = "$nin";
-  public final static String SIZE = "$size";
-  public final static String NOT = "$not";
-  public final static String OR = "$or";
-  public final static String AND = "$and";
-  public final static String REGEX = "$regex";
-  public final static String REGEX_OPTIONS = "$options";
-  public final static String TYPE = "$type";
-  public final static String NEAR = QueryOperators.NEAR;
-  public final static String NEAR_SPHERE = QueryOperators.NEAR_SPHERE;
-  public final static String MAX_DISTANCE = "$maxDistance";
-  public final static String ELEM_MATCH = QueryOperators.ELEM_MATCH;
-  public final static String WHERE = QueryOperators.WHERE;
-  public final static String GEO_WITHIN = "$geoWithin";
-  public final static String SLICE = "$slice";
+  public static final String LT = "$lt";
+  public static final String EQ = "$eq";
+  public static final String LTE = "$lte";
+  public static final String GT = "$gt";
+  public static final String GTE = "$gte";
+  public static final String NE = "$ne";
+  public static final String ALL = "$all";
+  public static final String EXISTS = "$exists";
+  public static final String MOD = "$mod";
+  public static final String IN = "$in";
+  public static final String NIN = "$nin";
+  public static final String SIZE = "$size";
+  public static final String NOT = "$not";
+  public static final String OR = "$or";
+  public static final String AND = "$and";
+  public static final String REGEX = "$regex";
+  public static final String REGEX_OPTIONS = "$options";
+  public static final String TYPE = "$type";
+  public static final String NEAR = QueryOperators.NEAR;
+  public static final String NEAR_SPHERE = QueryOperators.NEAR_SPHERE;
+  public static final String MAX_DISTANCE = "$maxDistance";
+  public static final String ELEM_MATCH = QueryOperators.ELEM_MATCH;
+  public static final String WHERE = QueryOperators.WHERE;
+  public static final String GEO_WITHIN = "$geoWithin";
+  public static final String SLICE = "$slice";
 
   // TODO : http://docs.mongodb.org/manual/reference/operator/query-geospatial/
   // TODO : http://docs.mongodb.org/manual/reference/operator/geoWithin/#op._S_geoWithin
   // TODO : http://docs.mongodb.org/manual/reference/operator/geoIntersects/
 
-  private static final SimpleDateFormat[] DATE_FORMATS = new SimpleDateFormat[]{
-      new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZZ"),
-      new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZZ"),
-      new SimpleDateFormat("yyyy-MM-dd")};
+  private static final String[] DATE_FORMATS = new String[]{
+      "yyyy-MM-dd'T'HH:mm:ss.SSSZZ",
+      "yyyy-MM-dd'T'HH:mm:ssZZ",
+      "yyyy-MM-dd\'T\'HH:mm:ss.SSS\'Z\'"//,
+      //    new SimpleDateFormat("yyyy-MM-dd")
+  };
 
 
   private static class Null {
@@ -920,13 +923,15 @@ public class ExpressionParser {
         checkTypes = false;
       }
       if (cc1 instanceof String && cc2 instanceof Date) {
-        for (SimpleDateFormat df : DATE_FORMATS) {
+        for (String df : DATE_FORMATS) {
           try {
-            cc1 = ((SimpleDateFormat) df.clone()).parse((String) cc1);
+            SimpleDateFormat dateFormat = new SimpleDateFormat(df);
+            dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+            cc1 = dateFormat.parse((String) cc1);
             checkTypes = false;
             break;
           } catch (ParseException e) {
-            LOG.debug("Not parseable as an ISO8601 date (" + df.toPattern() + ")");
+            LOG.debug("Not parseable as an ISO8601 date (" + df + ")");
           }
         }
       }
