@@ -76,12 +76,14 @@ public class FongoDBCollection extends DBCollection {
   private CommandResult insertResult(int updateCount) {
     CommandResult result = fongoDb.okResult();
     result.put("n", updateCount);
+    result.put("nInserted", updateCount);
     return result;
   }
 
   private CommandResult updateResult(int updateCount, boolean updatedExisting) {
     CommandResult result = fongoDb.okResult();
     result.put("n", updateCount);
+    result.put("nModified", updateCount);
     result.put("updatedExisting", updatedExisting);
     return result;
   }
@@ -1021,7 +1023,7 @@ public class FongoDBCollection extends DBCollection {
           final DBObject updateDocument = r.getUpdateDocument();
           checkMultiUpdateDocument(updateDocument);
 
-          wr   = update(r.getQuery(), updateDocument, r.isUpsert(), r.isMulti(), writeConcern, encoder);
+          wr = update(r.getQuery(), updateDocument, r.isUpsert(), r.isMulti(), writeConcern, encoder);
           matchedCount += wr.getN();
           if (wr.isUpdateOfExisting()) {
             upserts.add(new BulkWriteUpsert(idx, wr.getUpsertedId()));
